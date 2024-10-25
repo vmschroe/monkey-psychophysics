@@ -24,7 +24,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.special import comb
 from scipy.special import gammaln
 
-#did I do it?
+#how about now?
 #######
 # Constructing Necessary functions
 #######
