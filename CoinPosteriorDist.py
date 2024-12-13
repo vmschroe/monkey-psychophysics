@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 from scipy.stats import beta, binom
 
 #Prior distribution parameters
-alph = 250
-bet = 250
+alph = 25
+bet = 25
 
 # Generate sample observed data
 N=100

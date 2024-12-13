@@ -170,15 +170,16 @@ df_ln = df[(df['stimSIDE'] == 'left') & (df['distracted'] == False)]
 df_rd = df[(df['stimSIDE'] == 'right') & (df['distracted'] == True)]
 df_rn = df[(df['stimSIDE'] == 'right') & (df['distracted'] == False)]
 
+#######
+# Analysis
+#######
+
 y_ld, n_ld, ny_ld, x_ld = psych_vectors(df_ld)
 y_ln, n_ln, ny_ln, x_ln = psych_vectors(df_ln)
 y_rd, n_rd, ny_rd, x_rd = psych_vectors(df_rd)
 y_rn, n_rn, ny_rn, x_rn = psych_vectors(df_rn)
 
-#######
-# Analysis
-#######
-  
+
 gam_est_ld, lam_est_ld, b0_est_ld, b1_est_ld = paramest(n_ld,ny_ld)
 gam_est_ln, lam_est_ln, b0_est_ln, b1_est_ln = paramest(n_ln,ny_ln)
 gam_est_rd, lam_est_rd, b0_est_rd, b1_est_rd = paramest(n_rd,ny_rd)
