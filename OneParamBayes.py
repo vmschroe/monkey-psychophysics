@@ -30,19 +30,27 @@ import sys
 sys.path.append("/home/vmschroe/Documents/Monkey Analysis/Github")
 import FunctionsForBayes as ffb
 
-
+#Parameters used to simulate data
 sim_params = [0.01, 0.04, -6.1, 0.23] #[gam, lam, b0,b1]
-prior_params = [20,1.5]
-prior_range = [-91,-0.12]
-#NumTrialsVec = np.arange(10,110,25)
-NumTrialsVec = [50]
-plot_rec_curves = True
-plot_post_dist = True
-plot_post_sum = True
-store_mean_HDI = True
-plot_post_conv = False
+#Parameters of prior beta distribution of b0
+prior_params = [20,1.5] #[alpha,beta] 
+prior_range = [-91,-0.12] # [min,max]
+#Vector that gives number of trials per stimAMP for the simulation, length = number of simulations
+NumTrialsVec = np.arange(10,1010,5)
 
-x = [6, 12, 18, 24, 32, 38, 44, 50]
+#Plot psychometric curves produced by Bayes estimate of b0?
+plot_rec_curves = False
+#Plot posterior distribution of b0?
+plot_post_dist = False
+#Return summary of posterior sampling?
+print_post_sum = False
+#Keep vectors of all the posterior means and HDI's?
+store_mean_HDI = True
+#Plot posterior mean of b0 as a function of number of trials? Save it?
+plot_post_conv = True
+save_plot = True
+
+x = [6, 12, 18, 24, 32, 38, 44, 50] #stimulus amplitudes
 postmeans = []
 post3hdi = []
 post97hdi = []
@@ -79,7 +87,7 @@ for num_trials in NumTrialsVec:
     
     
     # Print a summary of the posterior
-    if plot_post_sum:
+    if print_post_sum:
         print(az.summary(trace, var_names=["b0"]))
     
     # Plot curves using posterior estimates of b0
@@ -113,15 +121,21 @@ for num_trials in NumTrialsVec:
         post3hdi.append(float(az.summary(trace)["hdi_3%"]["b0"]))
         post97hdi.append(float(az.summary(trace)["hdi_97%"]["b0"]))
     
-
+prior_mean = prior_range[0]+(prior_range[1]-prior_range[0])*prior_params[0]/(prior_params[0]+prior_params[1])
 if plot_post_conv and store_mean_HDI:
     plt.scatter(NumTrialsVec,post3hdi,label = "Posterior 94% HDI",color='green')
     plt.scatter(NumTrialsVec,post97hdi,color='green')
     plt.scatter(NumTrialsVec,postmeans, label = "Posterior Means",color='blue')
-    plt.plot(NumTrialsVec,np.full(len(postmeans),sim_params[2]), label = "True Data Mean", color="red")
-    plt.plot(NumTrialsVec,np.full(len(postmeans),priorb0mu), label = "Prior Mean", color="purple")
-    plt.title('Recovering b0, with normal prior')
+    plt.plot(NumTrialsVec,np.full(len(postmeans),sim_params[2]), label = f"Data Simulation b0 = {sim_params[2]}", color="red")
+    plt.plot(NumTrialsVec,np.full(len(postmeans),prior_mean), label = f"Prior Mean = {prior_mean}", color="purple")
+    plt.title('Recovering b0, with beta prior')
     plt.xlabel('Number of Trials')
     plt.ylabel('Parameter bo')
     plt.legend()
-    plt.show()   
+    if save_plot:
+        output_directory = "/home/vmschroe/Documents/Monkey Analysis/Github"  # Replace with your desired directory
+        os.makedirs(output_directory, exist_ok=True)  # Create the directory if it doesn't exist
+        output_filename = "ConvergenceOfOneVariableBayesEst"
+        plt.savefig(os.path.join(output_directory, f"{output_filename}.png"), dpi=300)
+        print(f"Plots saved to {output_directory} as {output_filename}.png")
+    plt.show()
