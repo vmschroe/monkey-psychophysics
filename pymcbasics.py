@@ -15,7 +15,7 @@ with pm.Model() as model:
     likelihood = pm.Normal("obs", mu=mu, sigma=sigma, observed=data)
     
     # use Markov Chain Monte Carlo (MCMC) to draw samples from the posterior
-    trace = pm.sample(2000, return_inferencedata=True)
+    trace = pm.sample(500, return_inferencedata=True)
 
 # Plot posterior distributions
 az.plot_posterior(trace, var_names=["mu", "sigma"])
