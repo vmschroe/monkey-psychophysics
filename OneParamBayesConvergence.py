@@ -31,79 +31,52 @@ sys.path.append("/home/vmschroe/Documents/Monkey Analysis/Github")
 import FunctionsForBayes as ffb
 
 
-sim_params = [0, 0, -5.9, 0.209] #[gam, lam, b0,b1]
-x = [6, 12, 18, 24, 32, 38, 44, 50]
-#num_trials=50000
-postmeans = []
-post3hdi = []
-post97hdi = []
-for num_trials in np.arange(10,20010,5):
-    n = np.full(8, num_trials, dtype=int)
-    
-    
-    # Generate sample observed data
-    ydata = ffb.sim_exp_data(sim_params, n)
-    yndata = ydata*n
-    
-    # Define the model
-    with pm.Model() as model:
-        # Define priors for the parameters
-        b0 = pm.Normal("b0", mu=-5.8, sigma=2)
-        
-        # Define the likelihood
-        likelihood = pm.Binomial("obs", n=n, p=ffb.phi_with_lapses([sim_params[0], sim_params[1], b0, sim_params[3]],x), observed=yndata)
-        
-        #pm.Binomial("obs", n=N, p=theta, observed=data)
-        # use Markov Chain Monte Carlo (MCMC) to draw samples from the posterior
-        trace = pm.sample(1000, return_inferencedata=True)
-    
-    # # Plot posterior distributions
-    # az.plot_posterior(trace, var_names=["b0"])
-    # plt.show()    
-    # # Print a summary of the posterior
-    # print('----------------------------------------------------------------------')
-    # print(f'num_trials = {num_trials}')
-    # print(az.summary(trace, var_names=["b0"]))
-    postmeans.append(float(az.summary(trace)["mean"]))
-    post3hdi.append(float(az.summary(trace)["hdi_3%"]))
-    post97hdi.append(float(az.summary(trace)["hdi_97%"]))
-    
-    # rec_params = sim_params.copy()
-    # rec_params[2] =  float(az.summary(trace)["mean"])
-    # lorec_params = sim_params.copy()
-    # lorec_params[2] =  float(az.summary(trace)["hdi_3%"])
-    # hirec_params = sim_params.copy()
-    # hirec_params[2]  =  float(az.summary(trace)["hdi_97%"])
-    # #######
-    # # Plots
-    # ######
-    # xfit = np.linspace(6,50,1000)
-    
-    # ysim = ffb.phi_with_lapses(sim_params,xfit)
-    # yrec = ffb.phi_with_lapses(rec_params,xfit)
-    # loyrec = ffb.phi_with_lapses(lorec_params,xfit)
-    # hiyrec = ffb.phi_with_lapses(hirec_params,xfit)
-    
-    
-    # plt.plot(xfit,ysim,label='Original',color='blue')
-    # plt.plot(xfit,yrec,label='Recovered',color='green')
-    # plt.plot(xfit,loyrec,color='green')
-    # plt.plot(xfit,hiyrec,color='green')
-    # plt.scatter(x,ydata, color = 'red')
-    # plt.title(f'Recovering b0 =  {sim_params[2]} from {num_trials} trials')
-    # plt.xlabel(f'Recovered b0~= {rec_params[2]}')
-    # plt.legend()
-    # plt.show()   
-    
-liln = np.arange(10,20010,5)
 
-plt.scatter(liln[0:600],post3hdi[0:600],label = "Posterior 94% HDI",color='green')
-plt.scatter(liln[0:600],post97hdi[0:600],color='green')
-plt.scatter(liln[0:600],postmeans[0:600], label = "Posterior Means",color='blue')
-plt.plot(liln[0:600],np.full(600,-5.9), label = "True Data Mean", color="red")
-plt.plot(liln[0:600],np.full(600,-5.8), label = "Prior Mean", color="purple")
-plt.title('Recovering b0, with normal prior')
+
+plt.scatter(NumTrialsVec,postmeans, label = "Posterior Means",color='blue')
+plt.plot(NumTrialsVec,np.full(len(postmeans),sim_params[2]), label = f"Data Simulation b0 = {sim_params[2]}", color="red")
+plt.title('b0 posterior means')
 plt.xlabel('Number of Trials')
 plt.ylabel('Parameter bo')
 plt.legend()
-plt.show()   
+plt.show()
+
+b0errs = np.abs(float(sim_params[2]) - np.array(postmeans))
+plt.scatter(NumTrialsVec,b0errs,color='blue')
+plt.plot(NumTrialsVec,(NumTrialsVec)**(-1/2), label = "abs(error) = n^(-1/2)", color="red")
+#plt.plot(NumTrialsVec,(NumTrialsVec)**(-0.3), label = "abs(error) = n^(-0.3)", color="purple")
+plt.plot(NumTrialsVec,1/(NumTrialsVec), label = "abs(error) = n^(-1)", color="green")
+#plt.plot(NumTrialsVec,np.exp(c)*(NumTrialsVec)**(m), label = "abs(error) = e^c * n^(m)", color="green")
+plt.title('n vs error')
+plt.xlabel('Number of Trials')
+plt.ylabel('abs error in bo')
+plt.legend()
+plt.show()
+
+# b0errs = np.abs(float(sim_params[2]) - np.array(postmeans))
+# plt.plot(NumTrialsVec,(NumTrialsVec)**(-1/2)-b0errs, label = "abs(error) = n^(-1/2)", color="red")
+# plt.plot(NumTrialsVec,np.exp(c)*(NumTrialsVec)**(m)-b0errs, label = "abs(error) = e^c * n^(m)", color="green")
+# plt.title('Residuals')
+# plt.xlabel('Number of Trials')
+# plt.ylabel('residuals')
+# plt.legend()
+# plt.show()
+
+
+plt.scatter(np.log(NumTrialsVec),2*np.log(b0errs),color='blue')
+plt.plot(np.log(NumTrialsVec),-0.5*np.log(NumTrialsVec),label = "log(abs(error)) = -0.5log(abs(n))", color="red")
+#plt.plot(np.log(NumTrialsVec),-0.3*np.log(NumTrialsVec),label = "log(abs(error)) = -0.3log(abs(n))", color="purple")
+plt.plot(np.log(NumTrialsVec),-np.log(NumTrialsVec),label = "log(abs(error)) = -log(abs(n))", color="green")
+# plt.plot(np.log(NumTrialsVec), m*np.log(NumTrialsVec)+c, color="green")
+plt.title('log n vs log err')
+plt.xlabel('log Number of Trials')
+plt.ylabel('log error')
+plt.legend()
+plt.show()
+
+# # Data
+# x = np.array(np.log(NumTrialsVec)[b0errs !=0])
+# y = np.array(np.log(b0errs)[b0errs !=0])
+
+# # Fit a line (y = mx + c)
+# m, c = np.polyfit(x, y, 1)  # 1 specifies a linear fit (degree=1)

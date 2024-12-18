@@ -32,8 +32,8 @@ from scipy.special import comb
 from scipy.special import gammaln
 
 test_params = [0.09, 0.06, -5.9, 0.209]
-Nrange = np.full(100,10000) #look at spread of estimates
-#Nrange = 8*np.linspace(15, 10000, 25) #looking at impact of N size
+#Nrange = np.full(100,10000) #look at spread of estimates
+Nrange = 8*np.linspace(15, 1000, 5) #looking at impact of N size
 
 x = [6, 12, 18, 24, 32, 38, 44, 50]
 
@@ -108,10 +108,10 @@ for N in Nrange:
     
     
     #Generate test data y
-    ny = binom.rvs(n, phi_with_lapses(test_params,x))
-    y = ny/n
-
-    
+    # ny = binom.rvs(n, phi_with_lapses(test_params,x))
+    # y = ny/n
+    y = [0,0,0,0,1,1,1,1]
+    ny = n*y
     ## OPTIMIZER
     #apply to negll without lapses
     
