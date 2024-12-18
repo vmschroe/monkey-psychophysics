@@ -33,22 +33,22 @@ import FunctionsForBayes as ffb
 #Parameters used to simulate data
 sim_params = [0.01, 0.04, -6.1, 0.23] #[gam, lam, b0,b1]
 #Parameters of prior beta distribution of b0
-prior_params = [20,1.5] #[alpha,beta] 
+prior_params = [2,2] #[alpha,beta] 
 prior_range = [-91,-0.12] # [min,max]
 #Vector that gives number of trials per stimAMP for the simulation, length = number of simulations
-NumTrialsVec = np.arange(10,1010,5)
+NumTrialsVec = [200]
 
 #Plot psychometric curves produced by Bayes estimate of b0?
-plot_rec_curves = False
+plot_rec_curves = True
 #Plot posterior distribution of b0?
-plot_post_dist = False
+plot_post_dist = True
 #Return summary of posterior sampling?
-print_post_sum = False
+print_post_sum = True
 #Keep vectors of all the posterior means and HDI's?
-store_mean_HDI = True
+store_mean_HDI = False
 #Plot posterior mean of b0 as a function of number of trials? Save it?
-plot_post_conv = True
-save_plot = True
+plot_post_conv = False
+save_plot = False
 
 x = [6, 12, 18, 24, 32, 38, 44, 50] #stimulus amplitudes
 postmeans = []
