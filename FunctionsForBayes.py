@@ -84,3 +84,19 @@ def sim_exp_data(phi_params, num_trials, num_repeats=1):
         y = ny / n
         results.append(y)
     return np.array(results)
+
+def plot_param_conv(ax, NumTrialsVec, post3hdi, post97hdi, postmeans, sim_param, prior_mean, param_name):
+    """
+    Generate a plot for the specified parameter on the given axis.
+    """
+    ax.scatter(NumTrialsVec, post3hdi, label="Posterior 94% HDI", color='green')
+    ax.scatter(NumTrialsVec, post97hdi, color='green')
+    ax.scatter(NumTrialsVec, postmeans, label="Posterior Means", color='blue')
+    ax.plot(NumTrialsVec, np.full(len(postmeans), sim_param), 
+            label=f"Data Simulation {param_name} = {sim_param}", color="red")
+    #ax.plot(NumTrialsVec, np.full(len(postmeans), prior_mean), 
+            #label=f"{param_name}_prior Mean = {prior_mean}", color="purple")
+    ax.set_title(f'Recovering {param_name}, with beta prior')
+    ax.set_xlabel('Number of Trials')
+    ax.set_ylabel(f'Parameter {param_name}')
+    ax.legend()

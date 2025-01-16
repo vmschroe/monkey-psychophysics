@@ -18,7 +18,8 @@ with pm.Model() as model:
     trace = pm.sample(500, return_inferencedata=True)
 
 # Plot posterior distributions
-az.plot_posterior(trace, var_names=["mu", "sigma"])
+az.plot_posterior(trace, var_names=["mu"])
+az.plot_posterior(trace, var_names=["sigma"])
 
 # Print a summary of the posterior
 print(az.summary(trace, var_names=["mu", "sigma"]))
