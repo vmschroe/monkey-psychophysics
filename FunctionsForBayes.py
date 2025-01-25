@@ -85,7 +85,7 @@ def sim_exp_data(phi_params, num_trials, num_repeats=1):
         results.append(y)
     return np.array(results)
 
-def plot_param_conv(ax, NumTrialsVec, post3hdi, post97hdi, postmeans, sim_param, prior_mean, param_name):
+def plot_param_conv(ax, NumTrialsVec, post3hdi, post97hdi, postmeans, sim_param, param_name):
     """
     Generate a plot for the specified parameter on the given axis.
     """
@@ -100,3 +100,30 @@ def plot_param_conv(ax, NumTrialsVec, post3hdi, post97hdi, postmeans, sim_param,
     ax.set_xlabel('Number of Trials')
     ax.set_ylabel(f'Parameter {param_name}')
     ax.legend()
+    
+def psych_vectors(df):
+    x= sorted(df['stimAMP'].unique())
+    n = []
+    y = []
+    for amp in x:
+        tempn, _ = df[df['stimAMP']==amp].shape
+        tempny,_ = df[ (df['stimAMP']==amp)&(df['lowORhighGUESS']==1)].shape
+        tempy = tempny/tempn
+        n = np.append(n,tempn)
+        y = np.append(y,tempy)
+        ny = (n * y).astype(int)
+    return y, n, ny, x
+
+def solve_phi_for_X(gamma, lambda_, beta0, beta1, p):
+    # Calculate X using the given formula
+    X = -( (beta0 - np.log((gamma - p) / (-1 + lambda_ + p))) / beta1 )
+    return X
+
+def PSE(gamma, lambda_, beta0, beta1):
+    X = solve_phi_for_X(gamma, lambda_, beta0, beta1, 0.5)
+    return X
+
+def JND(gamma, lambda_, beta0, beta1):
+    X25 = solve_phi_for_X(gamma, lambda_, beta0, beta1, 0.25)
+    X75 = solve_phi_for_X(gamma, lambda_, beta0, beta1, 0.75)
+    return 0.5*(X75-X25)
