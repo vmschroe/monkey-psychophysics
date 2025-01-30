@@ -135,60 +135,9 @@ def plot_curves_tog(trace1, param_samps1, ydata1, label1, trace2, param_samps2, 
         plt.fill_between(xfit, hdi2[:, 0], hdi2[:, 1], color='skyblue', alpha=0.3, label='95% HDI')
     plt.title(plot_title)
     plt.xlabel('Stimulus Amplitude')
-    plt.legend(loc='upper left', fontsize=9.5)
+    plt.legend(frameon=False, loc='upper left', fontsize=9.5)
     plt.show()   
-    
-# def plot_attr_dist(samples1, label1, samples2, label2, plot_title):
-#     # Convert samples into InferenceData with variable name "PSE"
-#     data1 = az.from_dict(posterior={"PSE": samples1})
-#     data2 = az.from_dict(posterior={"PSE": samples2})
 
-#     # Plot the posterior distributions
-#     az.plot_posterior(data1, var_names=["PSE"], color="red", label=label1)
-#     az.plot_posterior(data2, var_names=["PSE"], color="blue", label=label2)
-
-#     plt.legend()
-#     plt.title(plot_title)
-#     plt.show()
-
-
-# def plot_attr_dist(samples1, label1, samples2, label2, plot_title):
-#     # Plot the KDE of both distributions
-#     sns.kdeplot(samples1, label=label1, color="red", fill=True, alpha=0.5)
-#     sns.kdeplot(samples2, label=label2, color="blue", fill=True, alpha=0.5)
-
-#     # Add legend and title
-#     plt.legend()
-#     plt.title(plot_title)
-#     plt.xlabel("PSE")
-#     plt.ylabel("Density")
-#     plt.show()
-
-# def plot_attr_dist_with_hdi(samples1, label1, samples2, label2, plot_title):
-#     color1 = "red"
-#     color2 = "blue"
-#     # Plot the KDE for both distributions
-#     sns.kdeplot(samples1, label=label1, color=color1, fill=True, alpha=0.4)
-#     sns.kdeplot(samples2, label=label2, color=color2, fill=True, alpha=0.4)
-
-#     # Compute HDIs
-#     hdi_1 = az.hdi(samples1, hdi_prob=0.95)
-#     hdi_2 = az.hdi(samples2, hdi_prob=0.95)
-
-#     # Plot HDI for first distribution
-#     plt.axvline(hdi_1[0], color=color1, linestyle="--", label=f"{label1} 95% HDI")
-#     plt.axvline(hdi_1[1], color=color1, linestyle="--")
-
-#     # Plot HDI for second distribution
-#     plt.axvline(hdi_2[0], color="black", linestyle="--", label=f"{label2} 95% HDI")
-#     plt.axvline(hdi_2[1], color="black", linestyle="--")
-
-#     # Add legend and title
-#     plt.legend()
-#     plt.title(plot_title)
-#     plt.xlabel("PSE")
-#     plt.ylabel("Density")
-#     plt.show()
 
 def plot_attr_dist_with_hdi(samples1, label1, samples2, label2, plot_title):
     color1 = "red"
@@ -206,17 +155,17 @@ def plot_attr_dist_with_hdi(samples1, label1, samples2, label2, plot_title):
     print(f"{label2} HDI: {hdi_2}")
 
     # Plot HDI for first distribution
-    plt.axvline(hdi_1[0], color=color1, linestyle="--", label=f"{label1} 95% HDI [{hdi_1[0]:.2f}, {hdi_1[1]:.2f}]")
+    plt.axvline(hdi_1[0], color=color1, linestyle="--", label=f"{label1} 95% HDI")
     plt.axvline(hdi_1[1], color=color1, linestyle="--")
 
     # Plot HDI for second distribution
-    plt.axvline(hdi_2[0], color=color2, linestyle="--", label=f"{label2} 95% HDI [{hdi_2[0]:.2f}, {hdi_2[1]:.2f}]")
+    plt.axvline(hdi_2[0], color=color2, linestyle="--", label=f"{label2} 95% HDI")
     plt.axvline(hdi_2[1], color=color2, linestyle="--")
 
     # Add legend and title
-    plt.legend()
+    plt.legend(frameon=False)
     plt.title(plot_title)
-    plt.xlabel("PSE")
+    plt.xlabel(plot_title)
     plt.ylabel("Density")
     plt.show()
 
@@ -243,3 +192,12 @@ plot_attr_dist_with_hdi(param_samps_ld[0], "Distracted", param_samps_ln[0], "Not
 plot_attr_dist_with_hdi(param_samps_rd[0], "Distracted", param_samps_rn[0], "Not Distracted", "Right Hand Gamma (guess rate)")
 plot_attr_dist_with_hdi(param_samps_ld[1], "Distracted", param_samps_ln[1], "Not Distracted", "Left Hand Lambda (lapse rate)")
 plot_attr_dist_with_hdi(param_samps_rd[1], "Distracted", param_samps_rn[1], "Not Distracted", "Right Hand Lambda (lapse rate)")
+
+print("Left Hand, Distracted")
+print(az.summary(trace_ld, var_names=["gam", "lam", "b0", "b1"]))
+print("Left Hand, Not Distracted")
+print(az.summary(trace_ln, var_names=["gam", "lam", "b0", "b1"]))
+print("Right Hand, Distracted")
+print(az.summary(trace_rd, var_names=["gam", "lam", "b0", "b1"]))
+print("Right Hand, Not Distracted")
+print(az.summary(trace_rn, var_names=["gam", "lam", "b0", "b1"]))
