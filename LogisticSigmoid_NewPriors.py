@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 24 15:35:23 2025
+Created on Thu Feb 13 15:59:28 2025
 
 @author: vmschroe
 """
@@ -35,19 +35,19 @@ import seaborn as sns
 
 
 params_prior_params = [ [], [], [], [] ]
-params_prior_range = [ [], [], [], [] ]
-#Parameters of prior beta distribution of gamma
-params_prior_params[0] = [2,2] #[alpha,beta] 
-params_prior_range[0] = [0,0.5] # [min,max]
-#Parameters of prior beta distribution of lambda
-params_prior_params[1] = [2,2] #[alpha,beta] 
-params_prior_range[1] = [0,0.5] # [min,max]
-#Parameters of prior beta distribution of b0
-params_prior_params[2] = [2,2] #[alpha,beta] 
-params_prior_range[2] = [-91,-0.12] # [min,max]
-#Parameters of prior beta distribution of b1
-params_prior_params[3] = [2,2] #[alpha,beta] 
-params_prior_range[3] = [0.02,1.82] # [min,max]
+params_prior_scale = [1,1,1,1]
+#Parameters of prior beta distribution of W_gamma
+params_prior_params[0] = [2,5] #[alpha,beta] 
+params_prior_scale[0] = 0.25 # param = scale * W
+#Parameters of prior beta distribution of W_lambda
+params_prior_params[1] = [2,5] #[alpha,beta] 
+params_prior_scale[1] = 0.25 # [min,max]
+#Parameters of prior gamma distribution of W_b0
+params_prior_params[2] = [4,1] #[alpha,beta] 
+params_prior_scale[2] = -1 # [min,max]
+#Parameters of prior gamma distribution of W_b1
+params_prior_params[3] = [1.25,2.4] #[alpha,beta] 
+params_prior_scale[3] = 1 # [min,max]
 
 ##Load and clean data
 exec(open('/home/vmschroe/Documents/Monkey Analysis/Github/loaddata.py').read())
@@ -81,14 +81,14 @@ def bayes_data_analysis(df, grp_name, plot_posts):
     # Define the model
     with pm.Model() as model:
         # Define priors for the parameters
-        gam_norm = pm.Beta("gam_norm",alpha=params_prior_params[0][0],beta=params_prior_params[0][1])
-        gam = pm.Deterministic("gam", params_prior_range[0][0]+(params_prior_range[0][1]-params_prior_range[0][0])*gam_norm)
-        lam_norm = pm.Beta("lam_norm",alpha=params_prior_params[1][0],beta=params_prior_params[1][1])
-        lam = pm.Deterministic("lam", params_prior_range[1][0]+(params_prior_range[1][1]-params_prior_range[1][0])*lam_norm)
-        b0_norm = pm.Beta("b0_norm",alpha=params_prior_params[2][0],beta=params_prior_params[2][1])
-        b0 = pm.Deterministic("b0", params_prior_range[2][0]+(params_prior_range[2][1]-params_prior_range[2][0])*b0_norm)
-        b1_norm = pm.Beta("b1_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
-        b1 = pm.Deterministic("b1", params_prior_range[3][0]+(params_prior_range[3][1]-params_prior_range[3][0])*b1_norm)
+        W_gam = pm.Beta("W_gam",alpha=params_prior_params[0][0],beta=params_prior_params[0][1])
+        gam = pm.Deterministic("gam", params_prior_scale[0]*W_gam)
+        W_lam = pm.Beta("W_lam",alpha=params_prior_params[1][0],beta=params_prior_params[1][1])
+        lam = pm.Deterministic("lam", params_prior_scale[1]*W_lam)
+        W_b0 = pm.Gamma("W_b0",alpha=params_prior_params[2][0],beta=params_prior_params[2][1])
+        b0 = pm.Deterministic("b0", params_prior_scale[2]*W_b0)
+        W_b1 = pm.Gamma("b1_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
+        b1 = pm.Deterministic("b1", params_prior_scale[3]*W_b1)
     
         # Define the likelihood
         likelihood = pm.Binomial("obs", n=n, p=ffb.phi_with_lapses([gam, lam, b0, b1],x), observed=yndata)

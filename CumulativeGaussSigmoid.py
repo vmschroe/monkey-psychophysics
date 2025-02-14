@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 24 15:35:23 2025
+Created on Thu Feb 13 16:23:06 2025
 
 @author: vmschroe
+
 """
 
 
@@ -31,23 +32,24 @@ import sys
 sys.path.append("/home/vmschroe/Documents/Monkey Analysis/Github")
 import FunctionsForBayes as ffb
 import seaborn as sns
+from scipy.special import erf
 
 
 
 params_prior_params = [ [], [], [], [] ]
-params_prior_range = [ [], [], [], [] ]
-#Parameters of prior beta distribution of gamma
-params_prior_params[0] = [2,2] #[alpha,beta] 
-params_prior_range[0] = [0,0.5] # [min,max]
-#Parameters of prior beta distribution of lambda
-params_prior_params[1] = [2,2] #[alpha,beta] 
-params_prior_range[1] = [0,0.5] # [min,max]
-#Parameters of prior beta distribution of b0
-params_prior_params[2] = [2,2] #[alpha,beta] 
-params_prior_range[2] = [-91,-0.12] # [min,max]
-#Parameters of prior beta distribution of b1
-params_prior_params[3] = [2,2] #[alpha,beta] 
-params_prior_range[3] = [0.02,1.82] # [min,max]
+params_prior_scale = [1,1,1,1]
+#Parameters of prior beta distribution of W_gamma
+params_prior_params[0] = [2,5] #[alpha,beta] 
+params_prior_scale[0] = 0.25 # param = scale * W
+#Parameters of prior beta distribution of W_lambda
+params_prior_params[1] = [2,5] #[alpha,beta] 
+params_prior_scale[1] = 0.25 # [min,max]
+#Parameters of prior gamma distribution of W_mu
+params_prior_params[2] = [5.5,0.16] #[alpha,beta] 
+params_prior_scale[2] = 1 # [min,max]
+#Parameters of prior gamma distribution of W_sigma
+params_prior_params[3] = [2.08,0.054] #[alpha,beta] 
+params_prior_scale[3] = 1 # [min,max]
 
 ##Load and clean data
 exec(open('/home/vmschroe/Documents/Monkey Analysis/Github/loaddata.py').read())
@@ -67,6 +69,33 @@ group_names = ["Left hand, Distracted", "Left hand, Not distracted","Right hand,
 
 x = [6, 12, 18, 24, 32, 38, 44, 50] #stimulus amplitudes
 
+def phi(params, x):
+    [gam,lam,mu,sigma] = params
+    return gam + (1 - gam - lam) * 0.5 * (1 + pm.math.erf((np.array(x) - mu) / (sigma * np.sqrt(2))))
+
+def solve_phi_g_for_x(params, p):
+    gam, lam, mu, sigma = params
+    
+    if np.any(sigma <= 0):
+        raise ValueError("sigma must be positive.")
+    
+    # Compute the inverse
+    z = (2 * (p - gam) / (1 - gam - lam)) - 1
+    
+    if z < -1 or z > 1:
+        raise ValueError(f"No solution: {p} is outside the valid range of phi.")
+
+    x = mu + sigma * np.sqrt(2) * pm.math.erfinv(z)
+    return x
+
+def PSE_g(params):
+    return solve_phi_g_for_x(params, 0.5)
+
+def JND_g(params):
+    x25 = solve_phi_g_for_x(params, 0.25)
+    x75 = solve_phi_g_for_x(params, 0.75)
+    return 0.5*(x75-x25)
+
 def bayes_data_analysis(df, grp_name, plot_posts):
     print('----------------------------------------------------------------------')
     print('Loading data')
@@ -81,64 +110,97 @@ def bayes_data_analysis(df, grp_name, plot_posts):
     # Define the model
     with pm.Model() as model:
         # Define priors for the parameters
-        gam_norm = pm.Beta("gam_norm",alpha=params_prior_params[0][0],beta=params_prior_params[0][1])
-        gam = pm.Deterministic("gam", params_prior_range[0][0]+(params_prior_range[0][1]-params_prior_range[0][0])*gam_norm)
-        lam_norm = pm.Beta("lam_norm",alpha=params_prior_params[1][0],beta=params_prior_params[1][1])
-        lam = pm.Deterministic("lam", params_prior_range[1][0]+(params_prior_range[1][1]-params_prior_range[1][0])*lam_norm)
-        b0_norm = pm.Beta("b0_norm",alpha=params_prior_params[2][0],beta=params_prior_params[2][1])
-        b0 = pm.Deterministic("b0", params_prior_range[2][0]+(params_prior_range[2][1]-params_prior_range[2][0])*b0_norm)
-        b1_norm = pm.Beta("b1_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
-        b1 = pm.Deterministic("b1", params_prior_range[3][0]+(params_prior_range[3][1]-params_prior_range[3][0])*b1_norm)
+        W_gam = pm.Beta("W_gam",alpha=params_prior_params[0][0],beta=params_prior_params[0][1])
+        gam = pm.Deterministic("gam", params_prior_scale[0]*W_gam)
+        W_lam = pm.Beta("W_lam",alpha=params_prior_params[1][0],beta=params_prior_params[1][1])
+        lam = pm.Deterministic("lam", params_prior_scale[1]*W_lam)
+        W_mu = pm.Gamma("W_mu",alpha=params_prior_params[2][0],beta=params_prior_params[2][1])
+        mu = pm.Deterministic("mu", params_prior_scale[2]*W_mu)
+        W_sigma = pm.Gamma("sigma_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
+        sigma = pm.Deterministic("sigma", params_prior_scale[3]*W_sigma)
     
         # Define the likelihood
-        likelihood = pm.Binomial("obs", n=n, p=ffb.phi_with_lapses([gam, lam, b0, b1],x), observed=yndata)
+        likelihood = pm.Binomial("obs", n=n, p=phi([gam, lam, mu, sigma],x), observed=yndata)
         
         #pm.Binomial("obs", n=N, p=theta, observed=data)
         # use Markov Chain Monte Carlo (MCMC) to draw samples from the posterior
         trace = pm.sample(1000, return_inferencedata=True)
         
-    b0_samples = trace.posterior['b0'].values.flatten()
-    b1_samples = trace.posterior['b1'].values.flatten()
+    mu_samples = trace.posterior['mu'].values.flatten()
+    sigma_samples = trace.posterior['sigma'].values.flatten()
     gam_samples = trace.posterior['gam'].values.flatten()
     lam_samples = trace.posterior['lam'].values.flatten()
-    PSE_samples = np.array([ffb.PSE(gam,lam,b0,b1) for gam, lam, b0, b1 in zip(gam_samples, lam_samples, b0_samples, b1_samples)])
-    JND_samples = np.array([ffb.JND(gam,lam,b0,b1) for gam, lam, b0, b1 in zip(gam_samples, lam_samples, b0_samples, b1_samples)])
+    PSE_samples = np.array([PSE_g([gam,lam,mu,sigma]) for gam, lam, mu, sigma in zip(gam_samples, lam_samples, mu_samples, sigma_samples)])
+    JND_samples = np.array([JND_g([gam,lam,mu,sigma]) for gam, lam, mu, sigma in zip(gam_samples, lam_samples, mu_samples, sigma_samples)])
         
     if plot_posts:
-        az.plot_pair(trace, var_names=["gam", "lam", "b0", "b1"], kind='kde', marginals=True)
+        az.plot_pair(trace, var_names=["gam", "lam", "mu", "sigma"], kind='kde', marginals=True)
         plt.suptitle("Joint Posteriors of Parameters, "+group, fontsize=35)
         plt.show()
         
-    return trace, [gam_samples, lam_samples, b0_samples, b1_samples], PSE_samples, JND_samples, ydata
+    return trace, [gam_samples, lam_samples, mu_samples, sigma_samples], PSE_samples, JND_samples, ydata
     
 
     
 def plot_curves_tog(trace1, param_samps1, ydata1, label1, trace2, param_samps2, ydata2, label2, w_hdi, plot_title):
-    [gam_samples1, lam_samples1, b0_samples1, b1_samples1] = param_samps1
-    [gam_samples2, lam_samples2, b0_samples2, b1_samples2] = param_samps2
+    [gam_samples1, lam_samples1, mu_samples1, sigma_samples1] = param_samps1
+    [gam_samples2, lam_samples2, mu_samples2, sigma_samples2] = param_samps2
     
     xfit = np.linspace(6,50,1000)
-    rec_params1 = [float(az.summary(trace1)["mean"][param]) for param in ["gam", "lam", "b0", "b1"]]
-    rec_params2 = [float(az.summary(trace2)["mean"][param]) for param in ["gam", "lam", "b0", "b1"]]
-    y_samps1 = np.array([ffb.phi_with_lapses([gam,lam,b0,b1], xfit) for gam, lam, b0, b1 in zip(gam_samples1, lam_samples1, b0_samples1, b1_samples1)])    
-    y_samps2 = np.array([ffb.phi_with_lapses([gam,lam,b0,b1], xfit) for gam, lam, b0, b1 in zip(gam_samples2, lam_samples2, b0_samples2, b1_samples2)])    
-    hdi1 = az.hdi(y_samps1, hdi_prob=0.95)
-    yrec1 = ffb.phi_with_lapses(rec_params1,xfit)
-    hdi2 = az.hdi(y_samps2, hdi_prob=0.95)
-    yrec2 = ffb.phi_with_lapses(rec_params2,xfit)
-        
-    plt.plot(xfit,yrec1,label=label1,color='red')
-    plt.scatter(x,ydata1,label='Data', color = 'darkred')
-    plt.plot(xfit,yrec2,label=label2,color='blue')
-    plt.scatter(x,ydata2,label='Data', color = 'navy')
+    rec_params1 = [float(az.summary(trace1)["mean"][param]) for param in ["gam", "lam", "mu", "sigma"]]
+    rec_params2 = [float(az.summary(trace2)["mean"][param]) for param in ["gam", "lam", "mu", "sigma"]]
+    
+   # Convert tensor variables to numpy arrays
+    def convert_to_numpy(tensor_var):
+        if hasattr(tensor_var, 'eval'):
+            return tensor_var.eval()
+        return np.array(tensor_var)
+    
+    # Convert all samples to numpy arrays
+    gam_samples1 = convert_to_numpy(gam_samples1)
+    lam_samples1 = convert_to_numpy(lam_samples1)
+    mu_samples1 = convert_to_numpy(mu_samples1)
+    sigma_samples1 = convert_to_numpy(sigma_samples1)
+    
+    gam_samples2 = convert_to_numpy(gam_samples2)
+    lam_samples2 = convert_to_numpy(lam_samples2)
+    mu_samples2 = convert_to_numpy(mu_samples2)
+    sigma_samples2 = convert_to_numpy(sigma_samples2)
+    
+    # Calculate predicted values for all parameter samples
+    y_samps1 = np.array([phi([g, l, m, s], xfit) 
+                         for g, l, m, s in zip(gam_samples1, lam_samples1, 
+                                             mu_samples1, sigma_samples1)])
+    
+    y_samps2 = np.array([phi([g, l, m, s], xfit) 
+                         for g, l, m, s in zip(gam_samples2, lam_samples2, 
+                                             mu_samples2, sigma_samples2)])
+    
+    
+    # Calculate mean curves
+    yrec1 = phi(rec_params1, xfit)
+    yrec2 = phi(rec_params2, xfit)
+    
+    plt.figure(figsize=(10, 6))
+    
+    # Plot HDI bands if requested
     if w_hdi:
-        plt.fill_between(xfit, hdi1[:, 0], hdi1[:, 1], color='salmon', alpha=0.3, label='95% HDI')
-        plt.fill_between(xfit, hdi2[:, 0], hdi2[:, 1], color='skyblue', alpha=0.3, label='95% HDI')
-    plt.title(plot_title)
-    plt.xlabel('Stimulus Amplitude')
+        hdi1 = az.hdi(np.float64(y_samps1), hdi_prob=0.95)
+        hdi2 = az.hdi(np.float64(y_samps2), hdi_prob=0.95)
+        plt.fill_between(xfit, hdi1[:, 0], hdi1[:, 1], color='salmon', alpha=0.3, label=f'{label1} 95% HDI')
+        plt.fill_between(xfit, hdi2[:, 0], hdi2[:, 1], color='skyblue', alpha=0.3, label=f'{label2} 95% HDI')
+    
+    # Plot mean curves and data points
+    plt.plot(xfit, yrec1, label=label1, color='red')
+    plt.scatter(x, ydata1, color='darkred', alpha=0.6)
+    plt.plot(xfit, yrec2, label=label2, color='blue')
+    plt.scatter(x, ydata2, color='navy', alpha=0.6)
+    
+    plt.title(plot_title, fontsize=12)
+    plt.xlabel('Stimulus Amplitude', fontsize=10)
+    plt.ylabel('Response Probability', fontsize=10)
     plt.legend(frameon=False, fontsize=9.5)
-    plt.savefig(plot_title+".png", dpi=300)
-    plt.show()   
+    plt.grid(True, alpha=0.3)
 
 
 def plot_attr_dist_with_hdi(samples1, label1, samples2, label2, plot_title, x_label):
@@ -199,17 +261,17 @@ plot_attr_dist_with_hdi(param_samps_ld[1], "Distracted", param_samps_ln[1], "Not
 plot_attr_dist_with_hdi(param_samps_rd[1], "Distracted", param_samps_rn[1], "Not Distracted", "Right Hand Lambda (lapse rate)", "lambda")
 
 ################
-az.plot_trace(trace_ld, var_names=["gam", "lam", "b0", "b1"])
+az.plot_trace(trace_ld, var_names=["gam", "lam", "mu", "sigma"])
 
 
 print("Left Hand, Distracted")
-print(az.summary(trace_ld, var_names=["gam", "lam", "b0", "b1"]))
+print(az.summary(trace_ld, var_names=["gam", "lam", "mu", "sigma"]))
 print("Left Hand, Not Distracted")
-print(az.summary(trace_ln, var_names=["gam", "lam", "b0", "b1"]))
+print(az.summary(trace_ln, var_names=["gam", "lam", "mu", "sigma"]))
 print("Right Hand, Distracted")
-print(az.summary(trace_rd, var_names=["gam", "lam", "b0", "b1"]))
+print(az.summary(trace_rd, var_names=["gam", "lam", "mu", "sigma"]))
 print("Right Hand, Not Distracted")
-print(az.summary(trace_rn, var_names=["gam", "lam", "b0", "b1"]))
+print(az.summary(trace_rn, var_names=["gam", "lam", "mu", "sigma"]))
 
 print("-----------------PSE------------")
 print("Left Hand, Not Distracted")
