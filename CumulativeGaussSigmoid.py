@@ -33,7 +33,7 @@ sys.path.append("/home/vmschroe/Documents/Monkey Analysis/Github")
 import FunctionsForBayes as ffb
 import seaborn as sns
 from scipy.special import erf
-
+import jax
 
 
 params_prior_params = [ [], [], [], [] ]
@@ -69,9 +69,25 @@ group_names = ["Left hand, Distracted", "Left hand, Not distracted","Right hand,
 
 x = [6, 12, 18, 24, 32, 38, 44, 50] #stimulus amplitudes
 
+
 def phi(params, x):
-    [gam,lam,mu,sigma] = params
-    return gam + (1 - gam - lam) * 0.5 * (1 + pm.math.erf((np.array(x) - mu) / (sigma * np.sqrt(2))))
+    gam, lam, mu, sigma = params
+    x_arr = np.array(x)
+    
+    # Check if any input is a PyMC variable by looking for common attributes
+    try:
+        has_pymc_var = any(hasattr(p, 'eval') or hasattr(p, 'tag') or hasattr(p, 'logp') for p in params)
+    except:
+        # If we can't check attributes (e.g., with JAX arrays), assume it's not a PyMC variable
+        has_pymc_var = False
+    
+    if has_pymc_var:
+        # Use pm.math functions for PyMC variables
+        return gam + (1 - gam - lam) * 0.5 * (1 + pm.math.erf((x_arr - mu) / (sigma * pm.math.sqrt(2))))
+    else:
+        # Use scipy/numpy for regular numeric inputs
+        return gam + (1 - gam - lam) * 0.5 * (1 + erf((x_arr - mu) / (sigma * np.sqrt(2))))
+
 
 def solve_phi_g_for_x(params, p):
     gam, lam, mu, sigma = params
@@ -119,6 +135,9 @@ def bayes_data_analysis(df, grp_name, plot_posts):
         W_sigma = pm.Gamma("sigma_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
         sigma = pm.Deterministic("sigma", params_prior_scale[3]*W_sigma)
     
+        # Define PSE and JND as deterministic variables
+        pse = pm.Deterministic("pse", PSE_g([gam, lam, mu, sigma]))
+        jnd = pm.Deterministic("jnd", JND_g([gam, lam, mu, sigma]))
         # Define the likelihood
         likelihood = pm.Binomial("obs", n=n, p=phi([gam, lam, mu, sigma],x), observed=yndata)
         
@@ -126,13 +145,16 @@ def bayes_data_analysis(df, grp_name, plot_posts):
         # use Markov Chain Monte Carlo (MCMC) to draw samples from the posterior
         trace = pm.sample(1000, return_inferencedata=True)
         
+    # Extract parameter samples
     mu_samples = trace.posterior['mu'].values.flatten()
     sigma_samples = trace.posterior['sigma'].values.flatten()
     gam_samples = trace.posterior['gam'].values.flatten()
     lam_samples = trace.posterior['lam'].values.flatten()
-    PSE_samples = np.array([PSE_g([gam,lam,mu,sigma]) for gam, lam, mu, sigma in zip(gam_samples, lam_samples, mu_samples, sigma_samples)])
-    JND_samples = np.array([JND_g([gam,lam,mu,sigma]) for gam, lam, mu, sigma in zip(gam_samples, lam_samples, mu_samples, sigma_samples)])
-        
+    
+    # Extract PSE and JND samples directly from trace
+    PSE_samples = trace.posterior['pse'].values.flatten()
+    JND_samples = trace.posterior['jnd'].values.flatten()
+    
     if plot_posts:
         az.plot_pair(trace, var_names=["gam", "lam", "mu", "sigma"], kind='kde', marginals=True)
         plt.suptitle("Joint Posteriors of Parameters, "+group, fontsize=35)
@@ -203,9 +225,44 @@ def plot_curves_tog(trace1, param_samps1, ydata1, label1, trace2, param_samps2, 
     plt.grid(True, alpha=0.3)
 
 
+# def plot_attr_dist_with_hdi(samples1, label1, samples2, label2, plot_title, x_label):
+#     color1 = "red"
+#     color2 = "blue"
+#     # Plot the KDE for both distributions
+#     sns.kdeplot(samples1, label=label1, color=color1, fill=True, alpha=0.4)
+#     sns.kdeplot(samples2, label=label2, color=color2, fill=True, alpha=0.4)
+
+#     # Compute HDIs
+#     hdi_1 = az.hdi(samples1, hdi_prob=0.95)
+#     hdi_2 = az.hdi(samples2, hdi_prob=0.95)
+
+#     # Print HDI values for debugging
+#     print(f"{label1} HDI: {hdi_1}")
+#     print(f"{label2} HDI: {hdi_2}")
+
+#     # Plot HDI for first distribution
+#     plt.axvline(hdi_1[0], color=color1, linestyle="--", label=f"{label1} 95% HDI")
+#     plt.axvline(hdi_1[1], color=color1, linestyle="--")
+
+#     # Plot HDI for second distribution
+#     plt.axvline(hdi_2[0], color=color2, linestyle="--", label=f"{label2} 95% HDI")
+#     plt.axvline(hdi_2[1], color=color2, linestyle="--")
+
+#     # Add legend and title
+#     plt.legend(frameon=False)
+#     plt.title(plot_title)
+#     plt.xlabel(x_label)
+#     plt.savefig(plot_title+".png", dpi=300, bbox_inches='tight')
+#     plt.show()
+
 def plot_attr_dist_with_hdi(samples1, label1, samples2, label2, plot_title, x_label):
     color1 = "red"
     color2 = "blue"
+    
+    # Convert samples to numpy arrays if they aren't already
+    samples1 = np.array(samples1).astype(float)
+    samples2 = np.array(samples2).astype(float)
+    
     # Plot the KDE for both distributions
     sns.kdeplot(samples1, label=label1, color=color1, fill=True, alpha=0.4)
     sns.kdeplot(samples2, label=label2, color=color2, fill=True, alpha=0.4)
@@ -232,8 +289,6 @@ def plot_attr_dist_with_hdi(samples1, label1, samples2, label2, plot_title, x_la
     plt.xlabel(x_label)
     plt.savefig(plot_title+".png", dpi=300, bbox_inches='tight')
     plt.show()
-
-
 
 
 
