@@ -35,14 +35,45 @@ drop_freq_manip = True
 drop_repeats = True
 
 frames = {}
-frames_ld = {}
-frames_ln = {}
-frames_rd = {}
-frames_rn = {}
+frames["ld"] = {}
+frames["ln"] = {}
+frames["rd"] = {}
+frames["rn"] = {}
 sessions = []
 dates = []
 dist_amps = []
 
+Y = {}
+Y["ld"] = {}
+Y["ln"] = {}
+Y["rd"] = {}
+Y["rn"] = {}
+
+N = {}
+N["ld"] = {}
+N["ln"] = {}
+N["rd"] = {}
+N["rn"] = {}
+
+NY = {}
+NY["ld"] = {}
+NY["ln"] = {}
+NY["rd"] = {}
+NY["rn"] = {}
+x = [6, 12, 18, 24, 32, 38, 44, 50]
+
+
+def psych_vectors(df):
+    n = []
+    y = []
+    for amp in x:
+        tempn, _ = df[df['stimAMP']==amp].shape
+        tempny,_ = df[ (df['stimAMP']==amp)&(df['lowORhighGUESS']==1)].shape
+        tempy = tempny/tempn
+        n = np.append(n,tempn)
+        y = np.append(y,tempy)
+        ny = (n * y).astype(int)
+    return y, n, ny
 
 # Iterate over each file in the directory
 for filename in os.listdir(directory_path):
@@ -101,15 +132,66 @@ for filename in os.listdir(directory_path):
         df['stimAMP'] = df['stimAMP'].astype(int)
         df['lowORhighGUESS'] = df['lowORhighGUESS'].astype(int)
         
-        frames[session] = df
         
         # separate into 4 dataframes based on hand/distraction
-        frames_ld[session] = df[(df['stimSIDE'] == 'left') & (df['distracted'] == True)]
-        frames_ln[session] = df[(df['stimSIDE'] == 'left') & (df['distracted'] == False)]
-        frames_rd[session] = df[(df['stimSIDE'] == 'right') & (df['distracted'] == True)]
-        frames_rn[session] = df[(df['stimSIDE'] == 'right') & (df['distracted'] == False)]
+        frames['ld'][session] = df[(df['stimSIDE'] == 'left') & (df['distracted'] == True)]
+        frames['ln'][session] = df[(df['stimSIDE'] == 'left') & (df['distracted'] == False)]
+        frames['rd'][session] = df[(df['stimSIDE'] == 'right') & (df['distracted'] == True)]
+        frames['rn'][session] = df[(df['stimSIDE'] == 'right') & (df['distracted'] == False)]
         
-        list.append(dist_amps, max(frames[session]['distAMP'].unique()))
+        for grp in ['ld', 'ln', 'rd', 'rn']:
+            y, n, ny = psych_vectors(frames[grp][session])
+            Y[grp][session] = y
+            N[grp][session] = n
+            NY[grp][session] = ny
+        
+        #list.append(dist_amps, max(frames[:][session]['distAMP'].unique()))
         
 dist_amps = [round(x) for x in dist_amps]
 distAMPS = dict(zip(sessions, dist_amps))
+
+NumTrials ={}
+# Loop through each session and group
+for session in sessions:
+    sumtemp = 0
+    row = {}
+    for grp in ['ld', 'ln', 'rd', 'rn']:
+        row[grp] = sum(N[grp][session])
+        sumtemp += row[grp]
+    row['sum'] = sumtemp
+    row['Deviation from Split'] = max(row['ld'], row['ln'], row['rd'], row['rn'])-min(row['ld'], row['ln'], row['rd'], row['rn'])
+    
+    NumTrials[session] = row  # Store row in dictionary with session as key
+
+# Convert dictionary to a DataFrame
+NumTrialsdf = pd.DataFrame.from_dict(NumTrials, orient='index')
+
+# Rename index and columns for clarity
+NumTrialsdf.index.name = "Session"
+NumTrialsdf.columns = ["ld", "ln", "rd", "rn", "sum", 'Deviation from Split']
+
+# Print table
+print(NumTrialsdf)
+
+
+
+
+        
+# Create an empty dictionary to store results
+DistAmps = {}
+# Loop through each session and group
+for session in sessions:
+    row = {}
+    for grp in ['ld', 'ln', 'rd', 'rn']:
+        row[grp] = max(frames[grp][session]['distAMP'].unique())
+    DistAmps[session] = row  # Store row in dictionary with session as key
+
+# Convert dictionary to a DataFrame
+DistAmpsdf = pd.DataFrame.from_dict(DistAmps, orient='index')
+
+# Rename index and columns for clarity
+DistAmpsdf.index.name = "Session"
+DistAmpsdf.columns = ["ld", "ln", "rd", "rn"]
+
+# Print table
+print(DistAmpsdf)
