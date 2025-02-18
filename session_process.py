@@ -144,49 +144,35 @@ for filename in os.listdir(directory_path):
             Y[grp][session] = y
             N[grp][session] = n
             NY[grp][session] = ny
-        row = {}
-        for grp in ['ld', 'rd']:
-            row[grp] = round(max(frames[grp][session]['distAMP'].unique()))
-        DistAMPS[session] = row
         
+psych_vecs_all = {'Y': Y, 'N': N, 'NY': NY}        
+            
 
 
-NumTrials ={}
+
+SessSummary ={}
 # Loop through each session and group
 for session in sessions:
     sumtemp = 0
     row = {}
     for grp in ['ld', 'ln', 'rd', 'rn']:
-        row[grp] = sum(N[grp][session])
+        row[grp] = round(sum(N[grp][session]))
         sumtemp += row[grp]
     row['sum'] = sumtemp
-    row['Deviation from Split'] = max(row['ld'], row['ln'], row['rd'], row['rn'])-min(row['ld'], row['ln'], row['rd'], row['rn'])
-    
-    NumTrials[session] = row  # Store row in dictionary with session as key
+    row['Dist AMP'] = round(max(frames['ld'][session]['distAMP'].unique()))
+    SessSummary[session] = row  # Store row in dictionary with session as key
 
 # Convert dictionary to a DataFrame
-NumTrialsdf = pd.DataFrame.from_dict(NumTrials, orient='index')
+SessSummarydf = pd.DataFrame.from_dict(SessSummary, orient='index')
 
 # Rename index and columns for clarity
-NumTrialsdf.index.name = "Session"
-NumTrialsdf.columns = ["ld", "ln", "rd", "rn", "sum", 'Deviation from Unif']
+SessSummarydf.index.name = "Session"
+SessSummarydf.columns = ["NumTrials_ld", "NumTrials_ln", "NumTrials_rd", "NumTrials_rn","TrialsTotal","Dist_AMP"]
 
-# Print table
-print("Number of trials per session/type:")
-print(NumTrialsdf)
+print(SessSummarydf)
 
 
 
-# Convert dictionary to a DataFrame
-DistAMPSdf = pd.DataFrame.from_dict(DistAMPS, orient='index')
-
-# Rename index and columns for clarity
-DistAMPSdf.index.name = "Session"
-DistAMPSdf.columns = ["Stim = Left, Dist = Right", "Stim = Right, Dist = Left"]
-
-# Print table
-print("Amplitudes of Distractor")
-print(DistAMPSdf)
 
 
 
@@ -194,3 +180,12 @@ print(DistAMPSdf)
 
 # with open("prepared_data.pkl", "wb") as f:
 #     pickle.dump(frames, f)
+# with open("psych_vecs_all.pkl", "wb") as f:
+#     pickle.dump(psych_vecs_all, f)  
+# with open("session_summary.pkl", "wb") as f:
+#      pickle.dump(SessSummarydf, f)
+    
+    
+    
+    
+    

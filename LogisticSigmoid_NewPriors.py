@@ -48,6 +48,7 @@ params_prior_scale[2] = -1 # [min,max]
 #Parameters of prior gamma distribution of W_b1
 params_prior_params[3] = [1.25,2.4] #[alpha,beta] 
 params_prior_scale[3] = 1 # [min,max]
+plot_all_posteriors = False
 
 ##Load and clean data
 exec(open('/home/vmschroe/Documents/Monkey Analysis/Github/loaddata.py').read())
@@ -89,7 +90,9 @@ def bayes_data_analysis(df, grp_name, plot_posts):
         b0 = pm.Deterministic("b0", params_prior_scale[2]*W_b0)
         W_b1 = pm.Gamma("b1_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
         b1 = pm.Deterministic("b1", params_prior_scale[3]*W_b1)
-    
+        # Define PSE and JND as deterministic variables
+        pse = pm.Deterministic("pse", ffb.PSE(gam, lam, b0, b1))
+        jnd = pm.Deterministic("jnd", ffb.JND(gam, lam, b0, b1))
         # Define the likelihood
         likelihood = pm.Binomial("obs", n=n, p=ffb.phi_with_lapses([gam, lam, b0, b1],x), observed=yndata)
         
@@ -101,8 +104,8 @@ def bayes_data_analysis(df, grp_name, plot_posts):
     b1_samples = trace.posterior['b1'].values.flatten()
     gam_samples = trace.posterior['gam'].values.flatten()
     lam_samples = trace.posterior['lam'].values.flatten()
-    PSE_samples = np.array([ffb.PSE(gam,lam,b0,b1) for gam, lam, b0, b1 in zip(gam_samples, lam_samples, b0_samples, b1_samples)])
-    JND_samples = np.array([ffb.JND(gam,lam,b0,b1) for gam, lam, b0, b1 in zip(gam_samples, lam_samples, b0_samples, b1_samples)])
+    PSE_samples = trace.posterior['pse'].values.flatten()
+    JND_samples = trace.posterior['jnd'].values.flatten()
         
     if plot_posts:
         az.plot_pair(trace, var_names=["gam", "lam", "b0", "b1"], kind='kde', marginals=True)
@@ -176,10 +179,10 @@ def plot_attr_dist_with_hdi(samples1, label1, samples2, label2, plot_title, x_la
 
 
 
-trace_ld, param_samps_ld, PSE_samples_ld, JND_samples_ld, ydata_ld = bayes_data_analysis(dfs[0], group_names[0], True)
-trace_ln, param_samps_ln, PSE_samples_ln, JND_samples_ln, ydata_ln = bayes_data_analysis(dfs[1], group_names[1], True)
-trace_rd, param_samps_rd, PSE_samples_rd, JND_samples_rd, ydata_rd = bayes_data_analysis(dfs[2], group_names[2], True)
-trace_rn, param_samps_rn, PSE_samples_rn, JND_samples_rn, ydata_rn = bayes_data_analysis(dfs[3], group_names[3], True)
+trace_ld, param_samps_ld, PSE_samples_ld, JND_samples_ld, ydata_ld = bayes_data_analysis(dfs[0], group_names[0], plot_all_posteriors)
+trace_ln, param_samps_ln, PSE_samples_ln, JND_samples_ln, ydata_ln = bayes_data_analysis(dfs[1], group_names[1], plot_all_posteriors)
+trace_rd, param_samps_rd, PSE_samples_rd, JND_samples_rd, ydata_rd = bayes_data_analysis(dfs[2], group_names[2], plot_all_posteriors)
+trace_rn, param_samps_rn, PSE_samples_rn, JND_samples_rn, ydata_rn = bayes_data_analysis(dfs[3], group_names[3], plot_all_posteriors)
 
 
 ############
@@ -203,33 +206,11 @@ az.plot_trace(trace_ld, var_names=["gam", "lam", "b0", "b1"])
 
 
 print("Left Hand, Distracted")
-print(az.summary(trace_ld, var_names=["gam", "lam", "b0", "b1"]))
+print(az.summary(trace_ld, var_names=["gam", "lam", "b0", "b1", "pse", "jnd"]))
 print("Left Hand, Not Distracted")
-print(az.summary(trace_ln, var_names=["gam", "lam", "b0", "b1"]))
+print(az.summary(trace_ln, var_names=["gam", "lam", "b0", "b1", "pse", "jnd"]))
 print("Right Hand, Distracted")
-print(az.summary(trace_rd, var_names=["gam", "lam", "b0", "b1"]))
+print(az.summary(trace_rd, var_names=["gam", "lam", "b0", "b1", "pse", "jnd"]))
 print("Right Hand, Not Distracted")
-print(az.summary(trace_rn, var_names=["gam", "lam", "b0", "b1"]))
-
-print("-----------------PSE------------")
-print("Left Hand, Not Distracted")
-print(az.summary(PSE_samples_ln))
-print("Left Hand, Distracted")
-print(az.summary(PSE_samples_ld))
-print("Right Hand, Not Distracted")
-print(az.summary(PSE_samples_rn))
-print("Right Hand, Distracted")
-print(az.summary(PSE_samples_rd))
-
-print("-----------------JND------------")
-print("Left Hand, Not Distracted")
-print(az.summary(JND_samples_ln))
-print("Left Hand, Distracted")
-print(az.summary(JND_samples_ld))
-print("Right Hand, Not Distracted")
-print(az.summary(JND_samples_rn))
-print("Right Hand, Distracted")
-print(az.summary(JND_samples_rd))
-
-
+print(az.summary(trace_rn, var_names=["gam", "lam", "b0", "b1", "pse", "jnd"]))
 
