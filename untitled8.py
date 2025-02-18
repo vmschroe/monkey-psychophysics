@@ -5,8 +5,7 @@ Created on Tue Sep 24 17:25:08 2024
 
 @author: vmschroe
 """
-# Consider the initial value problem d/dt x(t) = f(x), x(0) = x0, x(t) \in R^N
-# No time-dependence in the right-hand side f(x)
+# is it working?
 
 import numpy as np
 import matplotlib.pyplot as plt 
