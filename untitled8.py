@@ -5,7 +5,7 @@ Created on Tue Sep 24 17:25:08 2024
 
 @author: vmschroe
 """
-# is it working? I sure hope so
+# please for the love of god
 
 import numpy as np
 import matplotlib.pyplot as plt 
