@@ -5,7 +5,7 @@ Created on Tue Sep 24 17:25:08 2024
 
 @author: vmschroe
 """
-# please for the love of god
+# lets see if it works backwards
 
 import numpy as np
 import matplotlib.pyplot as plt 
