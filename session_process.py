@@ -41,7 +41,7 @@ frames["rd"] = {}
 frames["rn"] = {}
 sessions = []
 dates = []
-dist_amps = []
+DistAMPS = {}
 
 Y = {}
 Y["ld"] = {}
@@ -144,11 +144,12 @@ for filename in os.listdir(directory_path):
             Y[grp][session] = y
             N[grp][session] = n
             NY[grp][session] = ny
+        row = {}
+        for grp in ['ld', 'rd']:
+            row[grp] = round(max(frames[grp][session]['distAMP'].unique()))
+        DistAMPS[session] = row
         
-        #list.append(dist_amps, max(frames[:][session]['distAMP'].unique()))
-        
-dist_amps = [round(x) for x in dist_amps]
-distAMPS = dict(zip(sessions, dist_amps))
+
 
 NumTrials ={}
 # Loop through each session and group
@@ -168,30 +169,28 @@ NumTrialsdf = pd.DataFrame.from_dict(NumTrials, orient='index')
 
 # Rename index and columns for clarity
 NumTrialsdf.index.name = "Session"
-NumTrialsdf.columns = ["ld", "ln", "rd", "rn", "sum", 'Deviation from Split']
+NumTrialsdf.columns = ["ld", "ln", "rd", "rn", "sum", 'Deviation from Unif']
 
 # Print table
+print("Number of trials per session/type:")
 print(NumTrialsdf)
 
 
 
-
-        
-# Create an empty dictionary to store results
-DistAmps = {}
-# Loop through each session and group
-for session in sessions:
-    row = {}
-    for grp in ['ld', 'ln', 'rd', 'rn']:
-        row[grp] = max(frames[grp][session]['distAMP'].unique())
-    DistAmps[session] = row  # Store row in dictionary with session as key
-
 # Convert dictionary to a DataFrame
-DistAmpsdf = pd.DataFrame.from_dict(DistAmps, orient='index')
+DistAMPSdf = pd.DataFrame.from_dict(DistAMPS, orient='index')
 
 # Rename index and columns for clarity
-DistAmpsdf.index.name = "Session"
-DistAmpsdf.columns = ["ld", "ln", "rd", "rn"]
+DistAMPSdf.index.name = "Session"
+DistAMPSdf.columns = ["Stim = Left, Dist = Right", "Stim = Right, Dist = Left"]
 
 # Print table
-print(DistAmpsdf)
+print("Amplitudes of Distractor")
+print(DistAMPSdf)
+
+
+
+# import pickle
+
+# with open("prepared_data.pkl", "wb") as f:
+#     pickle.dump(frames, f)
