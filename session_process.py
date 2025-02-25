@@ -133,6 +133,8 @@ for filename in os.listdir(directory_path):
         df['lowORhighGUESS'] = df['lowORhighGUESS'].astype(int)
         
         
+        df['rewardDURATION'] = df['correct']*(df['trialEnd'] - df['rewardStart'])
+        
         # separate into 4 dataframes based on hand/distraction
         frames['ld'][session] = df[(df['stimSIDE'] == 'left') & (df['distracted'] == True)]
         frames['ln'][session] = df[(df['stimSIDE'] == 'left') & (df['distracted'] == False)]
@@ -147,7 +149,7 @@ for filename in os.listdir(directory_path):
         
 psych_vecs_all = {'Y': Y, 'N': N, 'NY': NY}        
             
-
+print(df.head())
 
 
 SessSummary ={}
@@ -160,6 +162,12 @@ for session in sessions:
         sumtemp += row[grp]
     row['sum'] = sumtemp
     row['Dist AMP'] = round(max(frames['ld'][session]['distAMP'].unique()))
+    rewardlist = frames['ld'][session]['rewardType'].unique()
+    value = rewardlist[~pd.isna(rewardlist)][0]  # Select the first non-NaN element
+    if isinstance(value, str):
+        row['reward_type'] = value.lower()  # Convert to lowercase if it's a string
+    else:
+        row['reward_type'] = value 
     SessSummary[session] = row  # Store row in dictionary with session as key
 
 # Convert dictionary to a DataFrame
@@ -167,15 +175,17 @@ SessSummarydf = pd.DataFrame.from_dict(SessSummary, orient='index')
 
 # Rename index and columns for clarity
 SessSummarydf.index.name = "Session"
-SessSummarydf.columns = ["NumTrials_ld", "NumTrials_ln", "NumTrials_rd", "NumTrials_rn","TrialsTotal","Dist_AMP"]
+SessSummarydf.columns = ["NumTrials_ld", "NumTrials_ln", "NumTrials_rd", "NumTrials_rn","TrialsTotal","Dist_AMP","reward_type"]
 
-print(SessSummarydf)
+print(SessSummarydf.head())
+
+duration = []
+for session in sessions:
+    for grp in ['ld', 'ln', 'rd', 'rn']:
+        duration = np.append(duration,np.array(frames[grp][session]['rewardDURATION']))
 
 
-
-
-
-
+#'rewardStart', 'rewardType', 'trialEnd'
 # import pickle
 
 # with open("prepared_data.pkl", "wb") as f:
