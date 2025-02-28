@@ -145,3 +145,40 @@ for filename in os.listdir(directory_path):
         frames['rd'][session] = df[(df['stimSIDE'] == 'right') & (df['distracted'] == True)]
         frames['rn'][session] = df[(df['stimSIDE'] == 'right') & (df['distracted'] == False)]
   
+def slidplots(df_d, df_nd, win_sizes, plotlabel):
+    for win_size in win_sizes:
+        #prep reward plotting
+        df_corr_d = df_d[df_d['correct']==True]
+        df_corr_nd = df_nd[df_nd['correct']==True]
+        
+        # Compute moving average
+        df_d = df_d[df_d['stimAMP'].isin(stims)]
+        df_nd = df_nd[df_nd['stimAMP'].isin(stims)]
+        df_d['Moving_Avg'] = df_d['correct'].rolling(window=win_size, center=True).mean()
+        df_nd['Moving_Avg'] = df_nd['correct'].rolling(window=win_size, center=True).mean()
+        
+        irange_d = df_d[~np.isnan(df_d['Moving_Avg'])]['index']
+        irange_nd = df_nd[~np.isnan(df_nd['Moving_Avg'])]['index']
+        ranges = np.append(irange_d,irange_nd)
+
+        # Plot original data and moving average
+        plt.plot(df_d['index'],df_d['Moving_Avg'], label='distracted', color = 'red', linewidth=2)
+        plt.plot(df_nd['index'],df_nd['Moving_Avg'], label='not distracted', color = 'blue', linewidth=2)
+        plt.plot(df_corr_d['index'],np.round(df_corr_d['rewardDURATION'] * 30) / 30, label='reward', color = 'red', linewidth=1, ls='--')
+        plt.plot(df_corr_nd['index'], np.round(df_corr_nd['rewardDURATION'] * 30) / 30, color = 'blue', linewidth=1, ls='--')
+        plt.ylim(-0.05, 1.05)
+        plt.xlim( min(ranges)-2, max(ranges)+2)
+        plt.legend()
+        plt.xlabel('Trial Index')
+        plt.ylabel('Sliding P(correct)')
+        plt.title('Window = ' + str(win_size) + ', '+ plotlabel)
+        plt.show()
+        
+stims =[18, 24, 32, 38]
+for session in sessions:
+    if not (session == '04-14-S2'):
+        print(session)
+        df_d = frames['ld'][session]
+        df_nd = frames['ln'][session]
+        slidplots(df_d,df_nd, [10,15,20], 'Left Hand, '+ session + ', stimAMPs = '+str(stims))
+  
