@@ -20,7 +20,7 @@ def w_u(x):
 
 ### Sample from cauchy distribution:
     
-n=100000
+n=10000
 X = np.random.standard_cauchy(size=n)
 
 ### 1_(4,inf) (X)
@@ -79,7 +79,7 @@ C_inv, _ = quad(f_tilde, 0, 1)
 xplot = np.linspace(-0.25,1.25,300)
 fx = (1/C_inv) * f_tilde(xplot) * np.float64(xplot>0) * np.float64(xplot<1)
 
-plt.hist(fsamples,20,density = True, label = "100000 Samples from f")
+plt.hist(fsamples,20,density = True, label = "10000 Samples from f")
 
 plt.plot(xplot,fx,'r', linewidth=2, label = "Normalized density f")
 plt.title("Histogram")
