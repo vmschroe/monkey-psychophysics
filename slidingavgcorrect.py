@@ -144,6 +144,7 @@ for filename in os.listdir(directory_path):
         frames['ln'][session] = df[(df['stimSIDE'] == 'left') & (df['distracted'] == False)]
         frames['rd'][session] = df[(df['stimSIDE'] == 'right') & (df['distracted'] == True)]
         frames['rn'][session] = df[(df['stimSIDE'] == 'right') & (df['distracted'] == False)]
+        frames['all'][session] = df
   
 def slidplots(df_d, df_nd, win_sizes, plotlabel):
     for win_size in win_sizes:
@@ -174,11 +175,12 @@ def slidplots(df_d, df_nd, win_sizes, plotlabel):
         plt.title('Window = ' + str(win_size) + ', '+ plotlabel)
         plt.show()
         
-stims =[18, 24, 32, 38]
+# stims =[18, 24, 32, 38]
+stims = [6,12,44,50]
 for session in sessions:
     if not (session == '04-14-S2'):
         print(session)
         df_d = frames['ld'][session]
         df_nd = frames['ln'][session]
-        slidplots(df_d,df_nd, [10,15,20], 'Left Hand, '+ session + ', stimAMPs = '+str(stims))
+        slidplots(df_d,df_nd, [[6,12,44,50]], 'Left Hand, '+ session + ', stimAMPs = '+str(stims))
   
