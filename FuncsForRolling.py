@@ -699,12 +699,12 @@ def cross_corr(values1, values2, indices1=None, indices2=None, is_time_series=Tr
         }
 
 reload_data = False
-all_sessions = True
+all_sessions = False
 stim_levels = False
-saveimg = True
+saveimg = False
 dep_var = 'Moving_Avg'
-# indep_var = 'stimAMP'
 indep_var = 'rew_level'
+# indep_var = 'start_time'
 
 
 if reload_data:        
@@ -729,9 +729,61 @@ for stims in stims_list:
     for session in sess_list:
         df = frames['all'][session]
         reward_levels(df, plot_steps = True, plot_title = 'Reward Duration, ' + str(session))
-        # dfstim = df[df['stimAMP'].isin(stims)]
-        # dfnew = slidplots(session+', Sliding Average Proportion Correct', Avg_Prop_Correct = dfstim)
-        # result = cross_corr(np.array(dfnew[indep_var]), np.array(dfnew[dep_var]), indices1=np.array(dfnew['start_time']), values1_name='Reward Level', values2_name='Average Proportion Correct', main_title='Cross-correlation Analysis: Reward Duration vs Sliding Avg Proportion Correct, ' + str(session), causal_analysis=True)
-        # pvals = np.append(pvals,result['p_value'])
-        # maxcorr = np.append(maxcorr, result['max_causal_correlation'])
-        # lags = np.append(lags, result['causal_lag'])
+        dfstim = df[df['stimAMP'].isin(stims)]
+        dfnew = slidplots(session+', Sliding Average Proportion Correct', Avg_Prop_Correct = dfstim)
+        result = cross_corr(np.array(dfnew[indep_var]), np.array(dfnew[dep_var]), indices1=np.array(dfnew['start_time']), values1_name='Reward Level', values2_name='Average Proportion Correct', main_title='Cross-correlation Analysis: Reward Duration vs Sliding Avg Proportion Correct, ' + str(session), causal_analysis=True)
+        pvals = np.append(pvals,result['p_value'])
+        maxcorr = np.append(maxcorr, result['max_causal_correlation'])
+        lags = np.append(lags, result['causal_lag'])
+        
+A = zip(corrss,lagss,ps)        
+signif = np.zeros([2,2])
+insignif = np.zeros([2,2])
+
+siglags = []
+sigcorrs = []
+  
+for a in A:
+    print(a)
+    [c, l, p] = a
+    if p<=0.05:
+        print(p, "less")
+        if c>=0:
+            print(c, "pos")
+            if l>=-1000:
+                signif[0,0]+=1
+                print(l, 'big')
+                siglags = np.append(siglags,l)
+                sigcorrs = np.append(sigcorrs,c)
+#             else:
+#                 print(l, 'smol')
+#                 signif[0,1]+=1
+#         else:
+#             print(c, "neg")
+#             if l>=-1000:
+#                 print(l, 'big')
+#                 signif[1,0]+=1
+#             else:
+#                 print(l, 'smol')
+#                 signif[1,1]+=1
+#     else:
+#         print(p, "greater")
+#         if c>=0:
+#             print(c, "pos")
+#             if l>=-1000:
+#                 print(l, 'big')
+#                 insignif[0,0]+=1
+#             else:
+#                 print(l, 'smol')
+#                 insignif[0,1]+=1
+#         else:
+#             print(c, "neg")
+#             if l>=-1000:
+#                 print(l, 'big')
+#                 insignif[1,0]+=1
+#             else:
+#                 print(l, 'smol')
+#                 insignif[1,1]+=1
+                
+# print(signif)
+# print(insignif)
