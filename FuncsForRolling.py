@@ -111,7 +111,7 @@ def loaddfs(directory_path = '/home/vmschroe/Documents/Monkey Analysis/Sirius_da
     return frames, sessions
 
 
-def reward_levels(df, thresh=0.03, plot_steps=False, plot_title = "Computed Reward Levels"):
+def reward_levels(df, thresh=0.03, plot_steps=False):
     corr = (df['rewardDURATION'] > 0.3) & (df['correct'] == True)
 
     # Create dictionary and ensure proper conversion to DataFrame
@@ -148,14 +148,10 @@ def reward_levels(df, thresh=0.03, plot_steps=False, plot_title = "Computed Rewa
 
     # Optional plotting
     if plot_steps:
-        plt.scatter(df[(df['correct'] == True)]['index'], df[(df['correct'] == True)]['rewardDURATION'], color = 'green', alpha  = 0.5, label = 'Reward Duration')
-        plt.plot(rew_df['index'], rew_df['rew_level'], color = 'blue', label = 'Smoothed Reward Level')
+        plt.plot(rew_df['index'], rew_df['rew_level'])
         plt.xlabel("Trial Index")
-        plt.ylabel("Reward Duration")
-        plt.title(plot_title)
-        plt.legend()
-        if saveimg == True:
-            plt.savefig(plot_title+".png", dpi=300)
+        plt.ylabel("Reward Level")
+        plt.title("Computed Reward Levels")
         plt.show()
 
     return rew_df
@@ -199,14 +195,14 @@ def slidplots(plotlabel, time_win='100s', **dfs):
         df['Moving_Avg'] = df.rolling(time_win, on='time', min_periods=3)['correct'].mean()
 
         # Plot moving average
-        plt.plot(df['start_time'], df['Moving_Avg'], label=f'{label} (time window = {time_win})', color=colors[i], linewidth=2)
+        plt.plot(df['time'], df['Moving_Avg'], label=f'{label} (win={time_win})', color=colors[i], linewidth=2)
 
         # Process reward duration for the first dataset only
         if i == 0:
             rew_dur = reward_levels(df)
             df = df.merge(rew_dur[['index', 'rew_level']], on='index', how='left')
             df['rew_level'] = df['rew_level'].ffill().bfill()
-            plt.plot(df['start_time'], df['rew_level'], label='Reward Duration (s)', linewidth=1, linestyle='--')
+            plt.plot(df['time'], df['rew_level'], label='Reward Duration', linewidth=1, linestyle='--')
 
         modified_dfs[var_name] = df  # Store modified dataframe
 
@@ -214,10 +210,8 @@ def slidplots(plotlabel, time_win='100s', **dfs):
     plt.ylim(-0.05, 1.05)
     plt.legend()
     plt.xlabel('Time (s)')
-    plt.ylabel('Reward Duration (s) / Sliding P(correct)')
+    plt.ylabel('Sliding P(correct)')
     plt.title(f'{plotlabel}')
-    if saveimg == True:
-        plt.savefig(plotlabel+".png", dpi=300)
     plt.show()
     return modified_dfs if len(modified_dfs) > 1 else next(iter(modified_dfs.values()), None)
     # Return a single dataframe if there was only one input, otherwise return a dictionary
@@ -626,8 +620,6 @@ def cross_corr(values1, values2, indices1=None, indices2=None, is_time_series=Tr
                 plt.title('No Cross-Correlation')
         
         plt.tight_layout()
-        if saveimg == True:
-            plt.savefig(main_title+".png", dpi=300)
         plt.show()
         
         # Prepare return dictionary
@@ -701,10 +693,8 @@ def cross_corr(values1, values2, indices1=None, indices2=None, is_time_series=Tr
 reload_data = False
 all_sessions = False
 stim_levels = False
-saveimg = False
 dep_var = 'Moving_Avg'
-indep_var = 'rew_level'
-# indep_var = 'start_time'
+indep_var = 'stimAMP'
 
 
 if reload_data:        
@@ -727,63 +717,18 @@ lags = []
 
 for stims in stims_list:
     for session in sess_list:
+        print('-----------------------------------------------------------------')
+        print(session)
         df = frames['all'][session]
-        reward_levels(df, plot_steps = True, plot_title = 'Reward Duration, ' + str(session))
         dfstim = df[df['stimAMP'].isin(stims)]
-        dfnew = slidplots(session+', Sliding Average Proportion Correct', Avg_Prop_Correct = dfstim)
-        result = cross_corr(np.array(dfnew[indep_var]), np.array(dfnew[dep_var]), indices1=np.array(dfnew['start_time']), values1_name='Reward Level', values2_name='Average Proportion Correct', main_title='Cross-correlation Analysis: Reward Duration vs Sliding Avg Proportion Correct, ' + str(session), causal_analysis=True)
+        dfnew = slidplots(session+', '+str(stims), df = dfstim)
+        result = cross_corr(np.array(dfnew[indep_var]), np.array(dfnew[dep_var]), indices1=np.array(dfnew['start_time']), causal_analysis=True)
+        print(result)
         pvals = np.append(pvals,result['p_value'])
         maxcorr = np.append(maxcorr, result['max_causal_correlation'])
         lags = np.append(lags, result['causal_lag'])
         
-A = zip(corrss,lagss,ps)        
-signif = np.zeros([2,2])
-insignif = np.zeros([2,2])
+from statsmodels.graphics.tsaplots import plot_acf
 
-siglags = []
-sigcorrs = []
-  
-for a in A:
-    print(a)
-    [c, l, p] = a
-    if p<=0.05:
-        print(p, "less")
-        if c>=0:
-            print(c, "pos")
-            if l>=-1000:
-                signif[0,0]+=1
-                print(l, 'big')
-                siglags = np.append(siglags,l)
-                sigcorrs = np.append(sigcorrs,c)
-#             else:
-#                 print(l, 'smol')
-#                 signif[0,1]+=1
-#         else:
-#             print(c, "neg")
-#             if l>=-1000:
-#                 print(l, 'big')
-#                 signif[1,0]+=1
-#             else:
-#                 print(l, 'smol')
-#                 signif[1,1]+=1
-#     else:
-#         print(p, "greater")
-#         if c>=0:
-#             print(c, "pos")
-#             if l>=-1000:
-#                 print(l, 'big')
-#                 insignif[0,0]+=1
-#             else:
-#                 print(l, 'smol')
-#                 insignif[0,1]+=1
-#         else:
-#             print(c, "neg")
-#             if l>=-1000:
-#                 print(l, 'big')
-#                 insignif[1,0]+=1
-#             else:
-#                 print(l, 'smol')
-#                 insignif[1,1]+=1
-                
-# print(signif)
-# print(insignif)
+
+plot_acf(np.array(dfnew['correct']),zero = False)

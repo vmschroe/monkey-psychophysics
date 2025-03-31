@@ -6,12 +6,12 @@ Created on Tue Feb 18 16:48:52 2025
 @author: vmschroe
 """
 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+# from sklearn.model_selection import train_test_split
+# from sklearn.linear_model import LogisticRegression
+# from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import numpy as np
 import matplotlib.pyplot as plt
-from ipywidgets import interact
+# from ipywidgets import interact
 import pandas as pd
 import bayesfit as bf
 import statsmodels.api as sm

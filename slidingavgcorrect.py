@@ -39,7 +39,6 @@ frames["ld"] = {}
 frames["ln"] = {}
 frames["rd"] = {}
 frames["rn"] = {}
-frames['all']= {}
 sessions = []
 dates = []
 DistAMPS = {}
