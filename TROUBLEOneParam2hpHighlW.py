@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Apr  9 17:59:08 2025
+Created on Thu Apr 10 16:52:28 2025
 
 @author: vmschroe
 """
+
 import scipy.stats
 import numpy as np
 import pymc as pm
@@ -38,6 +39,8 @@ np.random.seed(12345)
     #       pm.Beta : alpha, beta
 params_fixed = np.array([0.01, 0.05, 35, 1.7])
 hyper_fixed = np.array([[1,1],[1,1],[4.5,0.18],[1,1]])
+params_prior_params = np.array([[2, 5], [2, 5], [4.5, 0.1], [2, 0.6]])
+params_prior_scale = np.array([0.25, 0.25, 1, 1])
 hyper_dict = {
     'gam': {
         'distribution': 'beta',
@@ -128,12 +131,75 @@ def sim_all_data(n=40):
         L = scipy.stats.gamma.rvs(a = hyper_fixed[2][0], scale = 1/hyper_fixed[2][1])
         Ls.append(L)
         sess_params[2] = L
+        print(sess_params)
         y = sim_exp_data(sess_params, n)
         psych_vecs_sim['Y']['all'][key] = y
         psych_vecs_sim['NY']['all'][key] = n*y
     return psych_vecs_sim, Ls
 
+
+
+
+def indiv_data_analysis(psych_vec, grp_name = " ", printsum = True):
+    print('----------------------------------------------------------------------')
+    print('Loading data')
+   
+    n, yndata = psych_vec
+    nsum = sum(n)
+    ydata = yndata / n
+    
+    # Define the model
+    with pm.Model() as model:
+        # Define priors for the parameters
+        W_gam = pm.Beta("W_gam",alpha=params_prior_params[0][0],beta=params_prior_params[0][1])
+        gam = pm.Deterministic("gam", params_prior_scale[0]*W_gam)
+        W_lam = pm.Beta("W_lam",alpha=params_prior_params[1][0],beta=params_prior_params[1][1])
+        lam = pm.Deterministic("lam", params_prior_scale[1]*W_lam)
+        W_L = pm.Gamma("W_L",alpha=params_prior_params[2][0],beta=params_prior_params[2][1])
+        L = pm.Deterministic("L", params_prior_scale[2]*W_L)
+        W_k = pm.Gamma("k_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
+        k = pm.Deterministic("k", params_prior_scale[3]*W_k)
+        # Define PSE and JND as deterministic variables
+        pse = pm.Deterministic("pse", ffg.PSE_W([gam, lam, L, k]))
+        jnd = pm.Deterministic("jnd", ffg.JND_W([gam, lam, L, k]))
+        # Define the likelihood
+        likelihood = pm.Binomial("obs", n=n, p=ffg.phi_W([gam, lam, L, k],x), observed=yndata)
+      
+        #pm.Binomial("obs", n=N, p=theta, observed=data)
+        # use Markov Chain Monte Carlo (MCMC) to draw samples from the posterior
+        trace = pm.sample(1000, return_inferencedata=True)
+    if printsum ==True:
+        print("Summary of parameter estimates:"+grp_name)
+        print("Sample size:", nsum, "total trials")
+        print(az.summary(trace, var_names=["gam", "lam", "L", "k", "pse", "jnd"]))    
+    return trace
+
 psych_vecs_sim, Ls = sim_all_data()
+
+
+for sess in np.arange(1,2):
+    NYvec = psych_vecs_sim['NY']['all'][sess]
+    Nvec = psych_vecs_sim['N']['all'][sess]
+    
+    sesstrace  = indiv_data_analysis([Nvec,NYvec])
+    
+    xgrid = np.linspace(min(x),max(x),100)
+    sess_params = params_fixed.copy()
+    sess_params[2] = Ls[sess]
+    yorig = ffg.phi_W(sess_params, xgrid)
+    recparams = np.array([sesstrace.posterior['gam'].values.mean(), sesstrace.posterior['lam'].values.mean(), sesstrace.posterior['L'].values.mean(), sesstrace.posterior['k'].values.mean()])
+    yrec = ffg.phi_W(recparams, xgrid)
+    
+    
+    plt.plot(xgrid,yorig,label = 'orig')
+    plt.plot(xgrid,yrec, label = 'rec')
+    plt.scatter(x,NYvec/Nvec, label = 'data')
+    plt.title(f"Session {sess}")
+    plt.legend()
+    plt.show()
+    
+    print(f'Original: {sess_params}')
+    print(f'Recovered: {recparams}')
     
 def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
     
@@ -224,74 +290,3 @@ def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
 
 
 trace = data_analysis(psych_vecs_sim, num_post_samps = 1000)
-
-L_ests = trace.posterior["L_session"].stack(sample=("chain", "draw")).values.mean(axis=1)
-
-plt.scatter(Ls,L_ests)
-plt.show()
-
-# plt.savefig('LTrueVEsts.png')
-
-
-az.plot_pair(trace, var_names=["L_session"], kind='kde', marginals=True)
-plt.show()
-
-az.plot_pair(trace, var_names=["alpha_L", "beta_L"], kind='kde', marginals=True)
-plt.show()
-
-
-
-
-
-
-# prior of L
-appr_size = 50000
-WLS = scipy.stats.gamma.rvs(a = hyper_deets[2]['hps']['shape_prior']['params'][0], scale = 1/hyper_deets[2]['hps']['shape_prior']['params'][1], size = appr_size)
-BLS = scipy.stats.gamma.rvs(a = hyper_deets[2]['hps']['rate_prior']['params'][0], scale = 1/hyper_deets[2]['hps']['rate_prior']['params'][1], size = appr_size)
-LPS = scipy.stats.gamma.rvs(a = WLS+1, scale = 1/BLS)
-
-H = plt.hist(LPS,density=True,bins = 2000);
-plt.show()
-Lpart = H[1]
-Lgrid = (Lpart[:-1] + Lpart[1:]) / 2
-
-#posterior of L for sessions
-L_post_samps = trace.posterior["L_session"].stack(sample=("chain", "draw")).values
-
-
-for sess in [15,37,41]:
-    #plot
-    plt.hist(L_post_samps[sess], density = True, label = 'Histogram of samples from posterior')
-    plt.plot(Lgrid, H[0], label = 'Approximation of Prior')
-    plt.vlines(x=Ls[sess], ymin=0, ymax=0.03, color='r', linestyle='--', label='True L for session')
-    plt.xlim(min(Ls)-10, max(Ls)+10)
-    plt.ylim(0,0.03)
-    plt.xlabel('L value')
-    plt.ylabel('density')
-    plt.title(f'Prior, Posterior, and true value, Session {sess}')
-    plt.legend()
-    plt.show()
-    
-#Hyperparameter alpha
-alpha_post_samps = trace.posterior["alpha_L"].stack(sample=("chain", "draw")).values
-mi = min(alpha_post_samps)
-ma = max(alpha_post_samps)
-plt.hist(alpha_post_samps, density = True, bins = 20, label = 'Histogram of samples from posterior')
-prior_pdf_alpha = scipy.stats.gamma.pdf(np.linspace(0,ma,100), a = hyper_deets[2]['hps']['shape_prior']['params'][0], scale = 1/hyper_deets[2]['hps']['shape_prior']['params'][1])
-plt.plot(np.linspace(0,ma,100)+1, prior_pdf_alpha, label = 'Prior')
-plt.vlines(x=hyper_fixed[2][0], ymin=0, ymax=0.05, color='r', linestyle='--', label='True alpha_L for simulation')
-plt.xlim(0, ma+1)
-plt.ylim(0,0.05)
-plt.xlabel('alpha_L value')
-plt.ylabel('density')
-plt.title('Prior, Posterior, and true value, of hyperparameter alpha_L')
-plt.legend()
-plt.show()
-
-#L vs estimates
-plt.scatter(Ls,L_ests)
-plt.xlabel('True L values used in sim')
-plt.ylabel('Estimated L value for corresponding session')
-plt.title('L parameter')
-plt.legend()
-plt.show()

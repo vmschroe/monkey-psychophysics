@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Apr  9 17:59:08 2025
+Created on Thu Apr 10 16:52:28 2025
 
 @author: vmschroe
 """
+
 import scipy.stats
 import numpy as np
 import pymc as pm
@@ -224,74 +225,3 @@ def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
 
 
 trace = data_analysis(psych_vecs_sim, num_post_samps = 1000)
-
-L_ests = trace.posterior["L_session"].stack(sample=("chain", "draw")).values.mean(axis=1)
-
-plt.scatter(Ls,L_ests)
-plt.show()
-
-# plt.savefig('LTrueVEsts.png')
-
-
-az.plot_pair(trace, var_names=["L_session"], kind='kde', marginals=True)
-plt.show()
-
-az.plot_pair(trace, var_names=["alpha_L", "beta_L"], kind='kde', marginals=True)
-plt.show()
-
-
-
-
-
-
-# prior of L
-appr_size = 50000
-WLS = scipy.stats.gamma.rvs(a = hyper_deets[2]['hps']['shape_prior']['params'][0], scale = 1/hyper_deets[2]['hps']['shape_prior']['params'][1], size = appr_size)
-BLS = scipy.stats.gamma.rvs(a = hyper_deets[2]['hps']['rate_prior']['params'][0], scale = 1/hyper_deets[2]['hps']['rate_prior']['params'][1], size = appr_size)
-LPS = scipy.stats.gamma.rvs(a = WLS+1, scale = 1/BLS)
-
-H = plt.hist(LPS,density=True,bins = 2000);
-plt.show()
-Lpart = H[1]
-Lgrid = (Lpart[:-1] + Lpart[1:]) / 2
-
-#posterior of L for sessions
-L_post_samps = trace.posterior["L_session"].stack(sample=("chain", "draw")).values
-
-
-for sess in [15,37,41]:
-    #plot
-    plt.hist(L_post_samps[sess], density = True, label = 'Histogram of samples from posterior')
-    plt.plot(Lgrid, H[0], label = 'Approximation of Prior')
-    plt.vlines(x=Ls[sess], ymin=0, ymax=0.03, color='r', linestyle='--', label='True L for session')
-    plt.xlim(min(Ls)-10, max(Ls)+10)
-    plt.ylim(0,0.03)
-    plt.xlabel('L value')
-    plt.ylabel('density')
-    plt.title(f'Prior, Posterior, and true value, Session {sess}')
-    plt.legend()
-    plt.show()
-    
-#Hyperparameter alpha
-alpha_post_samps = trace.posterior["alpha_L"].stack(sample=("chain", "draw")).values
-mi = min(alpha_post_samps)
-ma = max(alpha_post_samps)
-plt.hist(alpha_post_samps, density = True, bins = 20, label = 'Histogram of samples from posterior')
-prior_pdf_alpha = scipy.stats.gamma.pdf(np.linspace(0,ma,100), a = hyper_deets[2]['hps']['shape_prior']['params'][0], scale = 1/hyper_deets[2]['hps']['shape_prior']['params'][1])
-plt.plot(np.linspace(0,ma,100)+1, prior_pdf_alpha, label = 'Prior')
-plt.vlines(x=hyper_fixed[2][0], ymin=0, ymax=0.05, color='r', linestyle='--', label='True alpha_L for simulation')
-plt.xlim(0, ma+1)
-plt.ylim(0,0.05)
-plt.xlabel('alpha_L value')
-plt.ylabel('density')
-plt.title('Prior, Posterior, and true value, of hyperparameter alpha_L')
-plt.legend()
-plt.show()
-
-#L vs estimates
-plt.scatter(Ls,L_ests)
-plt.xlabel('True L values used in sim')
-plt.ylabel('Estimated L value for corresponding session')
-plt.title('L parameter')
-plt.legend()
-plt.show()
