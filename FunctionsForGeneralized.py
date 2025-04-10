@@ -44,10 +44,30 @@ x = [6, 12, 18, 24, 32, 38, 44, 50]
 
 ### FOR WEIBULL:
     
-def phi_W(params,x):
-    [gam,lam,L,k] = params
+# def phi_W(params,x):
+#     [gam,lam,L,k] = params
+#     x = np.asarray(x)
+#     weib = 1 - np.exp(-(x/L)**k)
+#     return gam + (1 - gam - lam) * weib
+
+
+def phi_W(params, x):
+    [gam, lam, L, k] = params
     x = np.asarray(x)
-    weib = 1 - np.exp(-(x/L)**k)
+    
+    # Handle session-wise L values
+    if isinstance(L, (list, np.ndarray)) and len(np.shape(L)) > 0:
+        # For batched L values (e.g., one per session)
+        if len(np.shape(x)) > 1:
+            # x is already expanded to match sessions
+            weib = 1 - np.exp(-((x/L[:, None])**k))
+        else:
+            # Expand x for each session's L value
+            weib = 1 - np.exp(-((x/L[:, None])**k))
+    else:
+        # Single L value
+        weib = 1 - np.exp(-((x/L)**k))
+        
     return gam + (1 - gam - lam) * weib
 
 def phi_inv_W(params, p):
