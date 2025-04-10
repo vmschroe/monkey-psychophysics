@@ -44,11 +44,11 @@ hyper_dict = {
         'hps': {
             'alpha_prior': {
                 'W_dist': 'gamma',
-                'params': [1.5,0.5]
+                'params': [1.1,0.05]
             },
             'rate_prior': {
                 'dist': 'gamma',
-                'params': [2,0.2]
+                'params': [1.005,0.8]
             }
         }
     },
@@ -134,7 +134,7 @@ def sim_all_data(n=40):
 
 psych_vecs_sim, Ls = sim_all_data()
     
-def data_analysis(psych_vecs_df, grp_name = " ", printsum = True, num_post_samps = 1000):
+def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
     
     start_time = time.time()
     
@@ -218,32 +218,23 @@ def data_analysis(psych_vecs_df, grp_name = " ", printsum = True, num_post_samps
         total_duration = post_timestamp - start_time
         print(f"Data analysis took {total_duration:.2f} seconds ({total_duration/60:.2f} minutes)")
         print('----------------------------------------------------------------------')
-    if printsum == True:
-        print('----------------------------------------------------------------------')
-        print("Summary of parameter estimates:" + grp_name)
-        print("Sample size:", nsum, "total trials")
-        
-        # Print group-level parameters
-        print("\nGroup-level parameters:")
-        print(az.summary(trace, var_names=["L_session", "alpha_L", "beta_L"]))
-        
-        # Print session-specific parameters
-        print("\nSession-specific L values:")
-        session_summary = az.summary(trace, var_names=["L_session"])
-        
-        # Map indices to session IDs for clearer output
-        for i, session_id in enumerate(sessions):
-            print(f"Session {session_id}: L = {session_summary.loc[f'L_session[{i}]', 'mean']:.2f} " +
-                  f"(95% CI: {session_summary.loc[f'L_session[{i}]', 'hdi_3%']:.2f} - " +
-                  f"{session_summary.loc[f'L_session[{i}]', 'hdi_97%']:.2f})")
-        print('----------------------------------------------------------------------')
     return trace
 
 
 
-trace = data_analysis(psych_vecs_sim, printsum=False, num_post_samps = 500)
+trace = data_analysis(psych_vecs_sim, num_post_samps = 1000)
 
 L_ests = trace.posterior["L_session"].stack(sample=("chain", "draw")).values.mean(axis=1)
 
 plt.scatter(Ls,L_ests)
-plt.savefig('LTrueVEsts.png')
+plt.show()
+
+# plt.savefig('LTrueVEsts.png')
+
+
+az.plot_pair(trace, var_names=["L_session"], kind='kde', marginals=True)
+plt.show()
+
+az.plot_pair(trace, var_names=["alpha_L", "beta_L"], kind='kde', marginals=True)
+plt.show()
+
