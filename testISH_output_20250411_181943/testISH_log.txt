@@ -1,3 +1,0 @@
-testISH started at 2025-04-11 18:19:43
-Results saved to testISH_output_20250411_181943/testISH_results.pkl
-testISH completed at 2025-04-11 18:19:43

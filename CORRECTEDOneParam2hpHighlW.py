@@ -25,6 +25,8 @@ import pickle
 import tqdm
 import time
 import sys
+from datetime import datetime
+import subprocess
 
 np.random.seed(12345)
 # Simulating for higherarchical weibul
@@ -228,30 +230,62 @@ def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
             total_duration = err_timestamp - start_time
         
     
-# Set up logging to a file
-log_file = open("sim_1O2HP_HighWeib_log.txt", "w")
+
+
+
+# Create a timestamp for the output files
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+output_dir = "sim_1O2HP_HighWeib_output_" + timestamp
+os.makedirs(output_dir, exist_ok=True)
+
+# Set up logging
+log_path = os.path.join(output_dir, "sim_1O2HP_HighWeib_log.txt")
+log_file = open(log_path, "w")
 original_stdout = sys.stdout
 sys.stdout = log_file
 
-#main code
-print("Running file script saved as CORRECTEDOneParam2hpHighlW.py")
+try:
+    print(f"Simulation started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Run your simulation and analysis
+    psych_vecs_sim, Ls = sim_all_data()
+    trace = data_analysis(psych_vecs_sim, num_post_samps = 1000)
+    
+    # Save the results
+    results_path = os.path.join(output_dir, "sim_1O2HP_HighWeib_results.pkl")
+    with open(results_path, 'wb') as f:
+        pickle.dump({
+            'psych_vecs_sim': psych_vecs_sim,
+            'Ls': Ls,
+            'trace': trace
+        }, f)
+    
+    print(f"Results saved to {results_path}")
+    print(f"Simulation completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
+except Exception as e:
+    print(f"Error occurred: {e}")
+    import traceback
+    traceback.print_exc(file=log_file)
 
-psych_vecs_sim, Ls = sim_all_data()
-trace = data_analysis(psych_vecs_sim, num_post_samps = 1000)
-
-
-
-# At the end of your script, after completing the analysis:
-with open('sim_1O2HP_HighWeib_results.pkl', 'wb') as f:
-    pickle.dump({
-        'psych_vecs_sim': psych_vecs_sim,
-        'Ls': Ls,
-        'trace': trace
-    }, f)
-
-print("Results saved to sim_1O2HP_HighWeib_results.pkl")
-
-# Save the logging file
-sys.stdout = original_stdout
-log_file.close()
+finally:
+    # Restore original stdout
+    sys.stdout = original_stdout
+    log_file.close()
+    print(f"Simulation complete. Log saved to {log_path}")
+    
+    # Push results to GitHub
+    try:
+        # Stage new files
+        subprocess.run(["git", "add", output_dir], check=True)
+        
+        # Commit changes
+        commit_message = f"Add simulation results from {timestamp}"
+        subprocess.run(["git", "commit", "-m", commit_message], check=True)
+        
+        # Push to remote repository
+        subprocess.run(["git", "push"], check=True)
+        
+        print("Successfully pushed results to GitHub")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to push to GitHub: {e}")
