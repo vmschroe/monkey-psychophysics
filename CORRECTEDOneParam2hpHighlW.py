@@ -251,6 +251,18 @@ try:
     psych_vecs_sim, Ls = sim_all_data()
     trace = data_analysis(psych_vecs_sim, num_post_samps = 1000)
     
+    
+    plt.figure(figsize=(10, 6))
+    L_posterior = np.mean(trace.posterior["L_session"].values, axis=(0, 1))
+    plt.scatter(Ls, L_posterior)
+    plt.plot([min(Ls), max(Ls)], [min(Ls), max(Ls)], 'k--')
+    plt.xlabel('True L values')
+    plt.ylabel('Estimated L values (posterior mean)')
+    plt.title('Recovery of L parameter')
+    plot_path = os.path.join(output_dir, "L_recovery_plot.png")
+    plt.savefig(plot_path, dpi=300)
+    plt.show()
+    
     # Save the results
     results_path = os.path.join(output_dir, "sim_1O2HP_HighWeib_results.pkl")
     with open(results_path, 'wb') as f:
@@ -289,3 +301,7 @@ finally:
         print("Successfully pushed results to GitHub")
     except subprocess.CalledProcessError as e:
         print(f"Failed to push to GitHub: {e}")
+        
+        
+        
+
