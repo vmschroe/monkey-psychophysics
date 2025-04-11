@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Apr 10 16:52:28 2025
+Created on Fri Apr 11 17:41:46 2025
 
 @author: vmschroe
 """
@@ -24,9 +24,11 @@ import seaborn as sns
 import pickle
 import tqdm
 import time
+import sys
 
 np.random.seed(12345)
 # Simulating for higherarchical weibul
+
 # params = [gam,lam,L,k]
 #### NOTE: For a GAMMA distribution Gamma[alpha,beta]:
     #       alpha = shape, beta = rate
@@ -37,6 +39,8 @@ np.random.seed(12345)
     #       alpha, beta are both shape parameters
     #       scipy.stats.beta : a = alpha, b = beta
     #       pm.Beta : alpha, beta
+    
+    
 params_fixed = np.array([0.01, 0.05, 35, 1.7])
 hyper_fixed = np.array([[1,1],[1,1],[40,1.6],[1,1]])
 params_prior_params = np.array([[2, 5], [2, 5], [4.5, 0.1], [2, 0.6]])
@@ -99,6 +103,7 @@ hyper_dict = {
         }
     }
 }
+
 hyper_deets = [hyper_dict['gam'], hyper_dict['lam'], hyper_dict['L'], hyper_dict['k']]
 x = np.array([6, 12, 18, 24, 32, 38, 44, 50])
 
@@ -135,42 +140,6 @@ def sim_all_data(n=40):
         psych_vecs_sim['NY']['all'][key] = n*y
     return psych_vecs_sim, Ls
 
-def indiv_data_analysis(psych_vec, grp_name = " ", printsum = True):
-    print('----------------------------------------------------------------------')
-    print('Loading data')
-   
-    n, yndata = psych_vec
-    nsum = sum(n)
-    ydata = yndata / n
-    
-    # Define the model
-    with pm.Model() as model:
-        # Define priors for the parameters
-        W_gam = pm.Beta("W_gam",alpha=params_prior_params[0][0],beta=params_prior_params[0][1])
-        gam = pm.Deterministic("gam", params_prior_scale[0]*W_gam)
-        W_lam = pm.Beta("W_lam",alpha=params_prior_params[1][0],beta=params_prior_params[1][1])
-        lam = pm.Deterministic("lam", params_prior_scale[1]*W_lam)
-        W_L = pm.Gamma("W_L",alpha=params_prior_params[2][0],beta=params_prior_params[2][1])
-        L = pm.Deterministic("L", params_prior_scale[2]*W_L)
-        W_k = pm.Gamma("k_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
-        k = pm.Deterministic("k", params_prior_scale[3]*W_k)
-        # Define PSE and JND as deterministic variables
-        pse = pm.Deterministic("pse", ffg.PSE_W([gam, lam, L, k]))
-        jnd = pm.Deterministic("jnd", ffg.JND_W([gam, lam, L, k]))
-        # Define the likelihood
-        likelihood = pm.Binomial("obs", n=n, p=ffg.phi_W([gam, lam, L, k],x), observed=yndata)
-      
-        #pm.Binomial("obs", n=N, p=theta, observed=data)
-        # use Markov Chain Monte Carlo (MCMC) to draw samples from the posterior
-        trace = pm.sample(1000, return_inferencedata=True)
-    if printsum ==True:
-        print("Summary of parameter estimates:"+grp_name)
-        print("Sample size:", nsum, "total trials")
-        print(az.summary(trace, var_names=["gam", "lam", "L", "k", "pse", "jnd"]))    
-    return trace
-
-
-
 def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
     
     start_time = time.time()
@@ -184,6 +153,8 @@ def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
    
     NY_data = np.array([psych_vecs_df['NY']['all'][k][0] for k in sessions])
     N_data = np.array([psych_vecs_df['N']['all'][k] for k in sessions])
+    print("N_data shape:", N_data.shape)
+    print("NY_data shape:", NY_data.shape)
 
     nsum = sum(sum(N_data))
     
@@ -223,19 +194,13 @@ def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
         print('----------------------------------------------------------------------')
         print('Constructing likelihoods')
         print('-- please wait --')
-        # Likelihood for each session
-        # for i in range(n_sessions):
-        #     # Calculate probability for this session using its own L value
-        #     p_i = ffg.phi_W([gam, lam, L_session[i], k], x)
-        #     # Define likelihood for this session's data
-        #     pm.Binomial(f"obs_{i}", n=N_data[i], p=p_i, observed=NY_data[i])
-        #     print(f" Session {sessions[i]} likelihood defined ( {i} of {n_sessions} )")
         # Reshape data for vectorized operations
         x_expanded = np.tile(x, (n_sessions, 1))  # Shape: (n_sessions, n_stimulus_levels)
         
         # Create probabilities for all sessions at once
         session_probs = ffg.phi_W([gam, lam, L_session[:, None], k], x_expanded)
-        
+        print("x_expanded shape:", x_expanded.shape)
+        print("session_probs shape:", session_probs.shape)
         # Single vectorized likelihood
         pm.Binomial("obs", n=N_data, p=session_probs, observed=NY_data)
         
@@ -247,116 +212,46 @@ def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
         # use Markov Chain Monte Carlo (MCMC) to draw samples from the posterior
         print(f'Drawing {num_post_samps} samples from Posterior')
         print('-- please wait (A LONG TIME) --')
-        trace = pm.sample(num_post_samps, return_inferencedata=True, progressbar=True)
-        print('Posterior samples are drawn')
-        post_timestamp = time.time()
-        post_duration = post_timestamp - Lik_timestamp
-        print(f"Posterior samples completed in {post_duration:.2f} seconds ({post_duration/60:.2f} minutes)")
-        total_duration = post_timestamp - start_time
-        print(f"Data analysis took {total_duration:.2f} seconds ({total_duration/60:.2f} minutes)")
-        print('----------------------------------------------------------------------')
-    return trace
-
-
-def altog():
-    psych_vecs_sim, Ls = sim_all_data()
+        try:
+            trace = pm.sample(num_post_samps, return_inferencedata=True, progressbar=True)
+            print('Posterior samples are drawn')
+            post_timestamp = time.time()
+            post_duration = post_timestamp - Lik_timestamp
+            print(f"Posterior samples completed in {post_duration:.2f} seconds ({post_duration/60:.2f} minutes)")
+            total_duration = post_timestamp - start_time
+            print(f"Data analysis took {total_duration:.2f} seconds ({total_duration/60:.2f} minutes)")
+            print('----------------------------------------------------------------------')
+            return trace
+        except Exception as e:
+            print(f"Error during sampling: {e}")
+            err_timestamp = time.time()
+            total_duration = err_timestamp - start_time
+        
     
-    
-    for sess in np.arange(1,5):
-        NYvec = psych_vecs_sim['NY']['all'][sess]
-        Nvec = psych_vecs_sim['N']['all'][sess]
-        
-        sesstrace  = indiv_data_analysis([Nvec,NYvec])
-        
-        xgrid = np.linspace(min(x),max(x),100)
-        sess_params = params_fixed.copy()
-        sess_params[2] = Ls[sess]
-        yorig = ffg.phi_W(sess_params, xgrid)
-        recparams = np.array([sesstrace.posterior['gam'].values.mean(), sesstrace.posterior['lam'].values.mean(), sesstrace.posterior['L'].values.mean(), sesstrace.posterior['k'].values.mean()])
-        yrec = ffg.phi_W(recparams, xgrid)
-        
-        
-        plt.plot(xgrid,yorig,label = 'orig')
-        plt.plot(xgrid,yrec, label = 'rec')
-        plt.scatter(x,NYvec/Nvec, label = 'data')
-        plt.title(f"Session {sess}")
-        plt.legend()
-        plt.show()
-        
-        print(f'Original: {sess_params}')
-        print(f'Recovered: {recparams}')
-        az.plot_trace(sesstrace)
+# Set up logging to a file
+log_file = open("sim_1O2HP_HighWeib_log.txt", "w")
+original_stdout = sys.stdout
+sys.stdout = log_file
+
+#main code
+print("Running file script saved as CORRECTEDOneParam2hpHighlW.py")
 
 
-    
-def sim1plot1(reps=1,recov = True):
-    for i in range(reps):
-        xgrid = np.linspace(min(x),max(x),100)
-        yorig = ffg.phi_W(params_fixed, xgrid)
-        y_sim_data = sim_exp_data(params_fixed,x)
-        if recov == True:
-            n_sim_data = np.array([40.0] * 8)
-            ny_sim_data = y_sim_data * n_sim_data
-            trace_indiv = indiv_data_analysis([n_sim_data, ny_sim_data])
-            summ = az.summary(trace_indiv, var_names=["gam", "lam", "L", "k"])
-            rec_params = np.array(summ['mean'])
-            yrec = ffg.phi_W(rec_params, xgrid)
-            plt.plot(xgrid,yrec,label = 'curve recovered from data')
-        plt.plot(xgrid,yorig,label = 'original curve')
-        plt.scatter(x,y_sim_data, label = 'data generated from orig')
-        plt.legend()
-        plt.show()
-
-def simALLplot1(reps = 1, recov = True):
-    xgrid = np.linspace(min(x),max(x),100)
-    psych_vecs_sim, Ls = sim_all_data()
-    sessions = list(psych_vecs_sim['Y']['all'].keys())
-    L_rec = []
-    for i, sess in enumerate(sessions):
-        if i<reps:
-            L = Ls[i]
-            orig_sess_params = params_fixed.copy()
-            orig_sess_params[2] = L
-            #yorig = ffg.phi_W(orig_sess_params, xgrid)
-            #y_sim_data = psych_vecs_sim['Y']['all'][sess][0]
-            if recov == True:
-                n_sim_data = psych_vecs_sim['N']['all'][sess]
-                ny_sim_data = psych_vecs_sim['NY']['all'][sess][0]
-                trace_indiv = indiv_data_analysis([n_sim_data, ny_sim_data])
-                summ = az.summary(trace_indiv, var_names=["gam", "lam", "L", "k"])
-                rec_params = np.array(summ['mean'])
-                L_rec.append(rec_params[2])
-            #    yrec = ffg.phi_W(rec_params, xgrid)
-            #     plt.plot(xgrid,yrec,label = f'curve recovered from data, params = {list(np.round(rec_params,2))}')
-            # plt.plot(xgrid,yorig,label = f'original curve, params = {list(np.round(orig_sess_params,2))}')
-            # plt.scatter(x,y_sim_data, label = 'data generated from orig')
-            # plt.title(f'Session {sess}')
-            # plt.legend()
-            # plt.show()
-    return L_rec, Ls
+psych_vecs_sim, Ls = sim_all_data()
+trace = data_analysis(psych_vecs_sim, num_post_samps = 1000)
 
 
-def simALLrecSEP():
-    si
-    xgrid = np.linspace(min(x),max(x),100)
-    psych_vecs_sim, Ls = sim_all_data()
-    sessions = list(psych_vecs_sim['Y']['all'].keys())
-    L_rec = []
-    for i, sess in enumerate(sessions):
-        L = Ls[i]
-        orig_sess_params = params_fixed.copy()
-        orig_sess_params[2] = L
-        
-        n_sim_data = psych_vecs_sim['N']['all'][sess]
-        ny_sim_data = psych_vecs_sim['NY']['all'][sess][0]
-        trace_indiv = indiv_data_analysis([n_sim_data, ny_sim_data])
-        summ = az.summary(trace_indiv, var_names=["gam", "lam", "L", "k"])
-        rec_params = np.array(summ['mean'])
 
-    return L_rec, Ls
+# At the end of your script, after completing the analysis:
+with open('sim_1O2HP_HighWeib_results.pkl', 'wb') as f:
+    pickle.dump({
+        'psych_vecs_sim': psych_vecs_sim,
+        'Ls': Ls,
+        'trace': trace
+    }, f)
 
+print("Results saved to sim_1O2HP_HighWeib_results.pkl")
 
-L_rec, Ls = simALLplot1(10)
-plt.scatter(Ls[0:10],L_rec)
-plt.plot(np.linspace(min(Ls)-2,max(Ls)+2,10),np.linspace(min(Ls)-2,max(Ls)+2,10),'--r')
-plt.show()
+# Save the logging file
+sys.stdout = original_stdout
+log_file.close()
