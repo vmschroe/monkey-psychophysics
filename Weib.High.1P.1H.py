@@ -39,6 +39,8 @@ np.random.seed(12345)
     #       pm.Beta : alpha, beta
 params_fixed = np.array([0.01, 0.05, 35, 1.7])
 hyper_fixed = np.array([[1,1],[1,1],[4.5,0.18],[1,1]])
+params_prior_params = np.array([[2, 5], [2, 5], [4.5, 0.1], [2, 0.6]])
+params_prior_scale = np.array([0.25, 0.25, 1, 1])
 hyper_dict = {
     'gam': {
         'distribution': 'beta',
@@ -129,12 +131,75 @@ def sim_all_data(n=40):
         L = scipy.stats.gamma.rvs(a = hyper_fixed[2][0], scale = 1/hyper_fixed[2][1])
         Ls.append(L)
         sess_params[2] = L
+        print(sess_params)
         y = sim_exp_data(sess_params, n)
         psych_vecs_sim['Y']['all'][key] = y
         psych_vecs_sim['NY']['all'][key] = n*y
     return psych_vecs_sim, Ls
 
+
+
+
+def indiv_data_analysis(psych_vec, grp_name = " ", printsum = True):
+    print('----------------------------------------------------------------------')
+    print('Loading data')
+   
+    n, yndata = psych_vec
+    nsum = sum(n)
+    ydata = yndata / n
+    
+    # Define the model
+    with pm.Model() as model:
+        # Define priors for the parameters
+        W_gam = pm.Beta("W_gam",alpha=params_prior_params[0][0],beta=params_prior_params[0][1])
+        gam = pm.Deterministic("gam", params_prior_scale[0]*W_gam)
+        W_lam = pm.Beta("W_lam",alpha=params_prior_params[1][0],beta=params_prior_params[1][1])
+        lam = pm.Deterministic("lam", params_prior_scale[1]*W_lam)
+        W_L = pm.Gamma("W_L",alpha=params_prior_params[2][0],beta=params_prior_params[2][1])
+        L = pm.Deterministic("L", params_prior_scale[2]*W_L)
+        W_k = pm.Gamma("k_norm",alpha=params_prior_params[3][0],beta=params_prior_params[3][1])
+        k = pm.Deterministic("k", params_prior_scale[3]*W_k)
+        # Define PSE and JND as deterministic variables
+        pse = pm.Deterministic("pse", ffg.PSE_W([gam, lam, L, k]))
+        jnd = pm.Deterministic("jnd", ffg.JND_W([gam, lam, L, k]))
+        # Define the likelihood
+        likelihood = pm.Binomial("obs", n=n, p=ffg.phi_W([gam, lam, L, k],x), observed=yndata)
+      
+        #pm.Binomial("obs", n=N, p=theta, observed=data)
+        # use Markov Chain Monte Carlo (MCMC) to draw samples from the posterior
+        trace = pm.sample(1000, return_inferencedata=True)
+    if printsum ==True:
+        print("Summary of parameter estimates:"+grp_name)
+        print("Sample size:", nsum, "total trials")
+        print(az.summary(trace, var_names=["gam", "lam", "L", "k", "pse", "jnd"]))    
+    return trace
+
 psych_vecs_sim, Ls = sim_all_data()
+
+
+for sess in np.arange(1,2):
+    NYvec = psych_vecs_sim['NY']['all'][sess]
+    Nvec = psych_vecs_sim['N']['all'][sess]
+    
+    sesstrace  = indiv_data_analysis([Nvec,NYvec])
+    
+    xgrid = np.linspace(min(x),max(x),100)
+    sess_params = params_fixed.copy()
+    sess_params[2] = Ls[sess]
+    yorig = ffg.phi_W(sess_params, xgrid)
+    recparams = np.array([sesstrace.posterior['gam'].values.mean(), sesstrace.posterior['lam'].values.mean(), sesstrace.posterior['L'].values.mean(), sesstrace.posterior['k'].values.mean()])
+    yrec = ffg.phi_W(recparams, xgrid)
+    
+    
+    plt.plot(xgrid,yorig,label = 'orig')
+    plt.plot(xgrid,yrec, label = 'rec')
+    plt.scatter(x,NYvec/Nvec, label = 'data')
+    plt.title(f"Session {sess}")
+    plt.legend()
+    plt.show()
+    
+    print(f'Original: {sess_params}')
+    print(f'Recovered: {recparams}')
     
 def data_analysis(psych_vecs_df, grp_name = " ", num_post_samps = 1000):
     
