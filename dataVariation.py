@@ -7,23 +7,11 @@ Created on Mon May 12 19:50:43 2025
 """
 
 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-import numpy as np
-import matplotlib.pyplot as plt
-from ipywidgets import interact
+
 import pandas as pd
-import bayesfit as bf
-import statsmodels.api as sm
-import os
-import math
-from scipy.optimize import minimize
-from scipy.stats import binom
-from functools import partial
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.special import comb
-from scipy.special import gammaln
+import numpy as np
+import pickle
+
 
 with open("Sirius_DFS_nodrops.pkl", "rb") as f:
     datadict = pickle.load(f)
@@ -81,3 +69,36 @@ for sess in datadict.keys():
     
     sessdict[sess] = [distAMPS,distFRS,stimFRS]
 
+
+condsum_df = condsum_df.set_index('trialCond')
+
+stimFRsummary = sessdict.copy()
+
+
+for sess in datadict.keys():
+    df = datadict[sess]
+    
+    A = df['trialCond'].value_counts()
+    
+    FR150 = 0
+    FR200 = 0
+    FR250 = 0
+    
+    for x in condsum_df.index:
+        fr = condsum_df.loc[x]['stimFR'][0]
+        c = A[x]
+        if (fr==250):
+            FR250 = FR250 + c
+        elif (fr==200):
+            FR200 = FR200 + c
+        elif (fr==150):
+            FR150 = FR150 + c
+        else:
+            print (f"whoops: FR = {fr}")
+    
+    FRS = np.array([FR150, FR200, FR250])
+    FRS = FRS/sum(FRS)
+    stimFRsummary[sess] = FRS
+    
+with open("session_summary.pkl", "rb") as f:
+    sess_sum = pickle.load(f)

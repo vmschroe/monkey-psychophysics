@@ -19,28 +19,17 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import numpy as np
 import matplotlib.pyplot as plt
-from ipywidgets import interact
 import pandas as pd
-import bayesfit as bf
-import statsmodels.api as sm
-import os
-import math
-from scipy.optimize import minimize
-from scipy.stats import binom
-from functools import partial
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.special import comb
-from scipy.special import gammaln
+
 import pymc as pm
 import arviz as az
-import sys
-import FunctionsForGeneralized as ffg
+
 import seaborn as sns
-import pickle
-import numpy as np
+
 
 #test_params = [0.09, 0.06, -5.9, 0.209]
 x = [6, 12, 18, 24, 32, 38, 44, 50]
+x_amp = [6, 12, 18, 24, 32, 38, 44, 50]
 
 ### FOR WEIBULL:
     
@@ -87,7 +76,7 @@ def JND_W(params):
 ### FOR LOGISTIC
 
 
-def phi_L(params, X):
+def phi_L(params, X=x_amp):
     X = np.asarray(X)
     gamma, lambda_, beta0, beta1 = params
     logistic = 1 / (1 + np.exp(-(beta0 + beta1 * X)))
