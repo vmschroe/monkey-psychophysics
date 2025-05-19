@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Apr 14 19:11:56 2025
-
-@author: vmschroe
-"""
-
-
-
 import numpy as np
 import pymc as pm
 import arviz as az
@@ -24,8 +14,7 @@ from scipy.stats import gamma
 from scipy.stats import beta
 import ast
 from scipy.stats import truncnorm
-import aesara.tensor as at
-
+import pytensor.tensor as pt  # Use pytensor instead of aesara
 
 np.random.seed(12345)
 
@@ -48,21 +37,57 @@ N_mat = sim_data_dict['N_mat']
 Ns = np.shape(C_data)[0]
 
 
+# Fixed versions of the psychometric functions for PyMC 5.x
 def phi_L_as(gamma, lambda_, beta0, beta1, X):
-    if X.ndim == 1:
-        X = X[None, :]  # shape (1, N)
-    z = beta0[:, None] + beta1[:, None] * X if gamma.ndim == 1 else beta0 + beta1 * X
-    logistic = 1 / (1 + at.exp(-z))
-    return gamma[:, None] + (1 - gamma[:, None] - lambda_[:, None]) * logistic if gamma.ndim == 1 else gamma + (1 - gamma - lambda_) * logistic
+    """
+    Psychometric function using logistic function.
+    Returns probabilities of positive response given stimulus intensity X.
+    Parameters should be scalar values to avoid broadcasting issues.
+    """
+    # Ensure X is properly shaped
+    if isinstance(X, np.ndarray):
+        X = pt.as_tensor_variable(X)
+    
+    # Handle scalar inputs differently
+    if gamma.ndim == 0:  # Scalar inputs
+        z = beta0 + beta1 * X
+        logistic = 1 / (1 + pt.exp(-z))
+        return gamma + (1 - gamma - lambda_) * logistic
+    else:  # Vector inputs for a subject
+        # Reshape for broadcasting
+        X_reshaped = X.reshape((1, -1)) if X.ndim == 1 else X
+        gamma_reshaped = gamma.reshape((-1, 1)) if gamma.ndim > 0 else gamma
+        lambda_reshaped = lambda_.reshape((-1, 1)) if lambda_.ndim > 0 else lambda_
+        beta0_reshaped = beta0.reshape((-1, 1)) if beta0.ndim > 0 else beta0
+        beta1_reshaped = beta1.reshape((-1, 1)) if beta1.ndim > 0 else beta1
+        
+        z = beta0_reshaped + beta1_reshaped * X_reshaped
+        logistic = 1 / (1 + pt.exp(-z))
+        return gamma_reshaped + (1 - gamma_reshaped - lambda_reshaped) * logistic
+
 
 def phi_inv_L_as(gamma, lambda_, beta0, beta1, p_scalar):
-    p = at.fill(gamma, p_scalar)  # same shape as gamma
+    """
+    Inverse psychometric function.
+    Returns stimulus intensity that would produce a given probability p_scalar.
+    """
+    # Create tensor of p_scalar with correct shape for broadcasting
+    if gamma.ndim == 0:  # Scalar case
+        p = p_scalar
+    else:  # Vector case
+        p = pt.ones_like(gamma) * p_scalar
+    
+    # Calculate inner value with clipping to avoid numerical issues
     inner = (gamma - p) / (-1 + lambda_ + p)
-    inner = at.clip(inner, 1e-6, 1e6)
-    return -(beta0 - at.log(inner)) / beta1
+    inner = pt.clip(inner, 1e-6, 1e6)  
+    
+    # Calculate inverse
+    return -(beta0 - pt.log(inner)) / beta1
+
 
 def PSE_L_as(gamma, lambda_, beta0, beta1):
     return phi_inv_L_as(gamma, lambda_, beta0, beta1, 0.5)
+
 
 def JND_L_as(gamma, lambda_, beta0, beta1):
     x25 = phi_inv_L_as(gamma, lambda_, beta0, beta1, 0.25)
@@ -72,10 +97,10 @@ def JND_L_as(gamma, lambda_, beta0, beta1):
 
 with pm.Model() as model:
     # Load prior scales as symbolic variables
-    scale_gamma_h = at.as_tensor_variable(params_prior_scale[0])
-    scale_gamma_l = at.as_tensor_variable(params_prior_scale[1])
-    scale_beta0   = at.as_tensor_variable(params_prior_scale[2])
-    scale_beta1   = at.as_tensor_variable(params_prior_scale[3])
+    scale_gamma_h = pt.as_tensor_variable(params_prior_scale[0])
+    scale_gamma_l = pt.as_tensor_variable(params_prior_scale[1])
+    scale_beta0   = pt.as_tensor_variable(params_prior_scale[2])
+    scale_beta1   = pt.as_tensor_variable(params_prior_scale[3])
     
     # Hyperpriors (truncated normals)
     mu_xi = hhps_mvtn[0]
@@ -107,14 +132,31 @@ with pm.Model() as model:
     JND = pm.Deterministic("JND", JND_L_as(gamma_h, gamma_l, beta0, beta1))
     
     # Fixed stimulus levels
-    x_vals = at.as_tensor_variable([6, 12, 18, 24, 32, 38, 44, 50])
+    x_vals = pt.as_tensor_variable([6, 12, 18, 24, 32, 38, 44, 50])
     
     # Likelihood per session
     for s in range(S):
         p = phi_L_as(gamma_h[s], gamma_l[s], beta0[s], beta1[s], x_vals)
+        # Fix the dimensionality issue - p might be returning shape [1, n_stim_levels]
+        # but we need it to match C_data[s] which is [n_stim_levels]
+        p = p.flatten()  # Flatten to ensure dimensions match
         pm.Binomial(f"c_obs_{s}", n=N_mat[s], p=p, observed=C_data[s])
     
     # Sampling
     trace = pm.sample(num_post_samps, return_inferencedata=True, progressbar=True)
     
-    
+m_recb0 = np.array(az.summary(trace,"beta0")['mean'])
+l_recb0 = np.array(az.summary(trace,"beta0")['hdi_3%'])
+u_recb0 = np.array(az.summary(trace,"beta0")['hdi_97%'])
+
+fig = plt.figure()
+x = true_thetas[:,2]
+y = m_recb0
+
+
+plt.scatter(x, y, color = "black")
+plt.scatter(x, l_recb0, color = 'blue')
+plt.scatter(x,u_recb0, color ='blue')
+
+plt.plot([min(x),max(x)],[min(x),max(x)])
+plt.show()

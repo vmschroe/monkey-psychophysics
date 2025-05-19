@@ -7,7 +7,7 @@ Created on Mon Apr 14 19:11:56 2025
 """
 
 
-import scipy.stats
+import scipy.statsgp
 import numpy as np
 import pymc as pm
 import arviz as az
