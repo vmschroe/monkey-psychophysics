@@ -33,6 +33,8 @@ import aesara.tensor as at
 
 np.random.seed(12345)
 
+num_post_samps = 1000
+
 thetas_fixed = np.array([0.01, 0.05, -2.8, 0.1])  #gam, lam, b0, b1 = gam_h, gam_l,bet0,bet1
 xi_for_sim = np.transpose(np.array([[4,16],[6,16],[13,3],[6,25]])) #narrow
 xi_fixed = np.transpose(np.array([[2, 5], [2, 5], [1.15, 0.05], [1.25, 2.5]]))  # cols for each theta, rows for a and b
@@ -114,3 +116,5 @@ with pm.Model() as model:
     for s in range(S):
         p = ffg.phi_L([gamma_h[s], gamma_l[s], beta0[s], beta1[s]])
         pm.Binomial(f"c_obs_{s}", n=N_mat[s], p=p, observed=C_data[s])
+    
+    #trace = pm.sample(num_post_samps, return_inferencedata=True, progressbar=True)
