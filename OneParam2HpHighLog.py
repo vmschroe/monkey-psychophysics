@@ -19,11 +19,7 @@ import math
 from scipy.stats import binom
 import sys
 import FunctionsForGeneralized as ffg
-import seaborn as sns
 import pickle
-import time
-from datetime import datetime
-import subprocess
 from scipy.stats import gamma
 from scipy.stats import beta
 import ast
