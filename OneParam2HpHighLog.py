@@ -18,6 +18,7 @@ import os
 import math
 from scipy.stats import binom
 import sys
+sys.path.append(r"C:\Users\schro\Documents\Research\monkey-psychophysics")
 import FunctionsForGeneralized as ffg
 import pickle
 from scipy.stats import gamma
