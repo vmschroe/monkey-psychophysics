@@ -15,10 +15,11 @@ from scipy.stats import beta
 import ast
 from scipy.stats import truncnorm
 import pytensor.tensor as pt  # Use pytensor instead of aesara
+from arviz.stats.density_utils import kde
 
 np.random.seed(12345)
 
-num_post_samps = 1000
+num_post_samps = 2000
 
 thetas_fixed = np.array([0.01, 0.05, -2.8, 0.1])  #gam, lam, b0, b1 = gam_h, gam_l,bet0,bet1
 xi_for_sim = np.transpose(np.array([[4,16],[6,16],[13,3],[6,25]])) #narrow
@@ -105,7 +106,7 @@ with pm.Model() as model:
     # Hyperpriors (truncated normals)
     mu_xi = hhps_mvtn[0]
     sigma_xi = hhps_mvtn[1]
-    xi = pm.TruncatedNormal("xi", mu=mu_xi, sigma=sigma_xi, lower=0, shape=8)
+    xi = pm.TruncatedNormal("xi", mu=mu_xi, sigma=10*sigma_xi, lower=0, shape=8)
     
     alpha_h, beta_h = xi[0], xi[1]
     alpha_l, beta_l = xi[2], xi[3]
@@ -145,18 +146,65 @@ with pm.Model() as model:
     # Sampling
     trace = pm.sample(num_post_samps, return_inferencedata=True, progressbar=True)
     
-m_recb0 = np.array(az.summary(trace,"beta0")['mean'])
-l_recb0 = np.array(az.summary(trace,"beta0")['hdi_3%'])
-u_recb0 = np.array(az.summary(trace,"beta0")['hdi_97%'])
+# m_rec = np.array(az.summary(trace,"beta0")['mean'])
+# l_rec = np.array(az.summary(trace,"beta0")['hdi_3%'])
+# u_rec = np.array(az.summary(trace,"beta0")['hdi_97%'])
 
-fig = plt.figure()
-x = true_thetas[:,2]
-y = m_recb0
+# fig = plt.figure()
+# x = true_thetas[:,2]
+# y = m_rec
+
+# plt.scatter(x, y, color = "black")
+# plt.plot([min(x),max(x)],[min(x),max(x)])
+# plt.vlines(x,l_rec,u_rec,color ='blue')
+# plt.show()
+
+# for varn in ['beta1']:
+#     az.plot_trace(trace, var_names=varn, divergences=False)
+#     plt.show()
+    
+# az.plot_pair(trace, var_names = 'beta0', coords={'beta0_dim_0': [1, 2,3,4]},kind="kde", marginals=True)
+# az.plot_posterior(trace,var_names = 'xi', coords={'xi_dim_0': [4,5]},hdi_prob=0.95)
+# plt.hist(x)
+
+# az.plot_pair(trace, var_names = 'xi', coords={'xi_dim_0': [4,5]},kind="kde", marginals=True, hdi_prob=0.95)
+# b0recranges = az.summary(trace,var_names = 'xi', coords={'xi_dim_0': [4,5]})[['mean','hdi_3%','hdi_97%']]
+
+# a = np.linspace(b0recranges['hdi_3%'][0],b0recranges['hdi_97%'][0],10)
+# b = np.linspace(b0recranges['hdi_3%'][1],b0recranges['hdi_97%'][1],10)
+# x2 = np.linspace(0,12)
+
+# plt.hist(x,density=True)
+# for i in range(10):
+#     plt.plot(-x2, gamma.pdf(x2, a=a[i] ,scale=1/b[i]))
+
+# plt.hist(x,density=True)
+# az.plot_posterior(trace,var_names='PSE',combine_dims={'chain','draw','PSE_dim_0'})
+
+# PSES = []
+# for j in range(np.shape(true_thetas)[0]):
+#     PSES.append(ffg.PSE_L(true_thetas[j]))
+ 
 
 
-plt.scatter(x, y, color = "black")
-plt.scatter(x, l_recb0, color = 'blue')
-plt.scatter(x,u_recb0, color ='blue')
 
-plt.plot([min(x),max(x)],[min(x),max(x)])
+# az.plot_posterior(trace,var_names='PSE',combine_dims={'chain','draw','PSE_dim_0'}) 
+# az.plot_posterior(np.array(PSES),kind='hist')
+
+
+
+beta0_post_all = trace.posterior["beta0"].stack(sample=("chain", "draw", "beta0_dim_0")).values
+
+# beta0_post_all: 1D array of posterior samples
+x_vals, y_vals = kde(beta0_post_all)
+a_prior,b_prior = hhps_mvtn[0,4:6]
+# Now x_vals and y_vals contain the KDE curve
+plt.plot(-np.linspace(0,16,50),gamma.pdf(np.linspace(0,16,50),a = xi_for_sim[0,2],scale = 1/xi_for_sim[1,2]),color = 'green',label='distribution for data generation')
+plt.hist(np.array(true_thetas[:,2]),density=True, color = 'green', alpha=0.35, label = 'generated data')
+plt.plot(-np.linspace(0,16,50),gamma.pdf(np.linspace(0,16,50),a = a_prior ,scale = 1/b_prior),label='prior',color='orange')
+plt.plot(x_vals, y_vals, lw=2, alpha = .80, label = r"posteriors of $\beta_0$ (aggregated across sessions)", color='blue')
+plt.title(r"Hierarchal Model Recovery of $\beta_0$")
+plt.legend()
+plt.savefig('ParamBeta0RecovHighLog.png')
 plt.show()
+
