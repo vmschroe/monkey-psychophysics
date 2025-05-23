@@ -4,6 +4,9 @@ Created on Mon May 19 19:05:04 2025
 
 @author: schro
 """
+
+
+#TESTTEST
 import numpy as np
 import pymc as pm
 import arviz as az
