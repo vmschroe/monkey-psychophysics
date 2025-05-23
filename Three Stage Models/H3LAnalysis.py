@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """
+Analysis of data using 3 layer hierarchical model
+
+
 Created on Mon May 19 19:05:04 2025
 
 @author: schro
 """
 
 
-#OKBYE
+
 import numpy as np
 import pymc as pm
 import arviz as az
