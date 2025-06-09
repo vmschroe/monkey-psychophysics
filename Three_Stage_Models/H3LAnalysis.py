@@ -20,6 +20,7 @@ import os
 import math
 from scipy.stats import binom
 import sys
+sys.path.append("Two_Stage_Models")
 import FunctionsForGeneralized as ffg
 import pickle
 from scipy.stats import gamma
@@ -28,12 +29,13 @@ import ast
 from scipy.stats import truncnorm
 import pytensor.tensor as pt  # Use pytensor instead of aesara
 from arviz.stats.density_utils import kde
+sys.path.append("Three_Stage_Models")
 from High3sLogFuncs import HighLogAnalysis
 
-with open("psych_vecs_all.pkl", "rb") as f:
+with open("Data/psych_vecs_all.pkl", "rb") as f:
     data = pickle.load(f)  
     
-with open("session_summary.pkl", "rb") as f:
+with open("Data/session_summary.pkl", "rb") as f:
     sess_sum = pickle.load(f)  
     
 
@@ -66,8 +68,7 @@ for grp in grps:
 
 
 with open('H3sL_traces.pkl', 'wb') as file:
-    pickle.dump(traces, file)
-
+     pickle.dump(traces, file)
 
 
 for grp in grps:
