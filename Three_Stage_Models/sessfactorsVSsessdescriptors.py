@@ -75,26 +75,75 @@ for grp in grps:
 with open('H3sL_descrip_post_ests.pkl', 'wb') as file:
      pickle.dump(post_ests, file)
 
+ref_vals = {}
+ref_vals['PSE'] = 28
+ref_vals['JND'] = 6
+ref_vals['gamma_h'] = 0.01
+ref_vals['gamma_l'] = 0.01
+
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
-desc = 'gamma_h'
+
 x_vals = sess_sum['dates']
 numtrials = sess_sum['TrialsTotal']
 rewardtype = sess_sum['reward']
 dist = sess_sum['Dist_AMP']
 
-fig, axs = plt.subplots(3, 1, sharex=True)
-# Remove vertical space between Axes
-fig.subplots_adjust(hspace=0)
 
-# Plot each graph, and manually set the y tick values
-axs[0].plot(x_vals, dist)
-
-axs[1].plot(x_vals, post_ests['ln'][desc]['mean'], color = 'blue')
-axs[1].plot(x_vals, post_ests['ld'][desc]['mean'], color = 'red')
-
-axs[2].plot(x_vals, post_ests['ln'][desc]['mean'], color = 'blue')
-axs[2].plot(x_vals, post_ests['ld'][desc]['mean'], color = 'red')
-
-plt.show()
+for desc in descriptors:
+    fig, axs = plt.subplots(3, 1, figsize=(12, 6), sharex=True)
+    # Remove vertical space between Axes
+    fig.subplots_adjust(hspace=0)
+    
+    # Plot each graph, and manually set the y tick values
+    axs[0].plot(x_vals, dist,'.g-')
+    
+    axs[1].plot(x_vals, post_ests['ln'][desc]['mean'], '.b-')
+    axs[1].fill_between(x_vals, post_ests['ln'][desc]['lHDI'], post_ests['ln'][desc]['hHDI'], color='blue', alpha=0.2)
+    
+    axs[1].plot(x_vals, post_ests['ld'][desc]['mean'], '.r-')
+    axs[1].fill_between(x_vals, post_ests['ld'][desc]['lHDI'], post_ests['ld'][desc]['hHDI'], color='red', alpha=0.2)
+    
+    axs[2].plot(x_vals, post_ests['rn'][desc]['mean'],'.b-')
+    axs[2].fill_between(x_vals, post_ests['rn'][desc]['lHDI'], post_ests['rn'][desc]['hHDI'], color='blue', alpha=0.2)
+    
+    axs[2].plot(x_vals, post_ests['rd'][desc]['mean'],'.r-')
+    axs[2].fill_between(x_vals, post_ests['rd'][desc]['lHDI'], post_ests['rd'][desc]['hHDI'], color='red', alpha=0.2)
+    
+    ymins = []
+    ymaxs = []
+    
+    for ax in [axs[1], axs[2]]:
+        ymin, ymax = ax.get_ylim()
+        ymins.append(ymin)
+        ymaxs.append(ymax)
+    
+    shared_ymin = min(ymins)
+    shared_ymax = max(ymaxs)
+    
+    for ax in [axs[1], axs[2]]:
+        ax.set_ylim(shared_ymin, shared_ymax)
+    
+    # Set x-axis major ticks to Sundays
+    sunday_locator = mdates.WeekdayLocator(byweekday=6)  # 6 = Sunday
+    axs[2].xaxis.set_major_locator(sunday_locator)
+    
+    # Optional: format the date labels
+    axs[2].xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
+    
+    # Enable grid only on Sundays
+    for ax in axs:
+        ax.grid(True, which='major', axis='x')
+    
+    axs[0].set_ylabel("Distractor")
+    axs[1].set_ylabel("Left " + desc)
+    axs[2].set_ylabel("Right " + desc)
+    axs[2].set_xlabel("Date") 
+    
+    fig.autofmt_xdate()
+    fig.suptitle("Posterior Estimates of " + desc+ " Over Time", fontsize=14)
+    plt.savefig(desc+'_post_ests_over_time_HL.png')
+    
+    plt.show()
