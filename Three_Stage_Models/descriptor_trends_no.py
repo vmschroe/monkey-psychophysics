@@ -11,7 +11,8 @@ import pandas as pd
 import os
 import numpy as np
 from sklearn.linear_model import LinearRegression
-
+import arviz as az
+import matplotlib.pyplot as plt
 
 #looking for trends in descriptors related to weekdays or familiarity with dist level
 
@@ -82,3 +83,43 @@ for desc in descriptors:
 
 
 
+with open("/home/vmschroe/Documents/Monkey Analysis/H3sL_traces.pkl", "rb") as f:
+    traces = pickle.load(f)  
+    
+left = 'ld'
+right = 'rd'
+
+for param in ['gamma_h', 'gamma_l', 'beta0', 'beta1','PSE','JND']:
+
+#param = 'PSE'
+    l_means = np.array(az.summary(traces[left], var_names=param)['mean'])
+    r_means = np.array(az.summary(traces[right], var_names=param)['mean'])
+    
+    lstd = np.std(l_means)
+    rstd = np.std(r_means)
+    
+    hstd = 0.5*(lstd+rstd)
+    sstd = 0.5*np.mean(np.abs(l_means-r_means))
+    
+    
+    if hstd<sstd:
+        grp_by = "hand"
+        rat = hstd/sstd
+    else:
+        grp_by = "session"
+        rat = sstd/hstd
+    
+    print('------')
+    print(param)
+    print("Hand deviation: "+ str(hstd))
+    print("Session deviation: "+ str(sstd))
+    print("For "+param+", group by: "+grp_by)
+    print("Confidence: "+ str(1-rat))
+    
+    x_vals = np.arange(len(l_means))
+    
+    
+    plt.scatter(x_vals, l_means,c='black')
+    plt.scatter(x_vals, r_means,c='blue')
+    plt.title(left+right+param)
+    plt.show()
