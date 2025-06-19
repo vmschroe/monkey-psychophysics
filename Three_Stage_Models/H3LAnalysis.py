@@ -20,7 +20,7 @@ import os
 import math
 from scipy.stats import binom
 import sys
-sys.path.append("Two_Stage_Models")
+sys.path.append("C:\\Users\\schro\\Miniconda3\\envs\\pymc-env\\monkey-psychophysics\\Two_Stage_Models")
 import FunctionsForGeneralized as ffg
 import pickle
 from scipy.stats import gamma
@@ -29,12 +29,13 @@ import ast
 from scipy.stats import truncnorm
 import pytensor.tensor as pt  # Use pytensor instead of aesara
 from arviz.stats.density_utils import kde
-sys.path.append("Three_Stage_Models")
+sys.path.append("monkey-psychophysics\\Three_Stage_Models")
 from High3sLogFuncs import HighLogAnalysis
+
 
 with open("Data/psych_vecs_all.pkl", "rb") as f:
     data = pickle.load(f)  
-    
+
 with open("Data/session_summary.pkl", "rb") as f:
     sess_sum = pickle.load(f)  
     
