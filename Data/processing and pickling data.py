@@ -3,6 +3,10 @@
 Created on Wed Mar 12 19:12:49 2025
 
 @author: schro
+
+improvement on loaddata
+
+
 """
 
 import pandas as pd
