@@ -7,6 +7,10 @@ Created on Wed Jun 18 19:03:48 2025
 
 from sklearn.metrics import mean_squared_error
 from matplotlib.lines import Line2D
+from Three_Stage_Models.High3sLogFuncs import HighLogAnalysis
+# from Two_Stage_Models import bayes4param_ppc as b4p
+
+#%%
 
 plot_save = False
 
@@ -47,7 +51,7 @@ def strat_K_split(C,N,K=3, info = False):
     return C_split, N_split
 #  C_split, N_split = strat_K_split(C, N, K = 3, info = False)
 
-def K_fold_train_test_split(C_split, N_split, agg_sess = True):
+def K_fold_train_test_split(C, N, K=3, info = False):
     """
     constructs K holdout/training sets from K stratified folds
 
@@ -57,18 +61,34 @@ def K_fold_train_test_split(C_split, N_split, agg_sess = True):
     agg_sess : bool, whether to aggregate session data or leave it stratified
     
     Returns:
-    training_sets, testing_sets : dictionaries with keys 0:K, each containing dictionary with 'C' and 'N'
+    ready_data = {
+        'sess_pool': {
+            'train': pool_train ~dict with K keys, each w dict with 'C' and 'N'
+            'test': pool_test, 
+            'all': all_pool}, ~dict with K keys, each w trunced data
+        'sess_strat': {
+            'train': strat_train, 
+            'test':strat_test, 
+            'all': all_strat}}
+    
     """
+    C_split, N_split = strat_K_split(C, N, K=K, info = info)
+    
     Nsess, _, K = C_split.shape
     if C_split.shape != N_split.shape:
         print('Error: size mismatch between C and N matrices')
-        return
+        #return
     
-    training_sets = {}
-    testing_sets = {}
+    pool_train = {}
+    pool_test = {}
     strat_train = {}
     strat_test = {}
-    
+    C_all_strat = np.sum(C_split, axis = 2)
+    N_all_strat = np.sum(N_split, axis = 2)
+    C_all_pool = np.sum(C_split, axis = (0,2))
+    N_all_pool = np.sum(N_split, axis = (0,2))
+    all_pool = {'C': C_all_pool, 'N': N_all_pool}
+    all_strat = {'C': C_all_strat, 'N': N_all_strat}
     for j in range(K):
         testC = C_split[:,:,j]
         testN = N_split[:,:,j]
@@ -78,20 +98,24 @@ def K_fold_train_test_split(C_split, N_split, agg_sess = True):
         trainC = np.sum(trainC, axis = 2)
         trainN = np.sum(trainN, axis = 2)
     
-        if agg_sess == True:
-            testCagg = np.sum(testC, axis = 0)
-            testNagg = np.sum(testN, axis = 0)
-            trainCagg = np.sum(trainC, axis = 0)
-            trainNagg = np.sum(trainN, axis = 0)
+        testCpool = np.sum(testC, axis = 0)
+        testNpool = np.sum(testN, axis = 0)
+        trainCpool = np.sum(trainC, axis = 0)
+        trainNpool = np.sum(trainN, axis = 0)
+        
+        pool_train[j] = {'C': trainCpool, 'N': trainNpool}
+        pool_test[j] = {'C': testCpool, 'N': testNpool}
         strat_train[j] = {'C': trainC, 'N': trainN}
-        testing_sets[j] = {'C': testC, 'N': testN}
-        training_sets[j] = {'C': trainC, 'N': trainN}
-        testing_sets[j] = {'C': testC, 'N': testN}
-    
-    return training_sets, testing_sets, strat_data
-# training_sets, testing_sets = K_fold_train_test_split(C_split, N_split, agg_sess = True)       
+        strat_test[j] = {'C': testC, 'N': testN}
+       
+    ready_data = {'sess_pool': {'train': pool_train, 'test': pool_test, 'all': all_pool}, 'sess_strat': {'train': strat_train, 'test':strat_test, 'all': all_strat}}
+    return ready_data
+# ready_data = K_fold_train_test_split(C, N, K=3, info = False) 
+    #   ready_data = {'sess_pool': {'train': pool_train, 'test': pool_test, 'all': all_pool}, 
+    #               'sess_strat': {'train': strat_train, 'test':strat_test, 'all': all_strat}}
+    #   ready_data['sess_pool']['train'][j]['C']
 
-def fit_baysian_model(C, N, trace=False):
+def fit_bayesian_model(C, N, trace=False):
     with pm.Model() as model_pooled:
         # Define priors for the parameters
         W_gam = pm.Beta("W_gam",alpha=params_prior_params[0][0],beta=params_prior_params[0][1])
@@ -115,76 +139,47 @@ def fit_baysian_model(C, N, trace=False):
         return trace_pooled
     fit_params = np.array(az.summary(trace_pooled)['mean'][['gam','lam','b0','b1']])
     return fit_params
-# fit_params = fit_baysian_model(C, N, trace=False)
+# fit_params = fit_bayesian_model(C, N, trace=False)
 
-def predict_c(fit_params, testN):
-    p_pred = ffb.phi_with_lapses(fit_params,x)
-    C_pred = p_pred*testN
-    return C_pred
-# C_pred = predict_c(fit_params, testN)
+def fit_hier_model(C,N,trace = False):
+    temp_dict = {}
+    temp_dict['C_mat'] = C
+    temp_dict['N_mat'] = N
+    trace_strat = HighLogAnalysis(temp_dict)
+    if trace:
+        return trace_strat
+    fit_params = np.array(az.summary(trace_strat, var_names = ['gamma_h', 'gamma_l', 'beta0', 'beta1'])['mean']).reshape((4,-1)).T
+    return fit_params
 
-def predict_all_data(C,N,K=3):
-    C_split, N_split = strat_K_split(C,N,K)
-    training_sets, testing_sets, strat_data = K_fold_train_test_split(C_split, N_split, agg_sess = True)
+
+def bayes_preds(training_sets, testing_sets, K=3):
+    def predict_c(fit_params, testN):
+        p_pred = ffb.phi_with_lapses(fit_params,x)
+        C_pred = p_pred*testN
+        return C_pred
     Cpred = np.full((1,8),0)
-    Ctrue = np.sum(C_split, axis=(0,2))
-    N_after = np.sum(N_split, axis=(0,2))
     for j in range(K):
+        print(f'~~~~~ {j+1} of {K} ~~~~~~')
         train = training_sets[j]
         test = testing_sets[j]
-        fit_params = fit_baysian_model(train['C'], train['N'])
-        Cpred = Cpred + np.round(predict_c(fit_params, test['N']))
-    return Cpred, Ctrue
-# Cpred, Ctrue = predict_all_data(C,N,K=3)
-
-def repeat_preds(data_dict, K=3, reps=10):
-    C_preds = []
-    C_trues = []
-    for rep in range(reps):
-        C_pred = {}
-        C_true = {}
-        for grp in ['ld','ln','rd','rn']:
-            C_pred[grp], C_true[grp] = predict_all_data(C = data_dict[grp]['C_mat'], N = data_dict[grp]['N_mat'],K=K)
-        
-        C_pred = np.array(list(C_pred.values())).reshape((1,-1))
-        C_true = np.array(list(C_true.values())).reshape((1,-1))
-        C_preds.append(C_pred)
-        C_trues.append(C_true)
-    return np.array(C_preds), np.array(C_trues)
-# preds_array, trues_array = repeat_preds(data_dict, K=3, reps=10)
-
-preds, trues = repeat_preds(data_dict)
-
-trues = trues.reshape((10,4,8))
-preds = preds.reshape((10,4,8))
+        fit_params = fit_bayesian_model(train['C'], train['N'])
+        Cpred = Cpred + predict_c(fit_params, test['N'])
+    return Cpred
+# Cpred = bayes_preds(training_sets, testing_sets, K=3)
 
 
-N_split = {}
-for grp in ['ld','ln','rd','rn']:
-    _, N_split[grp] = strat_K_split(C = data_dict[grp]['C_mat'], N = data_dict[grp]['N_mat'],K=3, info = True)
-
-N_after = {}
-for grp in ['ld','ln','rd','rn']:
-    N_after[grp] = np.sum(N_split[grp],axis=(0,2))
+def plot_KFoldCV(preds, trues, Ns, K, model_name, plot_save=False):
+    residuals = trues-preds
+    res_ps=residuals/Ns
+    # Define colors for the four groups
+    colors = ['red', 'navy', 'pink', 'skyblue']
+    offset = np.array([-1.2,-.4,.4,1.2])
+    labels = ['left hand, distracted', 
+              'left hand, not distracted', 
+              'right hand, distracted', 
+              'right hand, not distracted']
     
-Ns = np.array(list(N_after.values())).reshape((1,-1))
-
-Ns = np.vstack([Ns]*10).reshape((10,4,8))
-
-residuals = trues-preds
-x = np.array(x)
-res_ps=residuals/Ns
-# Define colors for the four groups
-colors = ['red', 'navy', 'pink', 'skyblue']
-offset = np.array([-1.2,-.4,.4,1.2])
-labels = ['left hand, distracted', 
-          'left hand, not distracted', 
-          'right hand, distracted', 
-          'right hand, not distracted']
-
-
-# Create scatter plot
-if plot_save:
+    
     plt.figure(figsize=(8, 6))
     for group in range(4):
         for i in range(8):
@@ -194,7 +189,7 @@ if plot_save:
     plt.hlines(0,4,52,colors='gray',linestyle=':')
     plt.xlabel('stim amp')
     plt.ylabel('residuals')
-    plt.title('Error in Response Proportion Prediction: 3-Fold Cross-Validation of Bayesian Model')
+    plt.title(f'Error in Response Proportion Prediction: {K}-Fold Cross-Validation of {model_name} Model')
     legend_handles = [
         Line2D([0], [0], marker='o', color='w', label=labels[i],
                markerfacecolor=colors[i], markeredgecolor=colors[i], markersize=8,
@@ -204,8 +199,51 @@ if plot_save:
     plt.xticks(x_ticks)
     plt.legend(handles=legend_handles, title="Mean ± SD")
     plt.tight_layout()
-    plt.savefig(f'Bayes_3Fold_CV_plot.png')
+    if plot_save:
+        plt.savefig(f'{model_name[:5]}_{K}Fold_CV_plot.png')
     plt.show()
+
+#%%
+K=3
+reps = 2
+
+#split data and do repeated bayesian predictions
+total_num_models = reps*4
+model_running = 0
+split_data_all = {}
+C_pred = {}
+for rep in range(reps):
+    split_data_all[rep] = {}
+    C_pred[rep] = {}
+    for grp in ['ld','ln','rd','rn']:
+        model_running += 1
+        print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+        print(f'~~~ Fitting model set {model_running} of {total_num_models} ~~~')
+        ready_data = K_fold_train_test_split(data_dict[grp]['C_mat'], N = data_dict[grp]['N_mat'], K=K)
+        split_data_all[rep][grp] = ready_data
+        training_sets = ready_data['sess_pool']['train']
+        testing_sets = ready_data['sess_pool']['test']
+        C_pred[rep][grp] = bayes_preds(training_sets, testing_sets, K=K)
+
+#%%
+
+#format bayesian predictions
+preds = np.zeros((reps, 4, 8))
+trues = np.zeros((reps, 4, 8))
+Ns = np.zeros((reps, 4, 8))
+# Fill it
+for i in range(reps):
+    for j, group in enumerate(['ld', 'ln', 'rd', 'rn']):
+        preds[i, j, :] = C_pred[i][group]
+        trues[i, j, :] = split_data_all[i][group]['sess_pool']['all']['C']
+        Ns[i, j, :] = split_data_all[i][group]['sess_pool']['all']['N']
+
+
+#plot
+plot_KFoldCV(preds, trues, Ns, K, 'Bayesian', plot_save=False)
+
+
+#%%
 # rmse = mean_squared_error(C_true.T,C_pred.T,squared=False)
 
 # plt.scatter(C_true.reshape((1,-1)),C_pred.reshape((1,-1))-C_true.reshape((1,-1)))
