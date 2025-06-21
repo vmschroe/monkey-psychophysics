@@ -145,13 +145,29 @@ def fit_hier_model(C,N,trace = False):
     temp_dict = {}
     temp_dict['C_mat'] = C
     temp_dict['N_mat'] = N
-    trace_strat = HighLogAnalysis(temp_dict)
+    trace_strat = HighLogAnalysis(temp_dict, mu_xi = np.array([1.,4.,1.,4.,6.,1.,1.,5.]), sigma_xi = 4*np.array([1.,4.,1.,4.,6.,1.,1.,5.]))
     if trace:
         return trace_strat
     fit_params = np.array(az.summary(trace_strat, var_names = ['gamma_h', 'gamma_l', 'beta0', 'beta1'])['mean']).reshape((4,-1)).T
     return fit_params
 
-
+def hier_preds(training_sets, testing_sets, K=3, Nsess=43):
+    def predict_c(fit_params, testN):
+        p_pred = np.full((Nsess,8),0)
+        for s in range(Nsess):
+            p_pred[s,:] = ffb.phi_with_lapses(fit_params[s,:],x)
+        C_pred = p_pred*testN
+        return C_pred
+    Cpred = np.full((Nsess,8),0)
+    for j in range(K):
+        print(f'~~~~~ {j+1} of {K} ~~~~~~')
+        train = training_sets[j]
+        test = testing_sets[j]
+        fit_params = fit_bayesian_model(train['C'], train['N'])
+        Cpred = Cpred + predict_c(fit_params, test['N'])
+    return Cpred
+    
+    
 def bayes_preds(training_sets, testing_sets, K=3):
     def predict_c(fit_params, testN):
         p_pred = ffb.phi_with_lapses(fit_params,x)
@@ -206,6 +222,7 @@ def plot_KFoldCV(preds, trues, Ns, K, model_name, plot_save=False):
 #%%
 K=3
 reps = 2
+Nsess=43
 
 #split data and do repeated bayesian predictions
 total_num_models = reps*4
@@ -244,6 +261,40 @@ plot_KFoldCV(preds, trues, Ns, K, 'Bayesian', plot_save=False)
 
 
 #%%
+# do hierarchicical predictions
+model_running = 0
+C_pred_hier = {}
+for rep in range(reps):
+    split_data_all[rep] = {}
+    C_pred_hier[rep] = {}
+    for grp in ['ld','ln','rd','rn']:
+        model_running += 1
+        print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+        print(f'~~~ Fitting model set {model_running} of {total_num_models} ~~~')
+        ready_data = split_data_all[rep][grp]
+        training_sets = ready_data['sess_strat']['train']
+        testing_sets = ready_data['sess_strat']['test']
+        C_pred_hier[rep][grp] = hier_preds(training_sets, testing_sets, K=K)
+
+#%%
+
+#format heirarchical predictions
+hier_preds = np.zeros((reps, 4, Nsess, 8))
+hier_trues = np.zeros((reps, 4, Nsess, 8))
+Ns_hier = np.zeros((reps, 4, Nsess, 8))
+# Fill it
+for i in range(reps):
+    for j, group in enumerate(['ld', 'ln', 'rd', 'rn']):
+        preds[i, j, :, :] = C_pred_hier[i][group]
+        trues[i, j, :, :] = split_data_all[i][group]['sess_strat']['all']['C']
+        Ns_hier[i, j, :, :] = split_data_all[i][group]['sess_strat']['all']['N']
+
+
+
+
+
+
+
 # rmse = mean_squared_error(C_true.T,C_pred.T,squared=False)
 
 # plt.scatter(C_true.reshape((1,-1)),C_pred.reshape((1,-1))-C_true.reshape((1,-1)))
