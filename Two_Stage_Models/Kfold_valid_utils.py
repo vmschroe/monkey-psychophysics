@@ -220,10 +220,14 @@ def plot_KFoldCV(preds, trues, Ns, K, model_name, plot_save=False):
     plt.show()
 
 #%%
-K=3
-reps = 2
+K=4
+reps = 4
 Nsess=43
-
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+print('~~~~~~~~~~~RUNNING BAYESIAN~~~~~~~~~~')
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 #split data and do repeated bayesian predictions
 total_num_models = reps*4
 model_running = 0
@@ -257,15 +261,21 @@ for i in range(reps):
 
 
 #plot
-plot_KFoldCV(preds, trues, Ns, K, 'Bayesian', plot_save=False)
+plot_KFoldCV(preds, trues, Ns, K, 'Bayesian', plot_save=True)
 
 
 #%%
 # do hierarchicical predictions
+
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+print('~~~~~~~~~~~RUNNING HIERARCHICAL~~~~~~~~~~')
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
 model_running = 0
 C_pred_hier = {}
 for rep in range(reps):
-    split_data_all[rep] = {}
     C_pred_hier[rep] = {}
     for grp in ['ld','ln','rd','rn']:
         model_running += 1
