@@ -220,8 +220,8 @@ def plot_KFoldCV(preds, trues, Ns, K, model_name, plot_save=False):
     plt.show()
 
 #%%
-K=4
-reps = 4
+K=3
+reps = 5
 Nsess=43
 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
