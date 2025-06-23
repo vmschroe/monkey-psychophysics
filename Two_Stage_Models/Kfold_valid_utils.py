@@ -404,4 +404,47 @@ for i, res in enumerate([results_pool, results_strat]):
         for form in ['C', 'P']:
             print('~~~~~~'+form)
             print('~~~~~~'+str(np.mean(res[form][mod]['rmses'])))
+
             
+#%%
+trace_bayes = fit_bayesian_model(ready_data['sess_pool']['all']['C'], ready_data['sess_pool']['all']['N'], trace = True)
+trace_hier = fit_hier_model(ready_data['sess_strat']['all']['C'], ready_data['sess_strat']['all']['N'], trace = True)
+
+#%%
+
+az.plot_trace(trace_bayes, var_names=['gam', 'lam', 'pse', 'jnd'], figsize=(15, 10), combined=False)
+
+# Adjust spacing between plots
+plt.tight_layout(pad=2.0)  # Increase pad as needed
+plt.savefig('bayes_traceplots.png')
+plt.show()
+
+#%%
+s=25
+az.plot_trace(trace_hier, var_names=['gamma_h', 'gamma_l', 'PSE', 'JND'], figsize=(15, 10), coords = {'gamma_h_dim_0':[s], 'gamma_l_dim_0':[s], 'PSE_dim_0':[s], 'JND_dim_0':[s]},  combined=False)
+
+# Adjust spacing between plots
+plt.tight_layout(pad=2.0)  # Increase pad as needed
+plt.savefig('hier_session_traceplots.png')
+plt.show()
+
+#%%
+
+az.plot_pair(trace_hier, var_names=['xi'], figsize=(15, 10), coords = {'xi_dim_0':[0, 2, 4, 6]}, kind = 'kde')
+
+# Adjust spacing between plots
+plt.tight_layout(pad=2.0)  # Increase pad as needed
+plt.savefig('hier_post_xi.png')
+plt.show()
+
+#%%
+
+az.plot_pair(trace_hier, var_names=['gamma_h', 'gamma_l', 'PSE', 'JND'], figsize=(15, 10), coords = {'gamma_h_dim_0':[s], 'gamma_l_dim_0':[s], 'PSE_dim_0':[s], 'JND_dim_0':[s]}, kind = 'kde')
+
+# Adjust spacing between plots
+plt.tight_layout(pad=2.0)  # Increase pad as needed
+plt.savefig('hier_post_desc.png')
+plt.show()
+
+
+
