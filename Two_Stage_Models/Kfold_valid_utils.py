@@ -153,9 +153,10 @@ def fit_hier_model(C,N,trace = False):
 
 def hier_preds(training_sets, testing_sets, K=3, Nsess=43):
     def predict_c(fit_params, testN):
-        p_pred = np.full((Nsess,8),0)
+        p_pred = np.array([])
         for s in range(Nsess):
-            p_pred[s,:] = ffb.phi_with_lapses(fit_params[s,:],x)
+            p_pred = np.append(p_pred,ffb.phi_with_lapses(fit_params[s,:],x))
+        p_pred = p_pred.reshape((-1,8))
         C_pred = p_pred*testN
         return C_pred
     Cpred = np.full((Nsess,8),0)
@@ -163,7 +164,7 @@ def hier_preds(training_sets, testing_sets, K=3, Nsess=43):
         print(f'~~~~~ {j+1} of {K} ~~~~~~')
         train = training_sets[j]
         test = testing_sets[j]
-        fit_params = fit_bayesian_model(train['C'], train['N'])
+        fit_params = fit_hier_model(train['C'], train['N'])
         Cpred = Cpred + predict_c(fit_params, test['N'])
     return Cpred
     
@@ -184,7 +185,7 @@ def bayes_preds(training_sets, testing_sets, K=3):
 # Cpred = bayes_preds(training_sets, testing_sets, K=3)
 
 
-def plot_KFoldCV(preds, trues, Ns, K, model_name, plot_save=False):
+def plot_KFoldCV(preds, trues, Ns, K, model_name, plot_save=False, ylims = [-0.06, 0.06]):
     residuals = trues-preds
     res_ps=residuals/Ns
     # Define colors for the four groups
@@ -212,6 +213,7 @@ def plot_KFoldCV(preds, trues, Ns, K, model_name, plot_save=False):
                linestyle='None') for i in range(4)
     ]
     x_ticks = np.array([6, 12, 18, 24, 28, 32, 38, 44, 50])
+    plt.ylim(*ylims)
     plt.xticks(x_ticks)
     plt.legend(handles=legend_handles, title="Mean ± SD")
     plt.tight_layout()
@@ -260,10 +262,6 @@ for i in range(reps):
         Ns[i, j, :] = split_data_all[i][group]['sess_pool']['all']['N']
 
 
-#plot
-plot_KFoldCV(preds, trues, Ns, K, 'Bayesian', plot_save=True)
-
-
 #%%
 # do hierarchicical predictions
 
@@ -295,17 +293,115 @@ Ns_hier = np.zeros((reps, 4, Nsess, 8))
 # Fill it
 for i in range(reps):
     for j, group in enumerate(['ld', 'ln', 'rd', 'rn']):
-        preds[i, j, :, :] = C_pred_hier[i][group]
-        trues[i, j, :, :] = split_data_all[i][group]['sess_strat']['all']['C']
+        hier_preds[i, j, :, :] = C_pred_hier[i][group]
+        hier_trues[i, j, :, :] = split_data_all[i][group]['sess_strat']['all']['C']
         Ns_hier[i, j, :, :] = split_data_all[i][group]['sess_strat']['all']['N']
 
 
 
 
+#%%
+hier_preds_agg = np.sum(hier_preds, axis = 2)
+hier_trues_agg = np.sum(hier_trues, axis = 2)
+Ns_hier_agg = np.sum(Ns_hier, axis = 2)
+
+#%%
+
+#plot
+plot_KFoldCV(hier_preds_agg, hier_trues_agg, Ns_hier_agg, K, 'Hierarchical', plot_save=True)
+plot_KFoldCV(preds, trues, Ns, K, 'Bayesian', plot_save=True)
 
 
+#%%
+hier_pred_props_strat = hier_preds / Ns_hier
+trues_props_strat = hier_trues / Ns_hier
+
+bayes_pred_props_agg = preds/Ns
+bayes_pred_props_strat = np.stack([bayes_pred_props_agg] * 43, axis=2)
+bayes_preds_strat = bayes_pred_props_strat*Ns_hier
+
+#%%
+
+results_pool = {'N': Ns, 
+                'C': {'true': trues,
+                    'bayes': {'est': preds, 'rmses': 9},
+                    'hier': {'est': hier_preds_agg, 'rmses': 9}}, 
+                'P': {'true': trues/Ns,
+                    'bayes': {'est': preds/Ns, 'rmses': 9},
+                    'hier': {'est': hier_preds_agg/Ns, 'rmses': 9}}}
+results_strat = {'N': Ns_hier, 
+                'C': {'true': hier_trues,
+                    'bayes': {'est': bayes_preds_strat, 'rmses': 9},
+                    'hier': {'est': hier_preds, 'rmses': 9}}, 
+                'P': {'true': trues_props_strat,
+                    'bayes': {'est': bayes_pred_props_strat, 'rmses': 9},
+                    'hier': {'est': hier_pred_props_strat, 'rmses': 9}}}
+
+for res in [results_pool, results_strat]:
+    for form in ['C', 'P']:
+        temp_true = res[form]['true'].reshape(-1,8)
+        for mod in ['bayes', 'hier']:
+            temp_pred = res[form][mod]['est'].reshape(-1,8)
+            res[form][mod]['rmses'] = mean_squared_error(temp_true, temp_pred, squared = False, multioutput = 'raw_values')
 
 # rmse = mean_squared_error(C_true.T,C_pred.T,squared=False)
 
+
 # plt.scatter(C_true.reshape((1,-1)),C_pred.reshape((1,-1))-C_true.reshape((1,-1)))
 # plt.hist(C_pred.reshape(32)-C_true.reshape(32))
+
+
+#%%
+
+for res in [results_pool, results_strat]:
+    for form in ['C', 'P']:
+        temp_true = res[form]['true'].reshape(-1,8)
+        for mod in ['bayes', 'hier']:
+            temp_pred = res[form][mod]['est'].reshape(-1,8)
+            temp_errs = temp_pred-temp_true
+            res[form][mod]['err_means'] = np.mean(temp_errs, axis=0)
+            res[form][mod]['err_stds'] = np.std(temp_errs, axis=0)
+            res[form][mod]['err_mins'] = np.min(temp_errs, axis=0)
+            res[form][mod]['err_maxs'] = np.max(temp_errs, axis=0)
+            
+            
+#%%
+cols = ['orange','green']
+model_names = ['Bayesian', 'Hierarchical']
+res_type = ['Pooled-Session', 'Session-Specific']
+
+offsets = [-0.5,0.5]
+form = 'P'
+
+i = 1
+for i, res in enumerate([results_pool, results_strat]):
+    for j, mod in enumerate(['bayes', 'hier']):
+        col = cols[j]
+        offset = offsets[j]
+        temp_means = res[form][mod]['err_means']
+        temp_stds = res[form][mod]['err_stds']
+        temp_mins = res[form][mod]['err_mins']
+        temp_maxs = res[form][mod]['err_maxs']
+        plt.errorbar(x+offset, temp_means, yerr=temp_stds, fmt = 'o', elinewidth = 3, capsize = 3, color = col, label = model_names[j])
+        #plt.errorbar(x+offset, temp_means, yerr=[temp_means-temp_mins, temp_maxs-temp_means], fmt = 'o', elinewidth = 1, color = col)
+        x_ticks = np.array([6, 12, 18, 24, 28, 32, 38, 44, 50])
+        plt.xticks(x_ticks)
+        # plt.scatter(x+offset, temp_mins, marker = '*', c=col)
+        # plt.scatter(x+offset, temp_maxs, marker = '*', c=col)
+        plt.legend(title="Mean ± SD")
+        plt.title(res_type[i])
+        plt.xlabel('Stimulus Amplitude')
+        plt.ylabel('Error in Predicted Response Probability')
+    plt.savefig(f'{res_type[i][:5]}_{K}Fold_errs_plot.png')
+    plt.show()
+
+#%%
+
+for i, res in enumerate([results_pool, results_strat]):
+    print(res_type[i])
+    for j, mod in enumerate(['bayes', 'hier']):
+        print('~~~'+model_names[j])
+        for form in ['C', 'P']:
+            print('~~~~~~'+form)
+            print('~~~~~~'+str(np.mean(res[form][mod]['rmses'])))
+            
