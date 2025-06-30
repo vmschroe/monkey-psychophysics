@@ -82,7 +82,7 @@ def JND_L_as(gamma, lambda_, beta0, beta1):
     x75 = phi_inv_L_as(gamma, lambda_, beta0, beta1, 0.75)
     return 0.5 * (x75 - x25)
 
-hhps_mvtn = np.load('Three_Stage_Models/hhps_prior_mv_trunc_norm.npy') #8 cols (for each xi), 2 rows (for mean and std)
+#hhps_mvtn = np.load('Three_Stage_Models/hhps_prior_mv_trunc_norm.npy') #8 cols (for each xi), 2 rows (for mean and std)
 
 
 def HighLogAnalysis(data_dict, mu_xi = np.full(8,8), sigma_xi = np.full(8,16), num_post_samps=2000):
