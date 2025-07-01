@@ -32,35 +32,42 @@ from Three_Stage_Models.High3sLogFuncs import phi_L_as
 x_orig = np.array([6, 12, 18, 24, 32, 38, 44, 50])
 x_new = (x_orig - np.mean(x_orig) ) / np.std(x_orig)
 
+#%%
+
 def compute_PSE_JND(gamma_h, gamma_l, beta0, beta1):
     jnd_log_term = np.log(1-gamma_h)+np.log(1-gamma_l)-np.log(3-gamma_h)-np.log(3-gamma_l)
-    jnd = jnd_log_term/(2*beta1)
+    jnd = jnd_log_term/(-2*beta1)
     
     pse_log_term = np.log(1-2*gamma_l)+np.log(1-2*gamma_h)
-    pse = (-beta0+pse_log_term)/beta1
+    pse = -(beta0+pse_log_term)/beta1
     return pse, jnd
 
 def compute_betas(gamma_h, gamma_l, pse, jnd):
     jnd_log_term = np.log(1-gamma_h)+np.log(1-gamma_l)-np.log(3-gamma_h)-np.log(3-gamma_l)
-    beta1 = jnd_log_term/(2*jnd)
+    beta1 = jnd_log_term/(-2*jnd)
     
     pse_log_term = np.log(1-2*gamma_l)+np.log(1-2*gamma_h)
-    beta0 = -beta1*pse + pse_log_term
+    beta0 = -beta1*pse - pse_log_term
     return beta0, beta1
 
 
 def compute_PSE_JND_pt(gamma_h, gamma_l, beta0, beta1, eps=1e-12):
+    gamma_h = pt.as_tensor_variable(gamma_h)
+    gamma_l = pt.as_tensor_variable(gamma_l)
+    beta0 = pt.as_tensor_variable(beta0)
+    beta1 = pt.as_tensor_variable(beta1)
+
     jnd_log_term = pt.log(pt.clip(1 - gamma_h, eps, 1e12)) \
                  + pt.log(pt.clip(1 - gamma_l, eps, 1e12)) \
                  - pt.log(pt.clip(3 - gamma_h, eps, 1e12)) \
                  - pt.log(pt.clip(3 - gamma_l, eps, 1e12))
     
-    jnd = jnd_log_term / (2 * pt.clip(beta1, eps, 1e12))
+    jnd = jnd_log_term / (-2 * pt.clip(beta1, eps, 1e12))
 
     pse_log_term = pt.log(pt.clip(1 - 2 * gamma_l, eps, 1e12)) \
                  + pt.log(pt.clip(1 - 2 * gamma_h, eps, 1e12))
 
-    pse = (pse_log_term - beta0) / pt.clip(beta1, eps, 1e12)
+    pse = -(beta0 + pse_log_term) / pt.clip(beta1, eps, 1e12)
 
     return pse, jnd
 
@@ -75,13 +82,34 @@ def compute_betas_pt(gamma_h, gamma_l, pse, jnd, eps=1e-12):
                  - pt.log(pt.clip(3 - gamma_h, eps, 1e12)) \
                  - pt.log(pt.clip(3 - gamma_l, eps, 1e12))
 
-    beta1 = jnd_log_term / (2 * pt.clip(jnd, eps, 1e12))
+    beta1 = jnd_log_term / (-2 * pt.clip(jnd, eps, 1e12))
 
     pse_log_term = pt.log(pt.clip(1 - 2 * gamma_l, eps, 1e12)) \
                  + pt.log(pt.clip(1 - 2 * gamma_h, eps, 1e12))
 
-    beta0 = -beta1 * pse + pse_log_term
+    beta0 = -beta1 * pse - pse_log_term
     return beta0, beta1
+
+def phi_L_np(gamma_h, gamma_l, beta0, beta1, x_vals):
+    # Ensure inputs are 1D arrays
+    gamma_h = gamma_h.flatten()  # shape: (num_samps,)
+    gamma_l = gamma_l.flatten()  # shape: (num_samps,)
+    beta0 = beta0.flatten()      # shape: (num_samps,)
+    beta1 = beta1.flatten()      # shape: (num_samps,)
+    x_vals = x_vals.flatten()    # shape: (num_x,)
+
+    # Reshape for broadcasting
+    beta0 = beta0[:, np.newaxis]    # shape: (num_samps, 1)
+    beta1 = beta1[:, np.newaxis]    # shape: (num_samps, 1)
+    gamma_h = gamma_h[:, np.newaxis]  # shape: (num_samps, 1)
+    gamma_l = gamma_l[:, np.newaxis]  # shape: (num_samps, 1)
+
+    # Broadcasted computation
+    logits = beta0 + beta1 * x_vals  # shape: (num_samps, num_x)
+    logistic = 1 / (1 + np.exp(-logits))
+    p_mat = gamma_h + (1 - gamma_h - gamma_l) * logistic  # shape: (num_samps, num_x)
+
+    return p_mat
 
 
 def rescaled_analysis(data_dict,  mu_xi = np.array([1,4,1,4,0,0.7,0.82,0.21]), sigma_xi = np.array([4,16,4,16,0.7,1.4,0.21,0.42]), lower = np.array([0,0,0,0,-1.51,0,0,0]), upper = np.array([np.inf,np.inf,np.inf,np.inf,1.51,np.inf,1.51,np.inf])
@@ -222,6 +250,9 @@ grps = ['ld','ln','rd','rn']
 for grp in ['ld']:
     traces[grp] = rescaled_analysis(data_dict[grp])
 
+
+#%%
+
 params_prior_scale = np.array([0.25, 0.25, -1., 1.])
 
 C_data = data_dict['ld']['C_mat']
@@ -229,8 +260,8 @@ N_mat = data_dict['ld']['N_mat']
 
 Ns = np.shape(C_data)[0]
 
-mu_xi = np.array([1,4,1,4,0,0.7,0.82,0.21])
-sigma_xi = np.array([4,16,4,16,0.7,1.4,0.21,0.42])
+mu_xi = np.array([0.4,1.6,0.4,1.6,0,0.7,0.82,0.21])
+sigma_xi = np.array([0.3,1.2,0.3,1.2,0.7,1.4,0.21,0.42])
 lower = np.array([0,0,0,0,-1.51,0,0,0])
 upper = np.array([np.inf,np.inf,np.inf,np.inf,1.51,np.inf,1.51,np.inf])
 
@@ -283,18 +314,49 @@ with pm.Model() as model:
     #     p = p.flatten()  # Flatten to ensure dimensions match
     #     pm.Binomial(f"c_obs_{s}", n=N_mat[s], p=p, observed=C_data[s])
     
-    # Sampling
-    trace = pm.sample(num_post_samps, return_inferencedata=True, progressbar=True, idata_kwargs={"log_likelihood": True})
-
 
 #%%
 
 with model:
     trace = pm.sample(num_post_samps, return_inferencedata=True, progressbar=True, idata_kwargs={"log_likelihood": True})
 
-
+#%%
 
 with model:
     prior = pm.sample_prior_predictive()
     
 ## beta0 values are coming out negative for some reason
+
+#%% prior predictive
+
+gamma_h_pp = np.array(prior.prior['gamma_h'])
+_ , temp_draws, temp_ns = gamma_h_pp.shape
+gamma_h_pp = gamma_h_pp.reshape(temp_draws,temp_ns)
+
+gamma_l_pp = np.array(prior.prior['gamma_l']).reshape(temp_draws,temp_ns)
+beta0_pp = np.array(prior.prior['beta0']).reshape(temp_draws,temp_ns)
+beta1_pp = np.array(prior.prior['beta1']).reshape(temp_draws,temp_ns)
+
+for s in range(temp_ns):
+    gamma_h_s = gamma_h_pp[:,s]
+    gamma_l_s = gamma_l_pp[:,s]
+    beta0_s = beta0_pp[:,s]
+    beta1_s = beta1_pp[:,s]
+    
+    x_plot = np.linspace(min(x_new),max(x_new),num = 50)
+    
+    p_vals = phi_L_np(gamma_h_s, gamma_l_s, beta0_s, beta1_s, x_plot)
+    
+    HDIS = az.hdi(p_vals, hdi_prob = 0.95).T
+    means = np.mean(p_vals, axis=0)
+    stds = np.std(p_vals, axis=0)
+    
+    plt.plot(x_plot, means)
+    # plt.scatter(x_new,C_data[s]/N_mat[s])
+    plt.fill_between(x_plot, means-stds, means+stds, alpha = 0.01)
+    plt.fill_between(x_plot, HDIS[0], HDIS[1], alpha = 0.01)
+plt.show()
+
+gamma_h_HDI = az.hdi(gamma_h_pp, hdi_prob=0.95)
+
+#changed mu_xi and sig_xi. Redo priorpred!
