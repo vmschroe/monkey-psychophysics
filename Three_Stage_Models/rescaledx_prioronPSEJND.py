@@ -215,10 +215,10 @@ def phi_L_pt(gam, lambda_, beta0, beta1, X):
 
 #%%
 
-with open(r"Data\psych_vecs_all.pkl", "rb") as f:
+with open("psych_vecs_all.pkl", "rb") as f:
     data = pickle.load(f)  
 
-with open(r"Data/session_summary.pkl", "rb") as f:
+with open(r"session_summary.pkl", "rb") as f:
     sess_sum = pickle.load(f)  
     
 
@@ -260,8 +260,8 @@ N_mat = data_dict['ld']['N_mat']
 
 Ns = np.shape(C_data)[0]
 
-mu_xi = np.array([0.4,1.6,0.4,1.6,0,0.7,0.82,0.21])
-sigma_xi = np.array([0.3,1.2,0.3,1.2,0.7,1.4,0.21,0.42])
+mu_xi = np.array([0.4,1.6,0.4,1.6,0,0.2,0.72,0.11])
+sigma_xi = np.array([0.2,0.8,0.2,0.8,0.2,0.4,0.11,0.11])
 lower = np.array([0,0,0,0,-1.51,0,0,0])
 upper = np.array([np.inf,np.inf,np.inf,np.inf,1.51,np.inf,1.51,np.inf])
 
@@ -327,7 +327,7 @@ with model:
     
 ## beta0 values are coming out negative for some reason
 
-#%% prior predictive
+#%% prior
 
 gamma_h_pp = np.array(prior.prior['gamma_h'])
 _ , temp_draws, temp_ns = gamma_h_pp.shape
@@ -337,6 +337,7 @@ gamma_l_pp = np.array(prior.prior['gamma_l']).reshape(temp_draws,temp_ns)
 beta0_pp = np.array(prior.prior['beta0']).reshape(temp_draws,temp_ns)
 beta1_pp = np.array(prior.prior['beta1']).reshape(temp_draws,temp_ns)
 
+#for s in range(3):
 for s in range(temp_ns):
     gamma_h_s = gamma_h_pp[:,s]
     gamma_l_s = gamma_l_pp[:,s]
@@ -359,4 +360,11 @@ plt.show()
 
 gamma_h_HDI = az.hdi(gamma_h_pp, hdi_prob=0.95)
 
-#changed mu_xi and sig_xi. Redo priorpred!
+#changed mu_xi and sig_xi. fix JND stuff and then Redo priorpred!
+
+#%%
+c_prior_p = np.array(prior.prior_predictive['c_obs']).reshape(500,43,8)
+c_pp_means = np.mean(c_prior_p, axis=0).reshape(-1,1)
+c_pp_stds = np.std(c_prior_p, axis=0).reshape(-1,1)
+c_trues = C_data.reshape(-1,1)
+zs = (c_pp_means-c_trues)/c_pp_stds
