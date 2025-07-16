@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+FAILED
 Created on Thu Jun 26 14:32:14 2025
 
 @author: schro
@@ -253,6 +254,7 @@ for grp in ['ld']:
 
 #%%
 
+eps = 10**(-5)
 params_prior_scale = np.array([0.25, 0.25, -1., 1.])
 
 C_data = data_dict['ld']['C_mat']
@@ -260,10 +262,11 @@ N_mat = data_dict['ld']['N_mat']
 
 Ns = np.shape(C_data)[0]
 
-mu_xi = np.array([0.4,1.6,0.4,1.6,0,0.2,0.72,0.11])
-sigma_xi = np.array([0.2,0.8,0.2,0.8,0.2,0.4,0.11,0.11])
-lower = np.array([0,0,0,0,-1.51,0,0,0])
-upper = np.array([np.inf,np.inf,np.inf,np.inf,1.51,np.inf,1.51,np.inf])
+mu_xi = np.array([0.4,1.6,0.4,1.6,0,0.2,0.55,0.15])
+sigma_xi = np.array([0.2,0.8,0.2,0.8,0.2,0.4,0.15,0.07])
+lower = np.array([eps,eps,eps,eps,-1.51,eps,eps,eps])
+#upper = np.array([np.inf,np.inf,np.inf,np.inf,1.51,np.inf,1.51,np.inf])
+upper = np.array([1/eps,1/eps,1/eps,1/eps,1.51,1/eps,1.51,1/eps])
 
 with pm.Model() as model:
     # Load prior scales as symbolic variables
@@ -360,7 +363,7 @@ plt.show()
 
 gamma_h_HDI = az.hdi(gamma_h_pp, hdi_prob=0.95)
 
-#changed mu_xi and sig_xi. fix JND stuff and then Redo priorpred!
+#changed mu_xi and sig_xi. fix JND stuff. curves not steep enoigh! and then Redo priorpred!
 
 #%%
 c_prior_p = np.array(prior.prior_predictive['c_obs']).reshape(500,43,8)

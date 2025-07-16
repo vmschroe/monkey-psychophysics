@@ -14,13 +14,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+#%%
 
+drop_abort_trials = True
+drop_freq_manip = True
+drop_repeats = True
 
-drop_abort_trials = False
-drop_freq_manip = False
-drop_repeats = False
-
-directory_path = "Sirius_data"
+directory_path = "Data\Sirius_data"
 sessions = []
 dates = []
 
@@ -82,8 +82,8 @@ for filename in os.listdir(directory_path):
         
         
         Sirius_DFS[session] = df
-        
-with open("Sirius_DFS_nodrops.pkl","wb") as f:
+#%%       
+with open("Sirius_DFS.pkl","wb") as f:
     pickle.dump(Sirius_DFS, f)
-with open("Sirius_DFS_nodrops.pkl", "rb") as f:
+with open("Sirius_DFS.pkl", "rb") as f:
     testout = pickle.load(f)
