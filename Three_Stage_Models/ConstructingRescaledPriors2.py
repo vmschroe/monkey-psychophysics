@@ -49,14 +49,14 @@ a_PSE, b_PSE = comp_hyps(lik_PSE, supp_PSE)
 
 #%%
 
-supp_JND = np.array([0,max(x_new)])
+supp_JND = np.array([0.04,max(x_new)])
 lik_JND = np.array([0.14,0.75])
 
 a_JND, b_JND = comp_hyps(lik_JND, supp_JND)
 
 #%%
 
-supp_gamma = np.array([0,0.25])
+supp_gamma = np.array([0,0.24999])
 lik_gamma = np.array([0,0.08])
 
 
