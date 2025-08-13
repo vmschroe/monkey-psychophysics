@@ -206,6 +206,64 @@ with hier_model:
 
 prior_checks.prior_predictive['resp']
 
+#%%
+
+prior_pred_responses = np.mean(np.array(prior_checks.prior_predictive['resp']), axis = 1)[0]
+
+az.plot_dist_comparison(prior_checks, var_names = ['gam_h_uni'], coords = {'sessions': [sessions[0], sessions[5]]})
+
+#%%
+
+with hier_model:
+    hier_trace = pm.sample(return_inferencedata=True, cores=1, progressbar=True, idata_kwargs={"log_likelihood": True})
+    
+    
+#%%
 
 
 
+
+with hier_model:
+    hier_trace.extend(pm.sample_prior_predictive())
+
+    
+
+
+#%%
+
+with hier_model:
+    post_pred = pm.sample_posterior_predictive(hier_trace, extend_inferencedata=True)
+
+#%%
+hand = 0
+sess = 0
+rec_params = {}
+
+for desc in ['beta_0','beta_1', 'beta_2','gam_h_uni','gam_h_bi','gam_l_uni','gam_l_bi']:
+    arr = np.array(hier_trace.posterior[desc])[0,:,hand,sess]
+    rec_params[desc] = [np.mean(arr), np.std(arr)]
+    
+    
+#%%
+
+
+p_test_pred = hier_trace.posterior_predictive['resp'].mean(dim=["chain", "draw"])
+y_test_pred = (p_test_pred >= 0.5).astype("int").to_numpy()
+y_true = hier_trace.observed_data['resp'].to_numpy()
+
+y_naive = np.sign(cov_mat[:,1])*0.5+0.5
+
+print(f"accuracy of model = {np.mean(y_true==y_test_pred)}")
+print(f"accuracy of naive = {np.mean(y_true==y_naive)}")
+
+#%%
+
+bad_pred = ((y_true==y_test_pred)==False)
+
+bad_sess = sessions_idx[bad_pred]
+bad_sides = sides_idx[bad_pred]
+bad_stim = cov_mat[bad_pred,1]
+bad_dist = cov_mat[bad_pred,2]
+
+#issues with dist=0, so unimanual trials
+#specifically gam_l_uni
