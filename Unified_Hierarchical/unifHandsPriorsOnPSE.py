@@ -139,7 +139,7 @@ with pm.Model(coords=coords) as hier_model:
         dims=('sides','sessions', 'betas'))
     
     
-    # lapses
+    # lapses DELTAS UNNECESSARY for gammas, and MAYBE CAUSING ERRORS, better to compute after the fact!!!!
     delta_h = pm.Deterministic("delta_h", (gam_h_bi-gam_h_uni)/sess_distAMP[None, :]  , dims = ('sides', 'sessions'))
     delta_l = pm.Deterministic("delta_l", (gam_l_bi-gam_l_uni)/sess_distAMP[None, :]  , dims = ('sides', 'sessions'))
 
@@ -210,7 +210,7 @@ prior_checks.prior_predictive['resp']
 
 prior_pred_responses = np.mean(np.array(prior_checks.prior_predictive['resp']), axis = 1)[0]
 
-az.plot_dist_comparison(prior_checks, var_names = ['gam_h_uni'], coords = {'sessions': [sessions[0], sessions[5]]})
+az.plot_dist_comparison(prior_checks, var_names = ['gam_l_uni'], coords = {'sessions': [sessions[0], sessions[5]]})
 
 #%%
 
