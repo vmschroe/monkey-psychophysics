@@ -23,15 +23,6 @@ import aesara.tensor as at
 import numpy as np
 
 #%%
-
-with open(r"desc_hyper_priors.pkl", "rb") as f:
-    desc_hyper_priors = pickle.load(f)  
-    
-arr = np.array([desc_hyper_priors[col].to_list() for col in desc_hyper_priors.columns]).astype(float)
-hparams = np.transpose(arr, (1, 0, 2))  # shape: (3, 2, 2)
-
-
-#%%
 with open(r"data_unif_hier.pkl", "rb") as f:
     data_unif_hier = pickle.load(f)  
 
@@ -86,76 +77,84 @@ beta_exp_rates = 1/(lik_beta[:,1]-lik_beta[:,0])
 
 hand = 0
 
-obs_data1 = obs_data[sides_idx==hand]
-sessions_idx1 = sessions_idx[sides_idx==hand]
-cov_mat1 = cov_mat[sides_idx==hand,:]
-biman_idx = cov_mat1[:,2]>0
+obs_data1 = obs_data[sides_idx==hand] #shape (6467,)
+sessions_idx1 = sessions_idx[sides_idx==hand] #shape (6467,)
+cov_mat1 = cov_mat[sides_idx==hand,:] #shape (6467, 3)
+biman_idx = cov_mat1[:,2]>0 #shape (6467,)
 #%% model
 
 coords = {
     'sessions': sessions, 
     'betas': ["b0", "b1", "b2"],
-    'trials': range(len(obs_data))  # Add trials dimension
+    'trials': range(len(obs_data1))  # Add trials dimension
 }
 
 with pm.Model(coords=coords) as hier_model:
     pm.MutableData("cov_mat1", cov_mat1, dims=("trials", "betas"))
-    pm.MutableData("sessions_idx", sessions_idx, dims="trials")
-    pm.MutableData("sess_distAMP", sess_distAMP, dims="sessions")
-    pm.MutableData("biman_idx", biman_idx, dims="trials")
+    pm.MutableData("sessions_idx1", sessions_idx, dims=("trials",))
+    pm.MutableData("sess_distAMP", sess_distAMP, dims=("sessions",))
+    pm.MutableData("biman_idx", biman_idx, dims=("trials",))
     
     z_b_s = pm.Normal("z_b_s", dims=("betas","sessions"))
-    mu_b = pm.Uniform("mu_b", lower = sup_beta[:,0], upper = sup_beta[:,1], dims = "betas")
-    sig_b = pm.Exponential("sig_b", lam = beta_exp_rates, dims = "betas")
-    
-    beta_vec = pm.Deterministic("beta_vec", mu_b + sig_b * z_b_s, dims = ('sessions', 'betas'))
+    mu_b = pm.Uniform("mu_b", lower = sup_beta[:,0], upper = sup_beta[:,1], dims = ("betas",))
+    sig_b = pm.Exponential("sig_b", lam = beta_exp_rates, dims = ("betas",))
+    # print("mu_b shape (symbolic):", mu_b.shape)
+    # print("sig_b shape (symbolic):", sig_b.shape)
+    # print("z_b_s shape (symbolic):", z_b_s.shape)
+    beta_vec = pm.Deterministic("beta_vec", (mu_b[:, None] + sig_b[:, None] * z_b_s).T, dims = ('sessions', 'betas'))
     
     # gammas
 
-    mu_h_uni = pm.Uniform("mu_h_uni")
-    z_var_h_uni = pm.Uniform("mu_h_uni")
+    mu_h_uni = pm.Uniform("mu_h_uni", lower=0.0, upper=1.0)
+    z_var_h_uni = pm.Uniform("z_var_h_uni", lower=0.0, upper=1.0)
     sig_h_uni = pm.Deterministic("sig_h_uni", pm.math.sqrt(mu_h_uni*(1-mu_h_uni)*z_var_h_uni))
-    z_h_uni_s = pm.Beta("z_h_uni_s", mu = mu_h_uni, sigma = sig_h_uni, dims="sessions")
-    gam_h_uni_s = pm.Deterministic("gam_h_uni_s", 0.25*z_h_uni_s, dims="sessions")
+    z_h_uni_s = pm.Beta("z_h_uni_s", mu = mu_h_uni, sigma = sig_h_uni, dims=("sessions",))
+    gam_h_uni_s = pm.Deterministic("gam_h_uni_s", 0.25*z_h_uni_s, dims=("sessions",))
     
-    
-    mu_h_bi = pm.Uniform("mu_h_bi")
-    z_var_h_bi = pm.Uniform("mu_h_bi")
+    mu_h_bi = pm.Uniform("mu_h_bi", lower=0.0, upper=1.0)
+    z_var_h_bi = pm.Uniform("z_var_h_bi", lower=0.0, upper=1.0)
     sig_h_bi = pm.Deterministic("sig_h_bi", pm.math.sqrt(mu_h_bi*(1-mu_h_bi)*z_var_h_bi))
-    z_h_bi_s = pm.Beta("z_h_bi_s", mu = mu_h_bi, sigma = sig_h_bi, dims="sessions")
-    gam_h_bi_s = pm.Deterministic("gam_h_bi_s", 0.25*z_h_bi_s, dims="sessions")
+    z_h_bi_s = pm.Beta("z_h_bi_s", mu = mu_h_bi, sigma = sig_h_bi, dims=("sessions",))
+    gam_h_bi_s = pm.Deterministic("gam_h_bi_s", 0.25*z_h_bi_s, dims=("sessions",))
     
-    
-    mu_l_uni = pm.Uniform("mu_l_uni")
-    z_var_l_uni = pm.Uniform("mu_l_uni")
+    mu_l_uni = pm.Uniform("mu_l_uni", lower=0.0, upper=1.0)
+    z_var_l_uni = pm.Uniform("z_var_l_uni", lower=0.0, upper=1.0)
     sig_l_uni = pm.Deterministic("sig_l_uni", pm.math.sqrt(mu_l_uni*(1-mu_l_uni)*z_var_l_uni))
-    z_l_uni_s = pm.Beta("z_l_uni_s", mu = mu_l_uni, sigma = sig_l_uni, dims="sessions")
-    gam_l_uni_s = pm.Deterministic("gam_l_uni_s", 0.25*z_l_uni_s, dims="sessions")
+    z_l_uni_s = pm.Beta("z_l_uni_s", mu = mu_l_uni, sigma = sig_l_uni, dims=("sessions",))
+    gam_l_uni_s = pm.Deterministic("gam_l_uni_s", 0.25*z_l_uni_s, dims=("sessions",))
     
-    
-    mu_l_bi = pm.Uniform("mu_l_bi")
-    z_var_l_bi = pm.Uniform("mu_l_bi")
+    mu_l_bi = pm.Uniform("mu_l_bi", lower=0.0, upper=1.0)
+    z_var_l_bi = pm.Uniform("z_var_l_bi", lower=0.0, upper=1.0)
     sig_l_bi = pm.Deterministic("sig_l_bi", pm.math.sqrt(mu_l_bi*(1-mu_l_bi)*z_var_l_bi))
-    z_l_bi_s = pm.Beta("z_l_bi_s", mu = mu_l_bi, sigma = sig_l_bi, dims="sessions")
-    gam_l_bi_s = pm.Deterministic("gam_l_bi_s", 0.25*z_l_bi_s, dims="sessions")
+    z_l_bi_s = pm.Beta("z_l_bi_s", mu = mu_l_bi, sigma = sig_l_bi, dims=("sessions",))
+    gam_l_bi_s = pm.Deterministic("gam_l_bi_s", 0.25*z_l_bi_s, dims=("sessions",))
     
-    gam_h = pm.Deterministic("gam_h", biman_idx*gam_h_bi_s + (1-biman_idx)*gam_h_uni_s, dims="trials")
-    gam_l = pm.Deterministic("gam_l", biman_idx*gam_l_bi_s + (1-biman_idx)*gam_l_uni_s, dims="trials")
+    
+    
+    gam_h = pm.Deterministic(
+        "gam_h", biman_idx*gam_h_bi_s[sessions_idx1] + (1-biman_idx)*gam_h_uni_s[sessions_idx1], 
+        dims=("trials",))
+    gam_l = pm.Deterministic(
+        "gam_l", biman_idx*gam_l_bi_s[sessions_idx1] + (1-biman_idx)*gam_l_uni_s[sessions_idx1], 
+        dims=("trials",))
     
     # Matrix multiplication
     logistic_arg = pm.Deterministic(
         'logistic_arg',
-        pm.math.sum(cov_mat1 * beta_vec[sessions_idx], axis=1),
-        dims='trials')
+        pm.math.sum(cov_mat1 * beta_vec[sessions_idx1], axis=1),
+        dims=('trials',))
     
     # Probability
-    p = pm.Deterministic('p', gam_h + (1 - gam_h - gam_l)*pm.math.invlogit(logistic_arg), dims='trials')
+    p = pm.Deterministic(
+        'p', 
+        gam_h + (1 - gam_h - gam_l)*pm.math.invlogit(logistic_arg), 
+        dims=('trials',))
     
     # # Likelihood
-    resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-5,1-1e-5), observed=obs_data, dims='trials')
+    resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-5,1-1e-5), observed=obs_data1, dims=('trials',))
 
 print("Model created successfully!")
-print(f"Total trials across all sessions: {len(obs_data)}")
+print(f"Total trials across all sessions: {len(obs_data1)}")
 
 
 

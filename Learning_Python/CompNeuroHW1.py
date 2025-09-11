@@ -283,21 +283,21 @@ plt.title('f-I Curve Comparison')
 
 #%% Problem 2
 
-T=1000
+T=300
 dt=.1
     
 # Discretized time
 time=np.arange(0,T,dt)
 
-A = 290
+A = 100
 
-omega = 100/100
+omega = 0.2
 
 Ix_sin = A* np.sin(omega*time)
 
-plot_title = f"EIF, A = {A}, $\omega$ = {omega}"
+plot_title = f"EIF, A = {A} mV, $\omega$ = {omega} mHz"
 
-r_sin = firing_rate_EIF(Ix_sin, plot_spikes = True, T=1000, dt=.1, plot_title = plot_title)
+r_sin = firing_rate_EIF(Ix_sin, plot_spikes = True, T=300, dt=.1, plot_title = plot_title)
 
 
 #%% Problem 3
