@@ -13,4 +13,4 @@ Model C: How does the strength of the distractor change it's impact?
 - 2 independent analyses for left/right hand
 - covariates: stimulus strength, distractor strength
 
-testing if it worked
+testing if it worked AGAIN
