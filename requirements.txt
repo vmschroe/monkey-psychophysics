@@ -1,0 +1,11 @@
+numpy
+scipy
+pandas
+matplotlib
+xarray
+arviz
+pymc>=5.26
+pymc-extras
+scikit-learn
+numba
+spyder-kernels==3.0.*
