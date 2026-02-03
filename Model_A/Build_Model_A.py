@@ -24,8 +24,8 @@ coords = {
     'trials': range(len(obs_data)) }
 
 with pm.Model(coords=coords) as model_A:
-    pm.MutableData("cov_mat", cov_mat, dims=("trials", "betas"))
-    pm.MutableData("grp_idx", grp_idx, dims=("trials",))
+    pm.Data("cov_mat", cov_mat, dims=("trials", "betas"))
+    pm.Data("grp_idx", grp_idx, dims=("trials",))
 
     z_beta = pm.Normal("z_beta", mu = 0, sigma = 1, dims = ("betas", "groups"))
     beta_vec = pm.Deterministic("beta_vec", pm.math.stack([ 6 * z_beta[0] , 2 * z_beta[1] + 4 ], axis=0), dims = ("betas", "groups"))
