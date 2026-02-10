@@ -74,6 +74,21 @@ with open("ReadyData_Sirius_B.pkl","wb") as f:
 
 #%% Generate Synthetic Dataset
 
+# fix parameters for synth dataset
+params_fixed_B = xr.DataArray(np.zeros((2,2,2,2,2)),
+                            dims = ("manual", "hand", "par_type", "par_idx", "hp_type"),
+                            coords = {"manual":["uni", "bi"], 
+                                      "hand":["left", "right"], 
+                                      "par_type":["gamma", "beta"], 
+                                      "par_idx":["h0", "l1"], 
+                                      "hp_type":["mu", "sig"]})
 
-
+#params_fixed_B.sel(par_type='gamma', par_idx='h0', hp_type="mu")
+                   
+##fix parameters for each group
+# gam_h_fix =  np.array([0.03, 0.06, 0.06, 0.03])
+# gam_l_fix =  np.array([0.005, 0.01, 0.005, 0.01])
+# beta0_fix = np.array([-1, 1, -1, 1])
+# beta1_fix = np.array([3, 3, 6, 6])                 
+#['h0']["mu"]
 
