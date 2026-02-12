@@ -50,6 +50,11 @@ with pm.Model(coords=coords) as model_B:
     #   Beta_0 ~N[mu_0,sig_0]
     #       mu_0 ~ Unif[-12,12]
     #       sig_0 ~ Exp[lambda = 1/12]
+    u_mu_betas = pm.Uniform('u_mu_betas', lower = 0, upper=1, dims = ('betas', 'groups'))
+    mu_betas = pm.Deterministic('mu_betas', pm.math.stack([ -12 + 24 * u_mu_betas[0] , 8 * u_mu_betas[1] ], axis=0), dims = ("betas", "groups"))
+    u_sig_betas = pm.Uniform('u_sig_betas', lower=0, upper=1, dims = ('betas', 'groups'))
+    sig_betas = pm.Deterministic('mu_betas', pm.math.stack([ (-1/(1/12)) * pm.math.log(u_sig_betas[0]) , (-1/(1/4)) * pm.math.log(u_sig_betas[1]) ], axis=0), dims = ("betas", "groups"))
+    z_betas = pm.No
     #   Beta_1 ~N[mu_1,sig_1]
     #       mu_1 ~ Unif[0,8]
     #       sig_1 ~ Exp[lambda = 1/4]
@@ -58,6 +63,12 @@ with pm.Model(coords=coords) as model_B:
     #   z_gam ~ Beta[ mu = mu_gam , sigma = sig_gam ]
     #       mu_gam ~ Beta[ mu = 0.2, sigma = 0.1 ]
     #       sig_gam^2 ~ Unif[0, mu_gam(1-mu_gam)]
+    # REPARAMETRIZATION Exponential: X ~ Exp[lam]
+    #   U ~ Unif[0,1]
+    #   X = ( -1 / lam ) * ln(U)
+    # REPARAMETRIZATION Uniform: X ~ Unif[ a , b ]
+    #   U ~ Unif[0,1]
+    #   X = a + (b-a) * U
 
 
 
