@@ -1,0 +1,38 @@
+Model Comparison: Fit both models to Synthetic data A
+
+                rank     elpd_loo      p_loo  elpd_diff        weight         se       dse  warning scale
+A_pooled           0 -3719.219184  14.337651   0.000000  1.000000e+00  67.463953  0.000000    False   log
+B_hierarchical     1 -3728.772288  67.361194   9.553104  2.614575e-14  67.965963  2.554073    False   log
+
+Interpretation: Model A fits data best
+
+
+Model Comparison: Fit both models to Synthetic data B
+
+                rank     elpd_loo       p_loo   elpd_diff    weight         se        dse  warning scale
+B_hierarchical     0 -3922.630589  167.484502    0.000000  0.971861  68.633840   0.000000    False   log
+A_pooled           1 -4082.616755   15.130900  159.986165  0.028139  68.295608  18.328441    False   log
+
+Interpretation: Model B fits data best
+
+
+
+Notes:
+
+rank: The rank-order of the models. 0 is the best.
+
+elpd: ELPD estimated using PSIS-LOO-CV (elpd_loo). Higher ELPD indicates higher out-of-sample predictive fit (“better” model).
+
+pIC: Estimated effective number of parameters.
+
+elpd_diff: The difference in ELPD between two models. If more than two models are compared, the difference is computed relative to the top-ranked model, that always has an elpd_diff of 0.
+
+weight: Relative weight for each model. This can be loosely interpreted as the probability of each model (among the compared models) given the data. By default the uncertainty in the weights estimation is considered using Bayesian bootstrap.
+
+SE: Standard error of the ELPD estimate. If method = BB-pseudo-BMA these values are estimated using Bayesian bootstrap.
+
+dSE: Standard error of the difference in ELPD between each model and the top-ranked model. It’s always 0 for the top-ranked model.
+
+subsampling_dSE: (Only when subsampling is used) The subsampling component of the standard error of the ELPD difference. This quantifies the uncertainty due to using a subsample rather than all observations.
+
+warning: A value of 1 indicates that the computation of the ELPD may not be reliable. This could be indication of LOO starting to fail see http://arxiv.org/abs/1507.04544 for details.

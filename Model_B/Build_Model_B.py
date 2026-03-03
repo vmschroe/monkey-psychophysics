@@ -30,6 +30,7 @@ with pm.Model(coords=coords) as model_B:
     cov_mat_mut = pm.Data("cov_mat", cov_mat, dims=("trials", "betas"))
     grp_idx_mut = pm.Data("grp_idx", grp_idx, dims=("trials",))
     sess_idx_mut = pm.Data("sess_idx", sess_idx, dims=("trials",))
+    obs_data = pm.Data("obs_data", obs_data, dims=("trials",))
     
     #HYPERPRIORS
     #Beta vector
