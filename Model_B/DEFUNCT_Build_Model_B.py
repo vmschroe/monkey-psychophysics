@@ -18,6 +18,20 @@ import pickle
 import ast
 import xarray as xr
 
+#%% LOAD DATA (delete from this script later)
+#os.getcwd() if doesnt work
+#load and unpack data
+with open("ReadyData_Synth_B.pkl", "rb") as f:
+    data_dict = pickle.load(f)
+#%% 
+sessions = list(data_dict['dates_sess_idx'])
+cov_mat = data_dict['cov_mat']
+grp_idx = data_dict['grp_idx']
+obs_data = data_dict['resp']
+sess_idx = data_dict['sess_idx']
+
+
+#%% Construct model
 
 coords = {
     'groups': ['left_uni','left_bi','right_uni','right_bi'],
@@ -59,30 +73,27 @@ with pm.Model(coords=coords) as model_B:
 
     
     #Gamma (gamma_h and gamma_l hyperprior iid)
-    #   gamma = 0.25 * w_gam
-    #   w_gam ~ LogitNormal[ mu = mu_gam , sigma = sig_gam ]
-    #       mu_gam ~ N[ mu = -2.5, sigma = 1 ]
-    #       sig_gam ~ HalfNormal[sig=1.25]
-    # REPARAMETRIZATION LogitNormal: X ~ LogitNormal[ mu , sig ]
-    #   Z ~ Normal[0,1]
-    #   X = 1 / ( 1+ exp (- (sig*Z + mu) ) )
-    # REPARAMETRIZATION HalfNormal: X ~ HalfNormal[ sig ]
-    #   Z ~ Normal[0,1]
-    #   X = abs(  sig * Z  )
-    z_mu_gams = pm.Normal("z_mu_gams", mu=0, sigma=1, dims = ('betas', 'groups'))
-    mu_gams = pm.Deterministic("mu_gams", z_mu_gams-2.5, dims = ('betas', 'groups'))
-    z_sig_gams = pm.Normal("z_sig_gams", mu=0, sigma=1, dims = ('betas', 'groups'))
-    sig_gams = pm.Deterministic('sig_gams', pm.math.abs(1.25*z_sig_gams), dims=('betas', 'groups'))
-    z_gams = pm.Normal("z_gams", mu=0, sigma=1, dims=("betas", "groups", "sessions"))
-    gams = pm.Deterministic("gams", 0.25 * pm.math.invlogit(sig_gams[..., None] * z_gams + mu_gams[..., None]), dims=("betas", "groups", "sessions"),)
-    
-    gam_h = pm.Deterministic("gam_h", gams[0], dims = ('groups', 'sessions'))
-    gam_l = pm.Deterministic("gam_l", gams[1], dims = ('groups', 'sessions'))
+    #   gamma = 0.25 * z_gam
+    #   z_gam ~ Beta[ mu = mu_gam , sigma = sig_gam ]
+    #       mu_gam ~ Beta[ mu = 0.2, sigma = 0.1 ]
+    #       sig_gam^2 ~ Unif[0, mu_gam(1-mu_gam)]
+    mu_gams = pm.Beta("mu_gams", mu=0.2, sigma=0.1, dims = ('betas', 'groups'))
+    #u_sig2_gams = pm.Uniform('u_sig2_gams', lower=0, upper=1, dims=('betas', 'groups'))
+    u_sig2_gams = pm.Uniform("u_sig2_gams", 1e-9, 1-1e-9, dims=("betas","groups"))
+    sig_gams = pm.Deterministic('sig_gams', pm.math.sqrt( mu_gams*(1-mu_gams)*u_sig2_gams ), dims=('betas', 'groups'))
+    #z_gams = pm.Beta("z_gams", mu=mu_gams, sigma=sig_gams, dims = ('betas', 'groups', 'sessions'))
+    z_gams = pm.Beta("z_gams", mu = mu_gams[..., None], sigma=sig_gams[..., None], dims=("betas", "groups", "sessions"),)
+
+    gam_h = pm.Deterministic("gam_h", 0.25*z_gams[0], dims = ('groups', 'sessions'))
+    gam_l = pm.Deterministic("gam_l", 0.25*z_gams[1], dims = ('groups', 'sessions'))
 
     PSE = pm.Deterministic("PSE", (-beta_vec[0] + pm.math.log( (1-2*gam_h) / (1-2*gam_l) ))/ beta_vec[1] , dims=("groups",'sessions'))
     JND = pm.Deterministic("JND", (pm.math.log( ((3-4*gam_h)*(3-4*gam_l)) / ((1-4*gam_h)*(1-4*gam_l)) )) / (2*beta_vec[1]) , dims=("groups",'sessions'))
 
-    
+    # logistic_arg = pm.Deterministic(
+    #     'logistic_arg',
+    #     pm.math.sum(cov_mat_mut * beta_vec[:, grp_idx_mut, sess_idx_mut].T, axis=1),
+    #     dims=("trials",))
     beta_trial = pm.Deterministic('beta_trial', beta_vec[:, grp_idx_mut, sess_idx_mut], dims= ('betas', 'trials') )
     
     logistic_arg = pm.Deterministic( "logistic_arg", pm.math.sum(cov_mat_mut.T * beta_trial, axis=0), dims=("trials",),)
@@ -96,3 +107,12 @@ with pm.Model(coords=coords) as model_B:
     resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-8,1-1e-8), observed=obs_data, dims=('trials',))
     
 print('model is built!')
+
+#%% 
+
+model_B.debug()
+
+#%%
+
+with model_B:
+    idata = pm.sample(500, tune=500, chains=2, target_accept=0.9)

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Use DataProcessing_A and nonunified as a guide
-UPDATED for logitnormal gen of gammas
 Created on Tue Feb  3 17:59:51 2026
 
 @author: vmschroe
@@ -81,18 +80,18 @@ with open("ReadyData_Sirius_B.pkl","wb") as f:
 
 pfixB= np.zeros((2,2,2,2,2))               
 ##fix parameters for each group
-gam_h_mu =  np.array([-1.9, -1.9, -1.2, -1.2]).reshape(2,2)
+gam_h_mu =  np.array([0.03, 0.06, 0.06, 0.03]).reshape(2,2)
 pfixB[:,:,0,0,0] = gam_h_mu
-gam_l_mu =  np.array([-3.8, -3.9, -2.8, -3.1]).reshape(2,2)
+gam_l_mu =  np.array([0.005, 0.01, 0.005, 0.01]).reshape(2,2)
 pfixB[:,:,0,1,0] = gam_l_mu
 beta0_mu = np.array([-1, 1, -1, 1]).reshape(2,2)
 pfixB[:,:,1,0,0] = beta0_mu
 beta1_mu = np.array([3, 3, 6, 6]).reshape(2,2)
 pfixB[:,:,1,1,0] = beta1_mu
 
-gam_h_sig =  np.array([0.04, 0.147, 0.09, 0.024]).reshape(2,2)
+gam_h_sig =  np.array([0.001, 0.002, 0.003, 0.005]).reshape(2,2)
 pfixB[:,:,0,0,1] = gam_h_sig
-gam_l_sig =  np.array([0.103, 0.027, 0.014, 0.05]).reshape(2,2)
+gam_l_sig =  np.array([0.0005, 0.0001, 0.0004, 0.0002]).reshape(2,2)
 pfixB[:,:,0,1,1] = gam_l_sig
 beta0_sig = np.array([1, 0.5, 0.25, 0.75]).reshape(2,2)
 pfixB[:,:,1,0,1] = beta0_sig
@@ -134,18 +133,20 @@ def sample_session_params(params_fixed_B, n_sessions=42):
 
             # ---- gammas: Beta on [0, 0.25] via your "multiply by 4" trick
             # gamma_h
-            mu_gh  = float(params_fixed_B.loc[h, m, "gamma", "h0", "mu"])
-            sig_gh = float(params_fixed_B.loc[h, m, "gamma", "h0", "sig"])
-            z_gh = norm.rvs(loc=0, scale=1, size=n_sessions)
-            
-            gam_h[:, hi, mi] = 0.25 / ( 1+ np.exp(-( sig_gh*z_gh + mu_gh   )) )
+            mu_gh  = 4.0 * float(params_fixed_B.loc[h, m, "gamma", "h0", "mu"])
+            sig_gh = 4.0 * float(params_fixed_B.loc[h, m, "gamma", "h0", "sig"])
+            nu_gh  = (mu_gh * (1.0 - mu_gh) / (sig_gh**2)) - 1.0  # <-- fixed *
+            a_gh   = mu_gh * nu_gh
+            b_gh   = (1.0 - mu_gh) * nu_gh
+            gam_h[:, hi, mi] = 0.25 * beta.rvs(a=a_gh, b=b_gh, size=n_sessions)
 
             # gamma_l
-            mu_gl  = float(params_fixed_B.loc[h, m, "gamma", "l1", "mu"])
-            sig_gl = float(params_fixed_B.loc[h, m, "gamma", "l1", "sig"])
-            z_gl = norm.rvs(loc=0, scale=1, size=n_sessions)
-            
-            gam_l[:, hi, mi] = 0.25 / ( 1+ np.exp(-( sig_gl*z_gl + mu_gl   )) )
+            mu_gl  = 4.0 * float(params_fixed_B.loc[h, m, "gamma", "l1", "mu"])
+            sig_gl = 4.0 * float(params_fixed_B.loc[h, m, "gamma", "l1", "sig"])
+            nu_gl  = (mu_gl * (1.0 - mu_gl) / (sig_gl**2)) - 1.0  # <-- fixed *
+            a_gl   = mu_gl * nu_gl
+            b_gl   = (1.0 - mu_gl) * nu_gl
+            gam_l[:, hi, mi] = 0.25 * beta.rvs(a=a_gl, b=b_gl, size=n_sessions)
 
     return {"beta0": beta0, "beta1": beta1, "gam_h": gam_h, "gam_l": gam_l}
 
@@ -323,6 +324,6 @@ ReadyData_Synth_B = {'cov_mat':cov_mat,
                     'hparams_fixed_B': params_fixed_B,
                     'synth_session_params': sess_params_xr}
 
-#%%
+
 with open("ReadyData_Synth_B.pkl","wb") as f:
     pickle.dump(ReadyData_Synth_B, f)
