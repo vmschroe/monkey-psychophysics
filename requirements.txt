@@ -8,4 +8,4 @@ pymc>=5.26
 pymc-extras
 scikit-learn
 numba
-spyder-kernels==3.0.*
+spyder-kernels>=3.0,<4
