@@ -401,3 +401,55 @@ ax.set_title(side)
 ax.legend(fontsize='small')
 fig.suptitle("Posterior Estimates: JND", fontsize=16)
 plt.show()
+
+#%% lapse parameters
+
+side, uni_grp, bi_grp = ['Right Hand', 'right_uni', 'right_bi']
+#side, uni_grp, bi_grp = ['Left Hand', 'left_uni', 'left_bi']
+gam_type = 'gam_l'
+
+fig, axes = plt.subplots(1, 1, constrained_layout=True)
+ax=axes
+
+
+uni_vals  = trace.posterior[gam_type].sel(groups=uni_grp).values.reshape(-1)
+bi_vals  = trace.posterior[gam_type].sel(groups=bi_grp).values.reshape(-1)
+# (optional) keep only finite values, safe habit
+
+uni_vals  = uni_vals[np.isfinite(uni_vals)]
+bi_vals  = bi_vals[np.isfinite(bi_vals)]
+
+az.plot_dist(uni_vals,  ax=ax, label="Unimanual", color='blue')
+az.plot_dist(uni_vals,  ax=ax, label="Unimanual", color='blue', 
+             fill_kwargs={'alpha': 0.3, 'label':"95% HDI and mean"}, 
+             quantiles= [0.025, 0.5, 0.9725])
+
+
+az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red')
+az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red', 
+             fill_kwargs={'alpha': 0.3, 'label':"95% HDI and mean"}, 
+             quantiles= [0.025, 0.5, 0.9725])
+
+
+#x_true = true_gam_h[g]
+#ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='green')
+#ax.set_xlim(22, 34)
+#ax.set_ylim(0,1.7)
+ax.set_title(side)
+#ax.set_title("Left Hand")
+ax.legend(fontsize='small')
+fig.suptitle(r"Posterior Estimates: $\gamma_l$", fontsize=16)
+plt.show()
+
+
+#%%
+
+az.plot_ppc(trace, num_pp_samples=100)
+
+LOO_results = az.loo(trace)
+
+fit_results = {'az_summary_trace': result_df,
+               'az_loo_trace': LOO_results}
+#%%
+with open("Results_B.pkl","wb") as f:
+    pickle.dump(fit_results, f)
