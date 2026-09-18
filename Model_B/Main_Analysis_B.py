@@ -45,7 +45,7 @@ print("FINISHED SAMPLING!")
 
 #%% Look at r_hats and effective sample sizes
 
-result_df = az.summary(trace, var_names = ['beta_vec', 'gam_h', 'gam_l', 'PSE', 'JND'])
+result_df = az.summary(trace, var_names = ['beta_vec', 'gam_h', 'gam_l', 'PSE', 'JND', 'mu_betas', 'sig_betas', 'mu_gams', 'sig_gams'])
 
 #result_df[ result_df['r_hat']>1 ]
     # r_hat = 1 and ess is large, so sampling was successful
@@ -59,7 +59,7 @@ az.plot_trace(trace, var_names=('gam_h', 'gam_l', 'beta_vec'), coords = {
 
 #%% plot joint posteriors
 
-sess_choice = '05-30'
+sess_choice = '06-14'
 
 for grp_num, grp_choice in enumerate(coords['groups']):
      az.plot_pair(trace, var_names=['gam_h', 'gam_l'
@@ -75,29 +75,29 @@ for grp_num, grp_choice in enumerate(coords['groups']):
 az.plot_trace(trace, var_names=('gam_h', 'mu_gams', 'sig_gams'), coords = {
     'groups': ['left_bi'],
     'betas': ["b0"], 
-    'sessions':['05-30'],}, compact=False,  backend_kwargs={"constrained_layout": True})
+    'sessions':['06-14'],}, compact=False,  backend_kwargs={"constrained_layout": True})
 
 
-#%% weird joint posterior, could it be from halfnormal in prior? z_sig_gams, sig_gams, z_gams trace?
+#%% weird joint posterior at 05-30, could it be from halfnormal in prior? z_sig_gams, sig_gams, z_gams trace?
 
 az.plot_pair(trace, var_names=['gam_h', 'mu_gams', 'sig_gams'], 
          coords = {
              'groups': ['left_bi'],
              'betas': ["b0"], 
-             'sessions':['05-30'],},  kind = 'kde', marginals=True)
+             'sessions':['06-14'],},  kind = 'kde', marginals=True)
 
 #%% Plot curves per session and group ??????????
-sess = 31
+sess = 10
 sess_label = sessions[sess]
 
 param_samps = trace.posterior[['beta_vec', 'gam_h', 'gam_l']]
-#%%
+
 
 gam_h_samps = {}
 gam_l_samps = {}
 beta_0_samps = {}
 beta_1_samps = {}
-#%%
+
 
 
 for grp in ["left_bi","left_uni","right_bi","right_uni"]:
@@ -106,7 +106,7 @@ for grp in ["left_bi","left_uni","right_bi","right_uni"]:
     beta_0_samps[grp] = param_samps['beta_vec'].sel(groups = grp, sessions=sess_label, betas='b0').values.flatten()
     beta_1_samps[grp] = param_samps['beta_vec'].sel(groups = grp, sessions=sess_label, betas='b1').values.flatten()
 
-#%%
+
 def psychfunc(params, X):
     """
     Psychometric function with lapses
@@ -123,10 +123,10 @@ def psychfunc(params, X):
     gam_h, gam_l, beta0, beta1 = params
     logistic = 1 / (1 + np.exp(-(beta0 + beta1 * X)))
     return gam_h + (1 - gam_h - gam_l) * logistic
-#%%
+
 #frquencies for each level
 freq_df = pd.DataFrame({'stim': cov_mat[sess_idx==sess][:,1], 'grp_idx': grp_idx[sess_idx==sess], 'obs_data': obs_data.eval()[sess_idx==sess]})
-#%%
+
 freqs = pd.pivot_table(
     freq_df, 
     values='obs_data',
@@ -134,8 +134,7 @@ freqs = pd.pivot_table(
     columns='grp_idx',
     aggfunc='mean'
 )
-#%%
-#%%
+
 
 xfit = np.linspace(-1.6,1.6,500)
 y_samples = {}
@@ -155,7 +154,7 @@ for grp_i, grp in enumerate(['left_uni','left_bi','right_uni','right_bi']):
  
 
 
-#%% 
+
 x_old = [6,12,18,24,32,38,44,50]
 x_mu = np.mean(x_old)
 x_sig = np.std(x_old)
@@ -178,7 +177,7 @@ plt.legend(loc='upper left', fontsize=9.5)
 plt.title("Left Hand Psychometric Curves, Session " + sess_label)
 plt.show()     
 
-#%%
+
 
 
 plt.plot(xfit*x_sig+x_mu,yrec['right_uni'],label='Unimanual',color='blue')
@@ -208,7 +207,6 @@ trace.extend(prior)
 
 #%% in aggregate
 
-#%%
 #PSE
 groups = coords['groups']
 fig, axes = plt.subplots(2, 2, constrained_layout=True)
