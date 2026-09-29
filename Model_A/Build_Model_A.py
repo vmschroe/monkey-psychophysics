@@ -25,10 +25,10 @@ coords = {
 
 with pm.Model(coords=coords) as model_A:
     #pm.Data("cov_mat", cov_mat, dims=("trials", "betas"))
-    cov_mat = pm.Data("cov_mat", cov_mat, dims=("trials", "betas"))
+    cov_mat_mut = pm.Data("cov_mat", cov_mat, dims=("trials", "betas"))
     #pm.Data("grp_idx", grp_idx, dims=("trials",))
-    grp_idx = pm.Data("grp_idx", grp_idx, dims=("trials",))
-    obs_data = pm.Data("obs_data", obs_data, dims=("trials",))
+    grp_idx_mut = pm.Data("grp_idx", grp_idx, dims=("trials",))
+    obs_data_mut = pm.Data("obs_data", obs_data, dims=("trials",))
     
     z_beta = pm.Normal("z_beta", mu = 0, sigma = 1, dims = ("betas", "groups"))
     beta_vec = pm.Deterministic("beta_vec", pm.math.stack([ 6 * z_beta[0] , 2 * z_beta[1] + 4 ], axis=0), dims = ("betas", "groups"))
@@ -43,13 +43,13 @@ with pm.Model(coords=coords) as model_A:
     
     logistic_arg = pm.Deterministic(
         'logistic_arg',
-        pm.math.sum(cov_mat * beta_vec[:, grp_idx].T, axis=1),
+        pm.math.sum(cov_mat_mut * beta_vec[:, grp_idx_mut].T, axis=1),
         dims=("trials",))
 
     p = pm.Deterministic(
-        'p', 
-        gam_h[grp_idx] + (1 - gam_h[grp_idx] - gam_l[grp_idx])*pm.math.invlogit(logistic_arg), 
+        'p',
+        gam_h[grp_idx_mut] + (1 - gam_h[grp_idx_mut] - gam_l[grp_idx_mut])*pm.math.invlogit(logistic_arg),
         dims=("trials",))
-    resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-8,1-1e-8), observed=obs_data, dims=('trials',))
+    resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-8,1-1e-8), observed=obs_data_mut, dims=('trials',))
     
 print('model is built!')

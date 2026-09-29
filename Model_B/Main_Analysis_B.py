@@ -17,11 +17,17 @@ import math
 import pickle
 import ast
 import xarray as xr
+from pathlib import Path
+
+try:
+    MODEL_DIR = Path(__file__).resolve().parent
+except NameError:  # __file__ isn't set when cells are run interactively
+    MODEL_DIR = Path.cwd()
+DATA_DIR = MODEL_DIR / "Data_B"
 
 #%% LOAD DATA (delete from this script later)
-#os.getcwd() if doesnt work
 #load and unpack data
-with open("ReadyData_Sirius_B.pkl", "rb") as f:
+with open(DATA_DIR / "ReadyData_Sirius_B.pkl", "rb") as f:
     data_dict = pickle.load(f)
 #%% 
 sessions = list(data_dict['dates_sess_idx'])
@@ -33,7 +39,7 @@ sess_idx = data_dict['sess_idx']
 sess_summary = data_dict['session_summary']
 #%%%
 
-exec(open("Build_Model_B.py").read())
+exec(open(MODEL_DIR / "Build_Model_B.py").read())
 
 
 #%% Sample from posteriors
@@ -125,7 +131,7 @@ def psychfunc(params, X):
     return gam_h + (1 - gam_h - gam_l) * logistic
 
 #frquencies for each level
-freq_df = pd.DataFrame({'stim': cov_mat[sess_idx==sess][:,1], 'grp_idx': grp_idx[sess_idx==sess], 'obs_data': obs_data.eval()[sess_idx==sess]})
+freq_df = pd.DataFrame({'stim': cov_mat[sess_idx==sess][:,1], 'grp_idx': grp_idx[sess_idx==sess], 'obs_data': obs_data[sess_idx==sess]})
 
 freqs = pd.pivot_table(
     freq_df, 
@@ -449,5 +455,5 @@ LOO_results = az.loo(trace)
 fit_results = {'az_summary_trace': result_df,
                'az_loo_trace': LOO_results}
 #%%
-with open("Results_B.pkl","wb") as f:
+with open(MODEL_DIR / "Results_B.pkl","wb") as f:
     pickle.dump(fit_results, f)

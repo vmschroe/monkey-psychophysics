@@ -18,11 +18,17 @@ import math
 import pickle
 import ast
 import xarray as xr
+from pathlib import Path
+
+try:
+    MODEL_DIR = Path(__file__).resolve().parent
+except NameError:  # __file__ isn't set when cells are run interactively
+    MODEL_DIR = Path.cwd()
+DATA_DIR = MODEL_DIR / "Data_A"
 
 #%%
-#os.getcwd() if doesnt work
 #load and unpack data
-with open("ReadyData_Sirius_A.pkl", "rb") as f:
+with open(DATA_DIR / "ReadyData_Sirius_A.pkl", "rb") as f:
     data_dict = pickle.load(f)
 
 cov_mat = data_dict['cov_mat']
@@ -31,7 +37,7 @@ obs_data = data_dict['resp']
 
 #%%
 
-exec(open("Build_Model_A.py").read())
+exec(open(MODEL_DIR / "Build_Model_A.py").read())
 
 #%% Sample from posteriors
 
@@ -420,5 +426,5 @@ LOO_results = az.loo(trace)
 fit_results = {'az_summary_trace': result_df,
                'az_loo_trace': LOO_results}
 
-with open("Results_A.pkl","wb") as f:
+with open(MODEL_DIR / "Results_A.pkl","wb") as f:
     pickle.dump(fit_results, f)

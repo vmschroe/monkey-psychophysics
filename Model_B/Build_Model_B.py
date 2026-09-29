@@ -30,7 +30,7 @@ with pm.Model(coords=coords) as model_B:
     cov_mat_mut = pm.Data("cov_mat", cov_mat, dims=("trials", "betas"))
     grp_idx_mut = pm.Data("grp_idx", grp_idx, dims=("trials",))
     sess_idx_mut = pm.Data("sess_idx", sess_idx, dims=("trials",))
-    obs_data = pm.Data("obs_data", obs_data, dims=("trials",))
+    obs_data_mut = pm.Data("obs_data", obs_data, dims=("trials",))
     
     #HYPERPRIORS
     #Beta vector
@@ -94,6 +94,6 @@ with pm.Model(coords=coords) as model_B:
         gam_h[grp_idx_mut, sess_idx_mut] + (1 - gam_h[grp_idx_mut, sess_idx_mut] - gam_l[grp_idx_mut, sess_idx_mut])*pm.math.invlogit(logistic_arg), 
         dims=("trials",))
     
-    resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-8,1-1e-8), observed=obs_data, dims=('trials',))
+    resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-8,1-1e-8), observed=obs_data_mut, dims=('trials',))
     
 print('model is built!')

@@ -20,14 +20,21 @@ import math
 import pickle
 import ast
 import xarray as xr
+from pathlib import Path
+
+try:
+    MODEL_DIR = Path(__file__).resolve().parent
+except NameError:  # __file__ isn't set when cells are run interactively
+    MODEL_DIR = Path.cwd()
+DATA_DIR = MODEL_DIR / "Data_B"
+MODEL_A_DIR = MODEL_DIR.parent / "Model_A"
 
 
 # Initialize Model A
 
 #%% Load Data and Info A
-#os.getcwd() if doesnt work
 #load and unpack data
-with open("ReadyData_Synth_A.pkl", "rb") as f:
+with open(MODEL_A_DIR / "Data_A" / "ReadyData_Synth_A.pkl", "rb") as f:
     data_dict_A = pickle.load(f)
 
 cov_mat = data_dict_A['cov_mat']
@@ -38,13 +45,13 @@ obs_data_A = obs_data
 
 #%% Load Model A
 
-exec(open("Build_Model_A.py").read())
+exec(open(MODEL_A_DIR / "Build_Model_A.py").read())
 
 #  Initialize Model B
 
 #%% Load Data and Info B
 #load and unpack data
-with open("ReadyData_Synth_B.pkl", "rb") as f:
+with open(DATA_DIR / "ReadyData_Synth_B.pkl", "rb") as f:
     data_dict_B = pickle.load(f)
 
 cov_mat = data_dict_B['cov_mat']
@@ -58,7 +65,7 @@ obs_data_B = obs_data
 
 #%% Load Model B
 
-exec(open("Build_Model_B.py").read())
+exec(open(MODEL_DIR / "Build_Model_B.py").read())
 
 
 #%% fit model A with data A, sample from posteriors

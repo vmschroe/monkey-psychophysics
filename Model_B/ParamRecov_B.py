@@ -17,11 +17,17 @@ import math
 import pickle
 import ast
 import xarray as xr
+from pathlib import Path
+
+try:
+    MODEL_DIR = Path(__file__).resolve().parent
+except NameError:  # __file__ isn't set when cells are run interactively
+    MODEL_DIR = Path.cwd()
+DATA_DIR = MODEL_DIR / "Data_B"
 
 #%% LOAD DATA (delete from this script later)
-#os.getcwd() if doesnt work
 #load and unpack data
-with open("ReadyData_Synth_B.pkl", "rb") as f:
+with open(DATA_DIR / "ReadyData_Synth_B.pkl", "rb") as f:
     data_dict = pickle.load(f)
 #%% 
 sessions = list(data_dict['dates_sess_idx'])
@@ -33,7 +39,7 @@ sess_idx = data_dict['sess_idx']
 
 #%%%
 
-exec(open("Build_Model_B.py").read())
+exec(open(MODEL_DIR / "Build_Model_B.py").read())
 
 
 #%% Sample from posteriors
