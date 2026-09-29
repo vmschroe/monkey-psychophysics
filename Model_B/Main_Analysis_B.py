@@ -211,125 +211,25 @@ with model_B:
     prior = pm.sample_prior_predictive(samples=3000)
 trace.extend(prior)
 
-#%% in aggregate
+#%% Effect of the distractor (bimanual - unimanual): shared setup
 
-#PSE
+# The goal for Model B is the effect of the distractor across sessions, looked at two ways:
+#   session level:    bimanual - unimanual within each session, so anything that shifts both
+#                     conditions on the same day cancels
+#   population level: the effect for a typical session, from the hyperparameters
+# Differences are taken per posterior draw, so their uncertainty is propagated exactly.
+# Note: pooling all sessions' posteriors into one distribution per group (as this script used
+# to) mixes session-to-session variation into the uncertainty and can hide a consistent effect.
+
 groups = coords['groups']
-fig, axes = plt.subplots(2, 2, constrained_layout=True)
-axes = axes.ravel()
-showlegend=0
-for ax, g in zip(axes, groups):
-    prior_vals = trace.prior["PSE"].sel(groups=g).values.reshape(-1)
-    post_vals  = trace.posterior["PSE"].sel(groups=g).values.reshape(-1)
-
-    # (optional) keep only finite values, safe habit
-    prior_vals = prior_vals[np.isfinite(prior_vals)]*x_sig+x_mu
-    post_vals  = post_vals[np.isfinite(post_vals)]*x_sig+x_mu
-
-    az.plot_dist(prior_vals, ax=ax, label="prior", color='blue')
-    az.plot_dist(post_vals,  ax=ax, label="posterior", color='purple')
-    #x_true = true_gam_h[g]
-    ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='green')
-    ax.set_xlim(20, 36)
-    ax.set_ylim(0,0.3)
-    ax.set_title(g)
-    if showlegend==0:
-        ax.legend(fontsize='small')
-        showlegend=1
-    else:
-        ax.get_legend().remove()
-fig.suptitle("PSE", fontsize=16)
-plt.show()
-
-
-#%% JND
-fig, axes = plt.subplots(2, 2, constrained_layout=True)
-axes = axes.ravel()
-showlegend=0
-for ax, g in zip(axes, groups):
-    prior_vals = trace.prior["JND"].sel(groups=g).values.reshape(-1)
-    post_vals  = trace.posterior["JND"].sel(groups=g).values.reshape(-1)
-
-    # (optional) keep only finite values, safe habit
-    prior_vals = prior_vals[np.isfinite(prior_vals)]*x_sig
-    post_vals  = post_vals[np.isfinite(post_vals)]*x_sig
-
-    az.plot_dist(prior_vals, ax=ax, label="prior", color='blue')
-    az.plot_dist(post_vals,  ax=ax, label="posterior", color='purple')
-    #x_true = true_gam_h[g]
-    #ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='green')
-    ax.set_xlim(0, 7)
-    ax.set_ylim(0,2.4)
-    ax.set_title(g)
-    if showlegend==0:
-        ax.legend(fontsize='small')
-        showlegend=1
-    else:
-        ax.get_legend().remove()
-fig.suptitle("JND", fontsize=16)
-plt.show()
-
-
-
-#%% gam_h
-     
-
-fig, axes = plt.subplots(2, 2, constrained_layout=True)
-axes = axes.ravel()
-showlegend=0
-for ax, g in zip(axes, groups):
-    prior_vals = trace.prior["gam_h"].sel(groups=g).values.reshape(-1)
-    post_vals  = trace.posterior["gam_h"].sel(groups=g).values.reshape(-1)
-
-    # (optional) keep only finite values, safe habit
-    prior_vals = prior_vals[np.isfinite(prior_vals)]
-    post_vals  = post_vals[np.isfinite(post_vals)]
-
-    az.plot_dist(prior_vals, ax=ax, label="prior", color='blue')
-    az.plot_dist(post_vals,  ax=ax, label="posterior", color='purple')
-    #x_true = true_gam_h[g]
-    #ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='green')
-    ax.set_xlim(0, 0.15)
-    ax.set_ylim(0,200)
-    ax.set_title(g)
-    if showlegend==0:
-        ax.legend(fontsize='small')
-        showlegend=1
-    else:
-        ax.get_legend().remove()
-fig.suptitle(r"$\gamma_h$", fontsize=16)
-plt.show()
-     
-#%% gam_l
-     
-
-fig, axes = plt.subplots(2, 2, constrained_layout=True)
-axes = axes.ravel()
-showlegend=0
-for ax, g in zip(axes, groups):
-    prior_vals = trace.prior["gam_l"].sel(groups=g).values.reshape(-1)
-    post_vals  = trace.posterior["gam_l"].sel(groups=g).values.reshape(-1)
-
-    # (optional) keep only finite values, safe habit
-    prior_vals = prior_vals[np.isfinite(prior_vals)]
-    post_vals  = post_vals[np.isfinite(post_vals)]
-
-    az.plot_dist(prior_vals, ax=ax, label="prior", color='blue')
-    az.plot_dist(post_vals,  ax=ax, label="posterior", color='purple')
-    #x_true = true_gam_h[g]
-    #ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='green')
-    ax.set_xlim(0, 0.15)
-    ax.set_ylim(0,120)
-    ax.set_title(g)
-    if showlegend==0:
-        ax.legend(fontsize='small')
-        showlegend=1
-    else:
-        ax.get_legend().remove()
-fig.suptitle(r"$\gamma_l$", fontsize=16)
-plt.show()   
-
-#%% compare unimanual vs bimanual plots
+HANDS = {'Left Hand': ('left_uni', 'left_bi'), 'Right Hand': ('right_uni', 'right_bi')}
+QUANTITIES = ['PSE', 'JND', 'gam_h', 'gam_l']
+QUANTITY_LABELS = {'PSE': r'PSE ($\mu m$)', 'JND': r'JND ($\mu m$)', 'gam_h': r'$\gamma_h$', 'gam_l': r'$\gamma_l$'}
+# normalized stimulus units -> micrometres (x_sig, x_mu from the psychometric curve cell);
+# differences are only scaled, never shifted
+SCALE = {'PSE': x_sig, 'JND': x_sig, 'gam_h': 1.0, 'gam_l': 1.0}
+SHIFT = {'PSE': x_mu, 'JND': 0.0, 'gam_h': 0.0, 'gam_l': 0.0}
+COLORS = {'population': '#2a78d6', 'sessions': '#eb6834', 'prior': '#52514e'}
 
 def plot_post_hdi(ax, vals, color, label, hdi_prob=0.95):
     """Posterior density with its HDI shaded and a dotted line at the posterior mean."""
@@ -340,99 +240,157 @@ def plot_post_hdi(ax, vals, color, label, hdi_prob=0.95):
     ax.fill_between(grid[in_hdi], dens[in_hdi], color=color, alpha=0.3, linewidth=0)
     ax.vlines(vals.mean(), 0, np.interp(vals.mean(), grid, dens), color=color, linestyles='dotted')
 
-HDI_LEGEND_TITLE = 'shaded: 95% HDI\ndotted: mean'
+def population_quantities(ds):
+    """PSE, JND and lapse rates of a typical session: the psychometric parameters at the
+    population centres (mu). Works on trace.posterior or trace.prior; dims (chain, draw, groups)."""
+    b0 = ds['mu_betas'].sel(betas='b0', drop=True)
+    b1 = ds['mu_betas'].sel(betas='b1', drop=True)
+    # Build_Model_B.py indexes the gamma hyperparameters with the 'betas' dim: b0 -> gam_h, b1 -> gam_l
+    gh = 0.25 / (1 + np.exp(-ds['mu_gams'].sel(betas='b0', drop=True)))
+    gl = 0.25 / (1 + np.exp(-ds['mu_gams'].sel(betas='b1', drop=True)))
+    pop = {'PSE': (-b0 + np.log((1 - 2*gh) / (1 - 2*gl))) / b1,
+           'JND': np.log(((3 - 4*gh)*(3 - 4*gl)) / ((1 - 4*gh)*(1 - 4*gl))) / (2*b1),
+           'gam_h': gh, 'gam_l': gl}
+    return {q: v * SCALE[q] + SHIFT[q] for q, v in pop.items()}
 
-#PSE
+def finite(vals):
+    vals = np.asarray(vals).reshape(-1)
+    return vals[np.isfinite(vals)]
 
-#side, uni_grp, bi_grp = ['Right Hand', 'right_uni', 'right_bi']
-side, uni_grp, bi_grp = ['Left Hand', 'left_uni', 'left_bi']
+pop_post = population_quantities(trace.posterior)
+pop_prior = population_quantities(trace.prior)
 
+# population-level difference, dims (chain, draw)
+pop_diff = {(hand, q): pop_post[q].sel(groups=bi, drop=True) - pop_post[q].sel(groups=uni, drop=True)
+            for hand, (uni, bi) in HANDS.items() for q in QUANTITIES}
+# session-level difference within each session, dims (chain, draw, sessions)
+sess_diff = {(hand, q): (trace.posterior[q].sel(groups=bi, drop=True)
+                         - trace.posterior[q].sel(groups=uni, drop=True)) * SCALE[q]
+             for hand, (uni, bi) in HANDS.items() for q in QUANTITIES}
 
-fig, axes = plt.subplots(1, 1, constrained_layout=True)
-ax=axes
+#%% Population level: prior vs posterior of the typical-session PSE, JND and lapse rates
 
+for q in QUANTITIES:
+    fig, axes = plt.subplots(2, 2, constrained_layout=True, figsize=(9, 6))
+    for ax, g in zip(axes.ravel(), groups):
+        post_vals = finite(pop_post[q].sel(groups=g))
+        prior_vals = finite(pop_prior[q].sel(groups=g))
+        # the prior is far wider than the posterior, so show it as a histogram over the posterior's range
+        lo, hi = np.quantile(post_vals, [0.001, 0.999])
+        bins = np.linspace(lo - (hi - lo), hi + (hi - lo), 60)
+        ax.hist(prior_vals, bins=bins, histtype='step', color=COLORS['prior'], label='prior',
+                weights=np.full(len(prior_vals), 1 / (len(prior_vals) * np.diff(bins)[0])))
+        plot_post_hdi(ax, post_vals, COLORS['population'], 'posterior (95% HDI shaded)')
+        if q == 'PSE':
+            ax.axvline(28, linestyle="--", linewidth=1.5, label="trained threshold", color='green')
+        ax.set_xlim(bins[0], bins[-1])
+        ax.set_yticks([])
+        ax.set_title(g)
+        ax.set_xlabel(QUANTITY_LABELS[q])
+    axes[0, 0].legend(fontsize='small')
+    fig.suptitle(f"Population level (typical session): {QUANTITY_LABELS[q]}", fontsize=14)
+    plt.show()
 
-uni_vals  = trace.posterior["PSE"].sel(groups=uni_grp).values.reshape(-1)
-bi_vals  = trace.posterior["PSE"].sel(groups=bi_grp).values.reshape(-1)
-# (optional) keep only finite values, safe habit
+#%% Session level: bimanual - unimanual within every session (main result for Model B)
 
-uni_vals  = uni_vals[np.isfinite(uni_vals)]*x_sig+x_mu
-bi_vals  = bi_vals[np.isfinite(bi_vals)]*x_sig+x_mu
+dates = list(trace.posterior['sessions'].values)
+x = np.arange(len(dates))
 
-plot_post_hdi(ax, uni_vals, 'blue', "Unimanual")
-plot_post_hdi(ax, bi_vals, 'red', "Bimanual")
+for q in QUANTITIES:
+    fig, axes = plt.subplots(len(HANDS), 1, sharex=True, constrained_layout=True, figsize=(14, 7))
+    for ax, hand in zip(axes, HANDS):
+        d = sess_diff[(hand, q)]
+        d_mean = d.mean(('chain', 'draw')).values
+        d_hdi = az.hdi(d.to_dataset(name='d'), hdi_prob=0.95)['d'].values   # (sessions, 2)
+        excludes_zero = (d_hdi[:, 0] > 0) | (d_hdi[:, 1] < 0)
+        avg = finite(d.mean('sessions'))
+        avg_low, avg_high = az.hdi(avg, hdi_prob=0.95)
+        ax.axhspan(avg_low, avg_high, color=COLORS['sessions'], alpha=0.2, linewidth=0,
+                   label='average over sessions (95% HDI)')
+        ax.axhline(avg.mean(), color=COLORS['sessions'], linewidth=1.5)
+        ax.axhline(0, linestyle='--', linewidth=1, color=COLORS['prior'])
+        ax.errorbar(x, d_mean, yerr=[d_mean - d_hdi[:, 0], d_hdi[:, 1] - d_mean], fmt='none',
+                    ecolor=COLORS['population'], elinewidth=1.2)
+        ax.plot(x[excludes_zero], d_mean[excludes_zero], 'o', color=COLORS['population'], markersize=5,
+                label='session: 95% HDI excludes 0')
+        ax.plot(x[~excludes_zero], d_mean[~excludes_zero], 'o', markerfacecolor='white',
+                markeredgecolor=COLORS['population'], markersize=5, label='session: 95% HDI includes 0')
+        ax.set_title(f"{hand}: {excludes_zero.sum()} of {len(dates)} sessions with 95% HDI excluding 0")
+        ax.set_ylabel(f'bimanual − unimanual\n{QUANTITY_LABELS[q]}')
+        ax.grid(alpha=0.3)
+    axes[-1].set_xticks(x, dates, rotation=90, fontsize=8)
+    axes[-1].set_xlabel('session')
+    axes[0].legend(fontsize='small', ncol=3)
+    fig.suptitle(f"{QUANTITY_LABELS[q]}: bimanual − unimanual within each session (posterior mean and 95% HDI)",
+                 fontsize=14)
+    plt.show()
 
+#%% Session level: unimanual (blue) and bimanual (red) estimates in every session
 
-#x_true = true_gam_h[g]
-ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='green')
-#ax.set_xlim(22, 34)
-#ax.set_ylim(0,1.7)
-ax.set_title(side)
-ax.legend(fontsize='small', loc='upper center', title=HDI_LEGEND_TITLE, title_fontsize='small')
-fig.suptitle("Posterior Estimates: PSE", fontsize=16)
+COND_COLORS = {'Unimanual': '#2a78d6', 'Bimanual': '#e34948'}
+offset = 0.18   # small horizontal shift so the two conditions don't overlap
+
+for q in QUANTITIES:
+    fig, axes = plt.subplots(len(HANDS), 1, sharex=True, constrained_layout=True, figsize=(14, 7))
+    for ax, (hand, (uni, bi)) in zip(axes, HANDS.items()):
+        for cond, grp, dx in [('Unimanual', uni, -offset), ('Bimanual', bi, offset)]:
+            vals = trace.posterior[q].sel(groups=grp, drop=True) * SCALE[q] + SHIFT[q]
+            v_mean = vals.mean(('chain', 'draw')).values
+            v_hdi = az.hdi(vals.to_dataset(name='v'), hdi_prob=0.95)['v'].values   # (sessions, 2)
+            pop_low, pop_high = az.hdi(finite(pop_post[q].sel(groups=grp)), hdi_prob=0.95)
+            ax.axhspan(pop_low, pop_high, color=COND_COLORS[cond], alpha=0.12, linewidth=0,
+                       label=f'{cond}: population, typical session (95% HDI)')
+            ax.errorbar(x + dx, v_mean, yerr=[v_mean - v_hdi[:, 0], v_hdi[:, 1] - v_mean], fmt='o', markersize=4,
+                        color=COND_COLORS[cond], elinewidth=1.2, label=f'{cond}: session (mean, 95% HDI)')
+        if q == 'PSE':
+            ax.axhline(28, linestyle='--', linewidth=1.5, color='green', label='trained threshold')
+        ax.set_title(hand)
+        ax.set_ylabel(QUANTITY_LABELS[q])
+        ax.grid(alpha=0.3)
+    axes[-1].set_xticks(x, dates, rotation=90, fontsize=8)
+    axes[-1].set_xlabel('session')
+    axes[0].legend(fontsize='small', ncol=3)
+    fig.suptitle(f"{QUANTITY_LABELS[q]}: unimanual and bimanual in each session (posterior mean and 95% HDI)",
+                 fontsize=14)
+    plt.show()
+
+#%% Overall distractor effect: population level vs average over these sessions
+
+fig, axes = plt.subplots(len(QUANTITIES), len(HANDS), constrained_layout=True, figsize=(12, 12))
+for r, q in enumerate(QUANTITIES):
+    for ax, hand in zip(axes[r], HANDS):
+        pop_d = finite(pop_diff[(hand, q)])
+        avg_d = finite(sess_diff[(hand, q)].mean('sessions'))
+        plot_post_hdi(ax, pop_d, COLORS['population'], f'population (typical session), P(>0) = {np.mean(pop_d > 0):.2f}')
+        plot_post_hdi(ax, avg_d, COLORS['sessions'], f'average over the {len(dates)} sessions, P(>0) = {np.mean(avg_d > 0):.2f}')
+        ax.axvline(0, linestyle='--', linewidth=1, color=COLORS['prior'])
+        ax.set_yticks([])
+        ax.set_xlabel(f'bimanual − unimanual {QUANTITY_LABELS[q]}')
+        ax.legend(fontsize='x-small', title='95% HDI shaded, mean dotted', title_fontsize='x-small')
+        if r == 0:
+            ax.set_title(hand)
+fig.suptitle("Effect of the distractor (bimanual − unimanual)", fontsize=14)
 plt.show()
 
-#%% JND
-     
+#%% Effect summary table
 
-#side, uni_grp, bi_grp = ['Right Hand', 'right_uni', 'right_bi']
-side, uni_grp, bi_grp = ['Left Hand', 'left_uni', 'left_bi']
-
-fig, axes = plt.subplots(1, 1, constrained_layout=True)
-ax=axes
-
-
-uni_vals  = trace.posterior["JND"].sel(groups=uni_grp).values.reshape(-1)
-bi_vals  = trace.posterior["JND"].sel(groups=bi_grp).values.reshape(-1)
-# (optional) keep only finite values, safe habit
-
-uni_vals  = uni_vals[np.isfinite(uni_vals)]*x_sig
-bi_vals  = bi_vals[np.isfinite(bi_vals)]*x_sig
-
-plot_post_hdi(ax, uni_vals, 'blue', "Unimanual")
-plot_post_hdi(ax, bi_vals, 'red', "Bimanual")
-
-
-#x_true = true_gam_h[g]
-#ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='green')
-ax.set_xlim(0, 20)
-#ax.set_ylim(0,1.7)
-ax.set_title(side)
-ax.legend(fontsize='small', title=HDI_LEGEND_TITLE, title_fontsize='small')
-fig.suptitle("Posterior Estimates: JND", fontsize=16)
-plt.show()
-
-#%% lapse parameters
-
-side, uni_grp, bi_grp = ['Right Hand', 'right_uni', 'right_bi']
-#side, uni_grp, bi_grp = ['Left Hand', 'left_uni', 'left_bi']
-gam_type = 'gam_l'
-
-fig, axes = plt.subplots(1, 1, constrained_layout=True)
-ax=axes
-
-
-uni_vals  = trace.posterior[gam_type].sel(groups=uni_grp).values.reshape(-1)
-bi_vals  = trace.posterior[gam_type].sel(groups=bi_grp).values.reshape(-1)
-# (optional) keep only finite values, safe habit
-
-uni_vals  = uni_vals[np.isfinite(uni_vals)]
-bi_vals  = bi_vals[np.isfinite(bi_vals)]
-
-plot_post_hdi(ax, uni_vals, 'blue', "Unimanual")
-plot_post_hdi(ax, bi_vals, 'red', "Bimanual")
-
-
-#x_true = true_gam_h[g]
-#ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='green')
-#ax.set_xlim(22, 34)
-#ax.set_ylim(0,1.7)
-ax.set_title(side)
-#ax.set_title("Left Hand")
-ax.legend(fontsize='small', title=HDI_LEGEND_TITLE, title_fontsize='small')
-fig.suptitle(r"Posterior Estimates: $\gamma_l$", fontsize=16)
-plt.show()
-
+effect_rows = []
+for hand in HANDS:
+    for q in QUANTITIES:
+        pop_d = finite(pop_diff[(hand, q)])
+        avg_d = finite(sess_diff[(hand, q)].mean('sessions'))
+        d_hdi = az.hdi(sess_diff[(hand, q)].to_dataset(name='d'), hdi_prob=0.95)['d'].values
+        effect_rows.append({
+            'hand': hand, 'quantity': q,
+            'pop_mean': pop_d.mean(), 'pop_hdi_low': az.hdi(pop_d, hdi_prob=0.95)[0],
+            'pop_hdi_high': az.hdi(pop_d, hdi_prob=0.95)[1], 'pop_P(>0)': np.mean(pop_d > 0),
+            'sess_avg_mean': avg_d.mean(), 'sess_avg_hdi_low': az.hdi(avg_d, hdi_prob=0.95)[0],
+            'sess_avg_hdi_high': az.hdi(avg_d, hdi_prob=0.95)[1], 'sess_avg_P(>0)': np.mean(avg_d > 0),
+            'n_sessions_hdi_above_0': int((d_hdi[:, 0] > 0).sum()),
+            'n_sessions_hdi_below_0': int((d_hdi[:, 1] < 0).sum()),
+        })
+effect_summary = pd.DataFrame(effect_rows)
+print(effect_summary.round(3).to_string())
 
 #%%
 
@@ -441,7 +399,8 @@ az.plot_ppc(trace, num_pp_samples=100)
 LOO_results = az.loo(trace)
 
 fit_results = {'az_summary_trace': result_df,
-               'az_loo_trace': LOO_results}
+               'az_loo_trace': LOO_results,
+               'effect_summary': effect_summary}
 #%%
 with open(MODEL_DIR / "Results_B.pkl","wb") as f:
     pickle.dump(fit_results, f)
