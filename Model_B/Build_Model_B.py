@@ -84,15 +84,14 @@ with pm.Model(coords=coords) as model_B:
     JND = pm.Deterministic("JND", (pm.math.log( ((3-4*gam_h)*(3-4*gam_l)) / ((1-4*gam_h)*(1-4*gam_l)) )) / (2*beta_vec[1]) , dims=("groups",'sessions'))
 
     
-    beta_trial = pm.Deterministic('beta_trial', beta_vec[:, grp_idx_mut, sess_idx_mut], dims= ('betas', 'trials') )
-    
-    logistic_arg = pm.Deterministic( "logistic_arg", pm.math.sum(cov_mat_mut.T * beta_trial, axis=0), dims=("trials",),)
+    # Per-trial quantities are plain tensors, not pm.Deterministic: storing one value
+    # per trial for every draw would add ~2 GB per variable to the trace
+    beta_trial = beta_vec[:, grp_idx_mut, sess_idx_mut]
 
-    
-    p = pm.Deterministic(
-        'p', 
-        gam_h[grp_idx_mut, sess_idx_mut] + (1 - gam_h[grp_idx_mut, sess_idx_mut] - gam_l[grp_idx_mut, sess_idx_mut])*pm.math.invlogit(logistic_arg), 
-        dims=("trials",))
+    logistic_arg = pm.math.sum(cov_mat_mut.T * beta_trial, axis=0)
+
+
+    p = gam_h[grp_idx_mut, sess_idx_mut] + (1 - gam_h[grp_idx_mut, sess_idx_mut] - gam_l[grp_idx_mut, sess_idx_mut])*pm.math.invlogit(logistic_arg)
     
     resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-8,1-1e-8), observed=obs_data_mut, dims=('trials',))
     

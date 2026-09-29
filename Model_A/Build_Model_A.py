@@ -41,15 +41,11 @@ with pm.Model(coords=coords) as model_A:
     PSE = pm.Deterministic("PSE", (-beta_vec[0] + pm.math.log( (1-2*gam_h) / (1-2*gam_l) ))/ beta_vec[1] , dims=("groups",))
     JND = pm.Deterministic("JND", (pm.math.log( ((3-4*gam_h)*(3-4*gam_l)) / ((1-4*gam_h)*(1-4*gam_l)) )) / (2*beta_vec[1]) , dims=("groups",))
     
-    logistic_arg = pm.Deterministic(
-        'logistic_arg',
-        pm.math.sum(cov_mat_mut * beta_vec[:, grp_idx_mut].T, axis=1),
-        dims=("trials",))
+    # Per-trial quantities are plain tensors, not pm.Deterministic, so the trace
+    # doesn't store one value per trial for every draw
+    logistic_arg = pm.math.sum(cov_mat_mut * beta_vec[:, grp_idx_mut].T, axis=1)
 
-    p = pm.Deterministic(
-        'p',
-        gam_h[grp_idx_mut] + (1 - gam_h[grp_idx_mut] - gam_l[grp_idx_mut])*pm.math.invlogit(logistic_arg),
-        dims=("trials",))
+    p = gam_h[grp_idx_mut] + (1 - gam_h[grp_idx_mut] - gam_l[grp_idx_mut])*pm.math.invlogit(logistic_arg)
     resp = pm.Bernoulli("resp", p=pm.math.clip(p,1e-8,1-1e-8), observed=obs_data_mut, dims=('trials',))
     
 print('model is built!')
