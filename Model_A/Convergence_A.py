@@ -45,6 +45,8 @@ try:
 except NameError:  # __file__ isn't set when cells are run interactively
     MODEL_DIR = Path.cwd()
 DATA_DIR = MODEL_DIR / "Data_A"
+PLOT_DIR = MODEL_DIR / "Plots_A" / "Convergence_Plots_A"
+PLOT_DIR.mkdir(parents=True, exist_ok=True)
 
 #%% SETTINGS
 
@@ -109,6 +111,7 @@ def split_params(ds):
 #%% GENERATE DATA AND FIT MODEL A AT EACH SIZE
 
 rows = []
+prop_rows = []      # observed response counts per stimulus level, instead of saving every response
 post_samples = {}   # (rep, size) -> {param: array (n_samples, n_groups)}
 var_names = ['beta_vec', 'gam_h', 'gam_l', 'PSE', 'JND']
 
@@ -125,6 +128,14 @@ for rep in range(N_REPS):
         cov_mat = rep_cov_mat[:size]
         grp_idx = rep_grp_idx[:size]
         obs_data = rep_resp[:size]
+
+        counts = (pd.DataFrame({'group': np.asarray(groups)[grp_idx], 'stim': cov_mat[:, 1], 'resp': obs_data})
+                  .groupby(['group', 'stim'])['resp'].agg(n_trials='size', n_high='sum').reset_index())
+        counts['prop_high'] = counts['n_high'] / counts['n_trials']
+        counts.insert(0, 'size', size)
+        counts.insert(0, 'rep', rep)
+        prop_rows.append(counts)
+
         exec(open(MODEL_DIR / "Build_Model_A.py").read())
 
         with model_A:
@@ -157,19 +168,20 @@ for rep in range(N_REPS):
                 })
 
 results = pd.DataFrame(rows)
+obs_props = pd.concat(prop_rows, ignore_index=True)
 print("FINISHED SAMPLING!")
 
 with open(MODEL_DIR / "Results_Convergence_A.pkl", "wb") as f:
-    pickle.dump({'results': results, 'post_samples': post_samples, 'groups': groups,
-                 'true_vals': true_vals, 'sizes': SIZES, 'n_reps': N_REPS,
+    pickle.dump({'results': results, 'post_samples': post_samples, 'obs_props': obs_props,
+                 'groups': groups, 'true_vals': true_vals, 'sizes': SIZES, 'n_reps': N_REPS,
                  'hdi_prob': HDI_PROB, 'seed': SEED}, f)
 
 #%% (optional) reload saved results instead of refitting
 
 # with open(MODEL_DIR / "Results_Convergence_A.pkl", "rb") as f:
 #     saved = pickle.load(f)
-# results, post_samples, groups = saved['results'], saved['post_samples'], saved['groups']
-# true_vals, SIZES, N_REPS, HDI_PROB = saved['true_vals'], saved['sizes'], saved['n_reps'], saved['hdi_prob']
+# results, post_samples, obs_props = saved['results'], saved['post_samples'], saved['obs_props']
+# groups, true_vals, SIZES, N_REPS, HDI_PROB = saved['groups'], saved['true_vals'], saved['sizes'], saved['n_reps'], saved['hdi_prob']
 
 #%% Sampling diagnostics: r_hat should be ~1 and there should be no divergences
 
@@ -184,7 +196,10 @@ print(coverage.loc[PARAM_NAMES].round(2).to_string())
 
 #%% Plot colors: one per group, fixed order; blue ramp (light -> dark) for dataset size
 
-GROUP_COLORS = dict(zip(groups, ['#2a78d6', '#eb6834', '#1baf7a', '#eda100']))
+CATEGORICAL = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
+GROUP_COLORS = dict(zip(groups, CATEGORICAL))
+# one color per replicate where replicates share a panel; past 8 they would be indistinguishable, so use one color
+REP_COLORS = CATEGORICAL[:N_REPS] if N_REPS <= len(CATEGORICAL) else [CATEGORICAL[0]] * N_REPS
 SIZE_RAMP = ['#86b6ef', '#6da7ec', '#5598e7', '#3987e5', '#2a78d6', '#256abf', '#1c5cab', '#184f95', '#104281', '#0d366b']
 SIZE_COLORS = dict(zip(SIZES, [SIZE_RAMP[i] for i in np.linspace(0, len(SIZE_RAMP) - 1, len(SIZES)).round().astype(int)]))
 
@@ -194,6 +209,9 @@ def size_axis(ax):
     ax.set_xlim(min(SIZES) / 1.4, max(SIZES) * 1.4)
     ax.set_xticks(SIZES, [str(n) for n in SIZES])
     ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+
+def save_plot(fig, name):
+    fig.savefig(PLOT_DIR / f"{name}.png", dpi=200, bbox_inches='tight')
 
 #%% Posterior mean and 95% HDI vs dataset size, one figure per parameter
 
@@ -219,6 +237,7 @@ for par in PARAM_NAMES:
         ax.set_ylabel(par)
     axes[0, 0].legend(fontsize=8)
     fig.suptitle(f'Recovery of {par} vs dataset size', fontsize=14)
+    save_plot(fig, f"recovery_{par}_mean_hdi_vs_size")
     plt.show()
 
 #%% Posterior sd vs dataset size (log-log); dashed line has the 1/sqrt(N) slope
@@ -245,20 +264,20 @@ for ax in axes[:, 0]:
 handles, labels = axes[0, 0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='outside right center')
 fig.suptitle('Posterior uncertainty vs dataset size', fontsize=14)
+save_plot(fig, "posterior_sd_vs_size_all_params")
 plt.show()
 
-#%% Posterior densities for one replicate, darker = more trials
-
-rep_show = 0
+#%% Posterior densities, all replicates overlaid; darker = more trials
 
 for par in PARAM_NAMES:
     fig, axes = plt.subplots(2, 2, constrained_layout=True, figsize=(9, 6))
     for g_i, (ax, grp) in enumerate(zip(axes.ravel(), groups)):
         for size in SIZES:
-            vals = post_samples[(rep_show, size)][par][:, g_i]
-            vals = vals[np.isfinite(vals)]
-            az.plot_kde(vals, ax=ax, plot_kwargs={'color': SIZE_COLORS[size], 'linewidth': 2},
-                        label=f'{size}')
+            for rep in range(N_REPS):
+                vals = post_samples[(rep, size)][par][:, g_i]
+                vals = vals[np.isfinite(vals)]
+                az.plot_kde(vals, ax=ax, plot_kwargs={'color': SIZE_COLORS[size], 'linewidth': 1.5, 'alpha': 0.85},
+                            label=f'{size}' if rep == 0 else None)
         ax.axvline(true_vals[par][g_i], linestyle='--', linewidth=1.5, color='#52514e', label='true value')
         ax.set_title(grp)
         ax.set_yticks([])
@@ -268,5 +287,125 @@ for par in PARAM_NAMES:
             ax.get_legend().remove()
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, title='trials', loc='outside right center')
-    fig.suptitle(f'Posterior of {par} as data grows (replicate {rep_show})', fontsize=14)
+    fig.suptitle(f'Posterior of {par} as data grows ({N_REPS} replicates overlaid)', fontsize=14)
+    save_plot(fig, f"posterior_density_{par}_by_size")
     plt.show()
+
+#%% Psychometric curves: posterior median and pointwise 95% HDI band for every fit
+
+stim_grid = np.linspace(design_cov_mat[:, 1].min(), design_cov_mat[:, 1].max(), 200)
+
+def psych_curves(gam_h, gam_l, beta0, beta1, X):
+    """Psychometric function with lapses for arrays of parameter samples.
+    Returns shape (n_samples, len(X))."""
+    gam_h, gam_l, beta0, beta1 = (np.atleast_1d(v)[:, None] for v in (gam_h, gam_l, beta0, beta1))
+    return gam_h + (1 - gam_h - gam_l) / (1 + np.exp(-(beta0 + beta1 * X)))
+
+true_curves = {grp: psych_curves(*(true_vals[p][g_i] for p in ['gam_h', 'gam_l', 'b0', 'b1']), stim_grid)[0]
+               for g_i, grp in enumerate(groups)}
+
+curve_bands = {}    # (rep, size, group) -> (median curve, hdi array (len(stim_grid), 2))
+curve_rows = []
+for (rep, size), samps in post_samples.items():
+    for g_i, grp in enumerate(groups):
+        curves = psych_curves(*(samps[p][:, g_i] for p in ['gam_h', 'gam_l', 'b0', 'b1']), stim_grid)
+        med = np.median(curves, axis=0)
+        hdi = az.hdi(curves[None], hdi_prob=HDI_PROB)   # (chain, draw, x) convention -> one band per x
+        curve_bands[(rep, size, grp)] = (med, hdi)
+        curve_rows.append({'rep': rep, 'size': size, 'group': grp,
+                           'mean_hdi_width': np.mean(hdi[:, 1] - hdi[:, 0]),
+                           'max_abs_error': np.max(np.abs(med - true_curves[grp])),
+                           'truth_in_band': np.mean((hdi[:, 0] <= true_curves[grp]) & (true_curves[grp] <= hdi[:, 1]))})
+curve_summary = pd.DataFrame(curve_rows)
+
+#%% A. Curve and HDI band for each dataset size (rows) and group (columns), replicates overlaid
+
+fig, axes = plt.subplots(len(SIZES), len(groups), sharex=True, sharey=True, constrained_layout=True,
+                         figsize=(12, 2.2 * len(SIZES) + 0.8))
+axes = np.atleast_2d(axes)
+for r, size in enumerate(SIZES):
+    for ax, grp in zip(axes[r], groups):
+        for rep in range(N_REPS):
+            med, hdi = curve_bands[(rep, size, grp)]
+            obs = obs_props[(obs_props['rep'] == rep) & (obs_props['size'] == size) & (obs_props['group'] == grp)]
+            ax.fill_between(stim_grid, hdi[:, 0], hdi[:, 1], color=REP_COLORS[rep], alpha=0.15, linewidth=0)
+            ax.plot(stim_grid, med, color=REP_COLORS[rep], linewidth=1.8)
+            ax.scatter(obs['stim'], obs['prop_high'], s=12 + 60 * obs['n_trials'] / obs_props['n_trials'].max(),
+                       color=REP_COLORS[rep], edgecolor='white', linewidth=0.8, zorder=3)
+        ax.plot(stim_grid, true_curves[grp], linestyle='--', linewidth=1.5, color='#0b0b0b', zorder=4)
+        ax.grid(alpha=0.3)
+        if r == 0:
+            ax.set_title(grp)
+    axes[r, 0].set_ylabel(f'{size} trials\nP("high")')
+for ax in axes[-1]:
+    ax.set_xlabel('stimulus (normalized)')
+handles = [(matplotlib.patches.Patch(color=REP_COLORS[rep], alpha=0.3),
+            matplotlib.lines.Line2D([], [], color=REP_COLORS[rep], linewidth=1.8)) for rep in range(N_REPS)]
+labels = [f'replicate {rep}' for rep in range(N_REPS)]
+handles += [matplotlib.lines.Line2D([], [], linestyle='--', linewidth=1.5, color='#0b0b0b'),
+            matplotlib.lines.Line2D([], [], marker='o', linestyle='', color='#52514e')]
+labels += ['true curve', 'observed proportion']
+fig.legend(handles, labels, loc='outside lower center', ncol=len(labels))
+fig.suptitle(f'Psychometric curve recovery by dataset size: posterior median and {int(HDI_PROB*100)}% HDI '
+             f'({N_REPS} replicates); dot area ∝ trials', fontsize=14)
+save_plot(fig, "psych_curve_hdi_by_size")
+plt.show()
+
+#%% B. Deviation of the recovered curve from the true curve; smallest, middle and largest sizes (rows), replicates overlaid
+
+sizes_show = sorted({SIZES[0], SIZES[len(SIZES) // 2], SIZES[-1]})
+
+fig, axes = plt.subplots(len(sizes_show), len(groups), sharex=True, sharey=True, constrained_layout=True,
+                         figsize=(14, 2.6 * len(sizes_show) + 0.8))
+axes = np.atleast_2d(axes)
+for r, size in enumerate(sizes_show):
+    for ax, grp in zip(axes[r], groups):
+        for rep in range(N_REPS):
+            med, hdi = curve_bands[(rep, size, grp)]
+            ax.fill_between(stim_grid, hdi[:, 0] - true_curves[grp], hdi[:, 1] - true_curves[grp],
+                            color=REP_COLORS[rep], alpha=0.15, linewidth=0)
+            ax.plot(stim_grid, med - true_curves[grp], color=REP_COLORS[rep], linewidth=1.8)
+        ax.axhline(0, linestyle='--', linewidth=1.5, color='#0b0b0b', zorder=4)
+        ax.grid(alpha=0.3)
+        if r == 0:
+            ax.set_title(grp)
+    axes[r, 0].set_ylabel(f'{size} trials\nposterior − true')
+for ax in axes[-1]:
+    ax.set_xlabel('stimulus (normalized)')
+handles = [(matplotlib.patches.Patch(color=REP_COLORS[rep], alpha=0.3),
+            matplotlib.lines.Line2D([], [], color=REP_COLORS[rep], linewidth=1.8)) for rep in range(N_REPS)]
+labels = [f'replicate {rep}' for rep in range(N_REPS)]
+handles.append(matplotlib.lines.Line2D([], [], linestyle='--', linewidth=1.5, color='#0b0b0b'))
+labels.append('true curve')
+fig.legend(handles, labels, loc='outside lower center', ncol=len(labels))
+fig.suptitle(f'Deviation of recovered P("high") from the true curve: posterior median and {int(HDI_PROB*100)}% HDI '
+             f'({N_REPS} replicates)', fontsize=14)
+save_plot(fig, "psych_curve_deviation_from_truth")
+plt.show()
+
+#%% C. Curve-level convergence summaries vs dataset size (mean over replicates)
+
+curve_means = curve_summary.groupby(['group', 'size'])[['mean_hdi_width', 'max_abs_error']].mean()
+
+fig, axes = plt.subplots(1, 2, constrained_layout=True, figsize=(12, 4.5))
+for ax, col, title in zip(axes, ['mean_hdi_width', 'max_abs_error'],
+                          [f'average {int(HDI_PROB*100)}% HDI width of the curve',
+                           'largest |posterior median − true curve|']):
+    for grp in groups:
+        ax.plot(SIZES, curve_means.loc[grp].loc[SIZES, col].values, marker='o', markersize=4,
+                linewidth=2, color=GROUP_COLORS[grp], label=grp)
+    ax.set_yscale('log')
+    size_axis(ax)
+    ax.set_title(title)
+    ax.set_xlabel('number of trials (all groups)')
+    ax.grid(alpha=0.3, which='both')
+axes[0].set_ylabel('P("high")')
+axes[0].legend()
+fig.suptitle('Psychometric curve convergence', fontsize=14)
+save_plot(fig, "psych_curve_hdi_width_and_error_vs_size")
+plt.show()
+
+
+#%% Fraction of the stimulus range where the true curve lies inside the HDI band
+
+print(curve_summary.pivot_table(index='group', columns='size', values='truth_in_band').round(2).to_string())
