@@ -330,6 +330,18 @@ fig.suptitle(r"$\gamma_l$", fontsize=16)
 plt.show()   
 
 #%% compare unimanual vs bimanual plots
+
+def plot_post_hdi(ax, vals, color, label, hdi_prob=0.95):
+    """Posterior density with its HDI shaded and a dotted line at the posterior mean."""
+    grid, dens = az.kde(vals)
+    hdi_low, hdi_high = az.hdi(vals, hdi_prob=hdi_prob)
+    in_hdi = (grid >= hdi_low) & (grid <= hdi_high)
+    ax.plot(grid, dens, color=color, label=label)
+    ax.fill_between(grid[in_hdi], dens[in_hdi], color=color, alpha=0.3, linewidth=0)
+    ax.vlines(vals.mean(), 0, np.interp(vals.mean(), grid, dens), color=color, linestyles='dotted')
+
+HDI_LEGEND_TITLE = 'shaded: 95% HDI\ndotted: mean'
+
 #PSE
 
 #side, uni_grp, bi_grp = ['Right Hand', 'right_uni', 'right_bi']
@@ -347,16 +359,8 @@ bi_vals  = trace.posterior["PSE"].sel(groups=bi_grp).values.reshape(-1)
 uni_vals  = uni_vals[np.isfinite(uni_vals)]*x_sig+x_mu
 bi_vals  = bi_vals[np.isfinite(bi_vals)]*x_sig+x_mu
 
-az.plot_dist(uni_vals,  ax=ax, label="Unimanual", color='blue')
-az.plot_dist(uni_vals,  ax=ax, label="Unimanual", color='blue', 
-             fill_kwargs={'alpha': 0.2, 'label':"95% HDI and mean"}, 
-             quantiles= [0.025, 0.5, 0.9725])
-
-
-az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red')
-az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red', 
-             fill_kwargs={'alpha': 0.2, 'label':"95% HDI and mean"}, 
-             quantiles= [0.025, 0.5, 0.9725])
+plot_post_hdi(ax, uni_vals, 'blue', "Unimanual")
+plot_post_hdi(ax, bi_vals, 'red', "Bimanual")
 
 
 #x_true = true_gam_h[g]
@@ -364,7 +368,7 @@ ax.axvline(28, linestyle="--", linewidth=2, label="trained threshold", color='gr
 #ax.set_xlim(22, 34)
 #ax.set_ylim(0,1.7)
 ax.set_title(side)
-ax.legend(fontsize='small', loc='upper center')
+ax.legend(fontsize='small', loc='upper center', title=HDI_LEGEND_TITLE, title_fontsize='small')
 fig.suptitle("Posterior Estimates: PSE", fontsize=16)
 plt.show()
 
@@ -385,16 +389,8 @@ bi_vals  = trace.posterior["JND"].sel(groups=bi_grp).values.reshape(-1)
 uni_vals  = uni_vals[np.isfinite(uni_vals)]*x_sig
 bi_vals  = bi_vals[np.isfinite(bi_vals)]*x_sig
 
-az.plot_dist(uni_vals,  ax=ax, label="Unimanual", color='blue')
-az.plot_dist(uni_vals,  ax=ax, label="Unimanual", color='blue', 
-             fill_kwargs={'alpha': 0.3, 'label':"95% HDI and mean"}, 
-             quantiles= [0.025, 0.5, 0.9725])
-
-
-az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red')
-az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red', 
-             fill_kwargs={'alpha': 0.3, 'label':"95% HDI and mean"}, 
-             quantiles= [0.025, 0.5, 0.9725])
+plot_post_hdi(ax, uni_vals, 'blue', "Unimanual")
+plot_post_hdi(ax, bi_vals, 'red', "Bimanual")
 
 
 #x_true = true_gam_h[g]
@@ -402,7 +398,7 @@ az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red',
 ax.set_xlim(0, 20)
 #ax.set_ylim(0,1.7)
 ax.set_title(side)
-ax.legend(fontsize='small')
+ax.legend(fontsize='small', title=HDI_LEGEND_TITLE, title_fontsize='small')
 fig.suptitle("Posterior Estimates: JND", fontsize=16)
 plt.show()
 
@@ -423,16 +419,8 @@ bi_vals  = trace.posterior[gam_type].sel(groups=bi_grp).values.reshape(-1)
 uni_vals  = uni_vals[np.isfinite(uni_vals)]
 bi_vals  = bi_vals[np.isfinite(bi_vals)]
 
-az.plot_dist(uni_vals,  ax=ax, label="Unimanual", color='blue')
-az.plot_dist(uni_vals,  ax=ax, label="Unimanual", color='blue', 
-             fill_kwargs={'alpha': 0.3, 'label':"95% HDI and mean"}, 
-             quantiles= [0.025, 0.5, 0.9725])
-
-
-az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red')
-az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red', 
-             fill_kwargs={'alpha': 0.3, 'label':"95% HDI and mean"}, 
-             quantiles= [0.025, 0.5, 0.9725])
+plot_post_hdi(ax, uni_vals, 'blue', "Unimanual")
+plot_post_hdi(ax, bi_vals, 'red', "Bimanual")
 
 
 #x_true = true_gam_h[g]
@@ -441,7 +429,7 @@ az.plot_dist(bi_vals,  ax=ax, label="Bimanual", color='red',
 #ax.set_ylim(0,1.7)
 ax.set_title(side)
 #ax.set_title("Left Hand")
-ax.legend(fontsize='small')
+ax.legend(fontsize='small', title=HDI_LEGEND_TITLE, title_fontsize='small')
 fig.suptitle(r"Posterior Estimates: $\gamma_l$", fontsize=16)
 plt.show()
 
