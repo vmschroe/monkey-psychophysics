@@ -33,7 +33,7 @@ HDIs reach the prior's upper bound of 8.
 (ii)~The between-session standard deviations of the slope and of both lapse
 rates are not identified: their true values are close to zero, yet the posterior
 means stay at 0.2--0.8 even with 80 sessions.
-(iii)~For the left-hand groups, the lower lapse rate $\gamma_l$ is overestimated
+(iii)~For the left-hand groups, the lapse rate $\gamma_l$, which sets the upper asymptote $1-\gamma_l$, is overestimated
 (about 0.014--0.024 against a true 0.0055), and more trials per session do not
 remove the bias.
 \end{abstract}
@@ -57,6 +57,8 @@ b_{1,gs} &\sim \mathcal{N}(\mu_{b_1,g},\, \sigma_{b_1,g}), \\
 \end{align*}
 and responses are Bernoulli with probability
 $\psi = \gamma_h + (1-\gamma_h-\gamma_l)\,\operatorname{logit}^{-1}(b_0 + b_1 x)$.
+The lapse rates set the asymptotes: $\psi \to \gamma_h$ at low amplitudes and
+$\psi \to 1-\gamma_l$ at high amplitudes.
 Stimuli are resampled from each group's stimuli in the real design, and groups
 cycle within a session so every session is balanced.
 
@@ -319,7 +321,7 @@ error in $\mu_{b_1}$ for left\_bi (posterior mean 3.45) lowers the coverage of
 $b_1$ and JND in that group to 0.86 and 0.88, which shows that errors at the
 population level carry through to every session of the group.
 
-\paragraph{Lower lapse rate $\gamma_l$ for left\_uni.}
+\paragraph{Lapse rate $\gamma_l$ for left\_uni.}
 Its RMSE stays at about 0.02 regardless of the number of trials
 (Figure~\ref{fig:session_trials}). The true session values are about 0.0055;
 the posterior means average 0.024 at 320 trials, roughly four times too high.
@@ -348,7 +350,7 @@ At the size of the real dataset (42 sessions of about 308 trials):
 \begin{itemize}
   \item \textbf{Reliable:} per-session PSE and JND; group means $\mu_{b_0}$;
         $\mu_{b_1}$ for the left-hand groups; the bias spread $\sigma_{b_0}$;
-        the upper lapse rate $\mu_{\gamma_h}$.
+        the lapse-rate mean $\mu_{\gamma_h}$.
   \item \textbf{Weakly constrained:} $\mu_{b_1}$ for the right-hand groups, whose
         HDIs are about 2 units wide and reach the prior bound of 8.
   \item \textbf{Biased:} $\mu_{\gamma_l}$ and the per-session $\gamma_l$ for the
