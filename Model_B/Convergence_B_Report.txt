@@ -102,11 +102,17 @@ corresponds to a typical lapse parameter of $0.25\,\invlogit(-2.5) \approx 0.02$
 All hyperparameters are independent.
 
 These are the priors used for the simulations in this report. Since then, the
-slope priors in \code{Build\_Model\_B.py} have been changed to
-$\mu_{\beta_1,g} \sim \text{LogNormal}(\log 4,\ 0.5)$ (median 4, 95\% in
-$[1.5,\ 10.7]$, no upper bound) and
-$\sigma_{\beta_1,g} \sim \text{Exponential}(\lambda = 1)$ (mean 1). The
-convergence results below have not been rerun with the new priors.
+following priors in \code{Build\_Model\_B.py} have been changed:
+\begin{itemize}
+  \item $\mu_{\beta_1,g} \sim \text{LogNormal}(\log 4,\ 0.5)$ (median 4, 95\% in
+        $[1.5,\ 10.7]$, no upper bound);
+  \item $\sigma_{\beta_1,g} \sim \text{Exponential}(\lambda = 1)$ (mean 1);
+  \item $\mu_{\gamma_h,g},\ \mu_{\gamma_l,g} \sim \mathcal{N}(-3,\ 1.5)$, so the
+        typical lapse rate $0.25\,\invlogit(\mu_\gamma)$ has median $0.012$ and 95\%
+        range $[0.0007,\ 0.12]$. The wider spread weakens the pull of the prior
+        when the data contain only a few lapses.
+\end{itemize}
+The convergence results below have not been rerun with the new priors.
 
 \subsection{Graphical Model}
 
@@ -452,6 +458,10 @@ At the size of the real dataset (42 sessions of about 308 trials):
         without the truncation.
   \item Test whether the $\gamma_l$ bias comes from the $\mathcal{N}(-2.5,1)$
         prior on $\mu_\gamma$, by refitting with a wider or lower-centered prior.
+        \textit{Prior changed after these simulations:} $\mu_\gamma$ is now
+        $\mathcal{N}(-3,\ 1.5)$. Rerunning the convergence study will show how much
+        of the bias remains; part of it is expected to come from the left\_uni
+        curve not reaching its ceiling within the stimulus range.
   \item Consider tighter priors on $\sigma_{\beta_1}$ and the lapse-rate sds, which
         would shrink the session estimates more and narrow their HDIs, if
         small between-session variation is plausible for the real animals.

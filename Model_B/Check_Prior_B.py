@@ -31,7 +31,7 @@ z_s = z_all[:,0]
 z_mu = z_all[:,1]
 z_sig = z_all[:,2]
 
-mu_gam = 1*z_mu+(-2.5)
+mu_gam = 1.5*z_mu+(-3)
 sig_gam = np.abs(1.25*z_sig)
 gam_samps = 0.25*(1 / (1 + np.exp(-(sig_gam*z_s+mu_gam))))
 
@@ -39,7 +39,8 @@ gam_samps = 0.25*(1 / (1 + np.exp(-(sig_gam*z_s+mu_gam))))
 plt.hist(gam_samps, density=True, bins=20)
 
 
-#%% SLOPE PRIOR: mu_b1 ~ LogNormal(log 4, 0.5), sig_b1 ~ Exp(mean 1), sampled from the actual model on the real design
+#%% SLOPE AND LAPSE PRIORS, sampled from the actual model on the real design
+# mu_b1 ~ LogNormal(log 4, 0.5), sig_b1 ~ Exp(mean 1), mu_gam ~ N(-3, 1.5)
 
 from pathlib import Path
 from scipy.stats import lognorm
@@ -59,7 +60,7 @@ sess_idx = data_dict['sess_idx']
 exec(open(MODEL_DIR / "Build_Model_B.py").read())
 
 with model_B:
-    prior = pm.sample_prior_predictive(draws=4000, var_names=['mu_betas', 'sig_betas', 'beta_vec', 'gam_h', 'gam_l', 'JND'],
+    prior = pm.sample_prior_predictive(draws=4000, var_names=['mu_betas', 'sig_betas', 'beta_vec', 'mu_gams', 'gam_h', 'gam_l', 'JND'],
                                        random_seed=1).prior
 
 mu_b1_samps = prior['mu_betas'].sel(betas='b1').values.ravel()
@@ -72,11 +73,8 @@ print(f"sig_b1 prior: mean {sig_b1_samps.mean():.2f}, 95% interval {np.round(np.
 print(f"session b1 prior: P(b1 < 0) = {np.mean(b1_samps < 0):.3f}")
 print(f"session JND prior (finite, b1 > 0): median {np.median(jnd_samps[b1_samps > 0]):.2f}")
 
-# real-data posterior means of mu_b1, from the fit with the old Uniform[0, 8] prior
-real_summary = pickle.load(open(MODEL_DIR / "Results_B.pkl", "rb"))['az_summary_trace']
-real_mu_b1 = real_summary.loc[real_summary.index.str.startswith('mu_betas[b1'), 'mean'].values
 
-BLUE, GRAY, INK = '#2a78d6', '#8a8984', '#52514e'
+BLUE, GRAY = '#2a78d6', '#8a8984'
 stim_levels = np.unique(np.round(cov_mat[:, 1], 3))
 
 fig, axes = plt.subplots(2, 2, figsize=(11, 8), constrained_layout=True)
@@ -86,8 +84,6 @@ grid = np.linspace(0, 16, 400)
 ax.hist(mu_b1_samps, bins=np.linspace(0, 16, 65), density=True, color=BLUE, alpha=0.35, label='model samples')
 ax.plot(grid, lognorm.pdf(grid, s=0.5, scale=4), color=BLUE, linewidth=2, label='LogNormal(log 4, 0.5)')
 ax.plot([0, 8, 8], [1/8, 1/8, 0], color=GRAY, linewidth=2, linestyle='--', label='old Uniform[0, 8]')
-for i, v in enumerate(real_mu_b1):
-    ax.axvline(v, color=INK, linewidth=1, alpha=0.6, label='real-data posterior means' if i == 0 else None)
 ax.set_xlabel('$\\mu_{b_1}$')
 ax.set_title('Group slope prior')
 ax.legend(fontsize=9)
@@ -121,6 +117,39 @@ for ax in axes.ravel()[:3]:
     ax.set_yticks([])
 fig.suptitle('Model B prior on the slope', fontsize=14)
 fig.savefig(MODEL_DIR / "Plots_B" / "Prior_Check_B_slope.png", dpi=200, bbox_inches='tight')
+plt.show()
+
+
+#%% Lapse-rate prior: typical lapse rate of a group and session-level lapse rates
+
+typical_gam = 0.25 / (1 + np.exp(-prior['mu_gams'].values.ravel()))
+typical_gam_old = 0.25 / (1 + np.exp(-norm.rvs(loc=-2.5, scale=1, size=typical_gam.size, random_state=3)))
+session_gam = np.concatenate([prior['gam_h'].values.ravel(), prior['gam_l'].values.ravel()])
+for name, s in [('typical gamma, N(-3, 1.5)', typical_gam), ('typical gamma, old N(-2.5, 1)', typical_gam_old),
+                ('session gamma', session_gam)]:
+    print(f"{name}: median {np.median(s):.4f}, 95% interval {np.round(np.percentile(s, [2.5, 97.5]), 4)}")
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
+bins = np.logspace(-5, np.log10(0.25), 61)
+frac = lambda s: np.full(s.size, 1 / s.size)   # fraction of samples per bin; density=True would distort log-spaced bins
+
+ax = axes[0]
+ax.hist(typical_gam, bins=bins, weights=frac(typical_gam), color=BLUE, alpha=0.6, label='$\\mu_\\gamma$ ~ N(-3, 1.5)')
+ax.hist(typical_gam_old, bins=bins, weights=frac(typical_gam_old), histtype='step', color=GRAY, linewidth=2, linestyle='--',
+        label='old $\\mu_\\gamma$ ~ N(-2.5, 1)')
+ax.set_title('Typical lapse rate of a group, 0.25 logit$^{-1}(\\mu_\\gamma)$')
+ax.legend(fontsize=9)
+
+ax = axes[1]
+ax.hist(session_gam, bins=bins, weights=frac(session_gam), color=BLUE, alpha=0.6)
+ax.set_title('Session lapse rates $\\gamma_{h,gs}$, $\\gamma_{l,gs}$')
+
+for ax in axes:
+    ax.set_xscale('log')
+    ax.set_xlabel('lapse rate (log scale; capped at 0.25 by the model)')
+    ax.set_yticks([])
+fig.suptitle('Model B prior on the lapse rates', fontsize=14)
+fig.savefig(MODEL_DIR / "Plots_B" / "Prior_Check_B_lapse.png", dpi=200, bbox_inches='tight')
 plt.show()
 
 
