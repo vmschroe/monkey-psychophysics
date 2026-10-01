@@ -1,0 +1,463 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,arrows.meta,calc}
+
+\newcommand{\invlogit}{\operatorname{logit}^{-1}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\graphicspath{{Convergence_Plots_B/}}
+
+\title{Convergence Simulations Model B}
+\author{Vera Schroeder}
+\date{September 2026}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Model Structure}
+\subsection{Data and indexing}
+The data are $N$ binary trials. Trial $i$ has
+\begin{itemize}
+  \item a response $y_i \in \{0,1\}$, the monkey's categorization of the stimulus as "low" (0) or "high" (1).;
+  \item a standardized stimulus amplitude $x_i$. The raw amplitudes are centered and scaled by the mean and standard deviation of the distinct amplitude levels. The covariate row is
+        $(1, x_i)$;
+  \item a group $g[i] \in \{1,\dots,4\}$ : the combination of
+        hand and distractor condition,
+        \[
+          g \in \{\text{left\_uni},\ \text{left\_bi},\ \text{right\_uni},\ \text{right\_bi}\},
+        \]
+        where ``uni'' is unimanual (no distractor) and ``bi'' is bimanual
+        (distractor present);
+  \item a session $s[i] \in \{1,\dots,S\}$ ; the real data have
+        $S = 42$.
+\end{itemize}
+
+\subsection{Likelihood}
+
+
+Each response is Bernoulli,
+\[
+  y_i \sim \text{Bernoulli}(\psi_i), \qquad
+  \psi_i = \psi\big(x_i;\ \theta_{g[i],s[i]}\big),
+\]
+with the psychometric function
+\[
+  \psi(x;\theta) = \gamma_h + (1 - \gamma_h - \gamma_l)\,\invlogit(\beta_0 + \beta_1 x),
+  \qquad \theta = (\beta_0, \beta_1, \gamma_h, \gamma_l).
+\]
+Here $\beta_0$ and $\beta_1$ are parameters of the sigmoid, and $\gamma_h,\gamma_l$
+set the asymptotes:
+\[
+  \lim_{x\to-\infty}\psi = \gamma_h, \qquad \lim_{x\to+\infty}\psi = 1-\gamma_l .
+\]
+So $\gamma_h$ is the probability of responding 1 ("high") at very low amplitudes, and
+$\gamma_l$ the probability of responding 0 ("low") at very high amplitudes. In the code
+$\psi_i$ is clipped to $[10^{-8},\,1-10^{-8}]$ before entering the Bernoulli
+likelihood, for numerical stability.
+
+\subsection{Session-level}
+
+For each group $g$ and session $s$, the four parameters are drawn independently
+from group-specific distributions:
+\begin{align*}
+  \beta_{0,gs} &\sim \mathcal{N}\big(\mu_{\beta_0,g},\ \sigma_{\beta_0,g}\big), \\
+  \beta_{1,gs} &\sim \mathcal{N}\big(\mu_{\beta_1,g},\ \sigma_{\beta_1,g}\big), \\
+  \gamma_{h,gs} &= 0.25\, w_{h,gs}, \qquad
+      w_{h,gs} \sim \text{LogitNormal}\big(\mu_{\gamma_h,g},\ \sigma_{\gamma_h,g}\big), \\
+  \gamma_{l,gs} &= 0.25\, w_{l,gs}, \qquad
+      w_{l,gs} \sim \text{LogitNormal}\big(\mu_{\gamma_l,g},\ \sigma_{\gamma_l,g}\big).
+\end{align*}
+The LogitNormal keeps $w \in (0,1)$, so each lapse parameter $\gamma$ lies in
+$(0, 0.25)$. That range keeps the curve increasing and makes the PSE and JND
+below well defined.
+
+Groups are independent of each other (no pooling across groups).
+
+\subsection{Group-level Hyperpriors}
+
+
+Each of the four groups has its own 8 hyperparameters, with the same priors in
+every group:
+\begin{align*}
+  \mu_{\beta_0,g} &\sim \mathcal{U}[-12,\ 12], &
+  \sigma_{\beta_0,g} &\sim \text{Exponential}(\lambda = 1/12) \quad (\text{mean } 12), \\
+  \mu_{\beta_1,g} &\sim \mathcal{U}[0,\ 8], &
+  \sigma_{\beta_1,g} &\sim \text{Exponential}(\lambda = 1/4) \quad (\text{mean } 4), \\
+  \mu_{\gamma_h,g},\ \mu_{\gamma_l,g} &\sim \mathcal{N}(-2.5,\ 1), &
+  \sigma_{\gamma_h,g},\ \sigma_{\gamma_l,g} &\sim \text{HalfNormal}(1.25).
+\end{align*}
+The prior on $\mu_{\beta_1}$ restricts the typical slope to be non-negative and at
+most 8. The lapse means are on the logit scale; the prior center $-2.5$
+corresponds to a typical lapse parameter of $0.25\,\invlogit(-2.5) \approx 0.02$.
+All hyperparameters are independent.
+
+These are the priors used for the simulations in this report. Since then, the
+slope priors in \code{Build\_Model\_B.py} have been changed to
+$\mu_{\beta_1,g} \sim \text{LogNormal}(\log 4,\ 0.5)$ (median 4, 95\% in
+$[1.5,\ 10.7]$, no upper bound) and
+$\sigma_{\beta_1,g} \sim \text{Exponential}(\lambda = 1)$ (mean 1). The
+convergence results below have not been rerun with the new priors.
+
+\subsection{Graphical Model}
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=1.1cm and 0.45cm,
+    latent/.style={circle, draw, minimum size=11mm, inner sep=0pt, font=\small},
+    obs/.style={latent, fill=gray!25},
+    det/.style={rectangle, draw, minimum size=9mm, inner sep=2pt, font=\small},
+    const/.style={font=\small},
+    arr/.style={-{Stealth[length=2mm]}},
+    plate/.style={draw, rounded corners, inner sep=8pt}
+  ]
+  % hyperparameters
+  \node[latent] (mub0) {$\mu_{\beta_0}$};
+  \node[latent, right=of mub0] (sb0) {$\sigma_{\beta_0}$};
+  \node[latent, right=of sb0] (mub1) {$\mu_{\beta_1}$};
+  \node[latent, right=of mub1] (sb1) {$\sigma_{\beta_1}$};
+  \node[latent, right=of sb1] (mugh) {$\mu_{\gamma_h}$};
+  \node[latent, right=of mugh] (sgh) {$\sigma_{\gamma_h}$};
+  \node[latent, right=of sgh] (mugl) {$\mu_{\gamma_l}$};
+  \node[latent, right=of mugl] (sgl) {$\sigma_{\gamma_l}$};
+
+  % session-level parameters
+  \node[latent, below=1.6cm of $(mub0)!0.5!(sb0)$] (b0) {$\beta_{0,gs}$};
+  \node[latent, below=1.6cm of $(mub1)!0.5!(sb1)$] (b1) {$\beta_{1,gs}$};
+  \node[latent, below=1.6cm of $(mugh)!0.5!(sgh)$] (gh) {$\gamma_{h,gs}$};
+  \node[latent, below=1.6cm of $(mugl)!0.5!(sgl)$] (gl) {$\gamma_{l,gs}$};
+
+  % derived
+  \node[det, below=1.6cm of b0] (pse) {PSE$_{gs}$, JND$_{gs}$};
+
+  % trial level
+  \node[det, below=1.4cm of $(b1)!0.5!(gh)$] (psi) {$\psi_i$};
+  \node[obs, below=1.0cm of psi] (y) {$y_i$};
+  \node[const, right=1.0cm of psi] (x) {$x_i$};
+
+  \foreach \h/\p in {mub0/b0, sb0/b0, mub1/b1, sb1/b1, mugh/gh, sgh/gh, mugl/gl, sgl/gl}
+    \draw[arr] (\h) -- (\p);
+  \foreach \p in {b0, b1, gh, gl}
+    \draw[arr] (\p) -- (psi);
+  \foreach \p in {b0, b1, gh, gl}
+    \draw[arr, densely dashed, gray] (\p) -- (pse);
+  \draw[arr] (x) -- (psi);
+  \draw[arr] (psi) -- (y);
+
+  % plates
+  \node[plate, fit=(x)(psi)(y), label={[font=\small]below:{trials $i$ with $g[i]=g,\ s[i]=s$}}] (ptrial) {};
+  \node[plate, fit=(b0)(gl)(pse)(ptrial), inner sep=22pt,
+        label={[font=\small, anchor=south west]south west:{sessions $s = 1,\dots,S$}}] (psess) {};
+  \node[plate, fit=(mub0)(sgl)(psess), inner sep=12pt,
+        label={[font=\small]above left:{groups $g = 1,\dots,4$}}] {};
+\end{tikzpicture}
+\end{center}
+
+\noindent
+Circles are random variables (shaded: observed), rectangles are deterministic
+functions, and $x_i$ is a fixed covariate. Dashed arrows lead to derived
+quantities that do not feed back into the likelihood.
+
+
+\subsection{Derived Quantities: PSE and JND}
+
+For each group and session the model records two summaries of the psychometric
+curve.
+
+\paragraph{Point of subjective equality (PSE):} the stimulus at which a response of "high" and "low" are equally likely ($\psi = 1/2$). Solving
+$\psi(x;\theta) = \tfrac12$ for x gives
+\[
+  \text{PSE} = \frac{1}{\beta_1}\left[-\beta_0 + \log\frac{1-2\gamma_h}{1-2\gamma_l}\right].
+\]
+
+\paragraph{Just noticeable difference (JND):} the amount the stimulus must be changed for the
+difference to be noticeable half of the time, a measure of sensitivity. This is computed as half the stimulus distance between the points where $\psi = 0.25$ and $\psi = 0.75$,
+\[
+  \text{JND} = \frac{x_{.75} - x_{.25}}{2}
+  = \frac{1}{2\beta_1}\,\log\frac{(3-4\gamma_h)(3-4\gamma_l)}{(1-4\gamma_h)(1-4\gamma_l)} .
+\]
+Both are in units of the standardized stimulus. When
+$\gamma_h=\gamma_l=0$, they reduce to $\text{PSE} = - \frac{\beta_0}{\beta_1} $ and $\text{JND} =  \frac{\log 3}{\beta_1}$.
+
+\subsection{Implementation}
+
+To aid fit, as in the convention of typical logistic regression, The raw amplitudes $x_i$ are centered and scaled by the mean and standard deviation of the distinct amplitude levels. To aid convergence of HMC NUTS, all distributions are written as deterministic transforms of a standard normal or uniform random variable. These non-centered parameterizations mean the sampler only uses uniform or standard normals.
+
+\section{Synthetic Data Generation}
+
+I fixed "hyperparameters" and simulated 10 total dataset conditions in two sweeps, and fit the model to each dataset. Each sweep was performed twice with new data.
+
+The first sweep held trials-per-session constant and varied number of sessions (5, 10, 20, 40 and 80 sessions, each with 308 trials). This provides info on convergence of global hyperparameters.
+
+The second held session count constant, varying trials-per-session (42 sessions, each with 20, 40, 80, 160 or 320 trials). This provides info on convergence of session-level parameters.
+
+The real data has 42 sessions with about 308 trials per session, the 40-session/320-trial is the best representative.
+
+\section{Model Fit Results}
+
+\subsection{Sampling Diagnostics}
+The 5-session fits sampled badly, (93 divergences in one replicate,
+$\hat{R}=1.06$, ESS 77) and are excluded from the conclusions below.. The rest of the fits sampled without issue.
+
+\begin{table}[H]
+\centering
+\caption{Sampler diagnostics over both replicates. $\hat{R}$ and bulk ESS are
+taken over the hyperparameters.}
+\begin{tabular}{llccc}
+\toprule
+Sweep & Size & max $\hat{R}$ & min ESS & divergences \\
+\midrule
+sessions & 5   & 1.061 & 77  & 93 \\
+sessions & 10  & 1.007 & 867 & 0 \\
+sessions & 20  & 1.006 & 703 & 0 \\
+sessions & 40  & 1.009 & 694 & 0 \\
+sessions & 80  & 1.008 & 677 & 0 \\
+\midrule
+trials & 20  & 1.010 & 542 & 0 \\
+trials & 40  & 1.011 & 431 & 0 \\
+trials & 80  & 1.011 & 540 & 0 \\
+trials & 160 & 1.009 & 590 & 0 \\
+trials & 320 & 1.006 & 640 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hyperparameter means}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{hyper_means_recovery_vs_sessions.png}
+\caption{Posterior mean and 95\% HDI of the group means against the number of
+sessions (308 trials each). The two replicates are drawn side by side; the
+dashed line is the true value.}
+\label{fig:means_sessions}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{hyper_means_recovery_vs_trials.png}
+\caption{As Figure~\ref{fig:means_sessions}, against trials per session (42
+sessions).}
+\label{fig:means_trials}
+\end{figure}
+
+\paragraph{Bias $\mu_{\beta_0}$:}
+Recovered well in all groups. From 20 sessions onward the HDIs are narrow and
+contain the true value. At 40 sessions the posterior means are within 0.22 of the
+truth, with HDI widths of about 0.7--0.8.
+
+\paragraph{Slope $\mu_{\beta_1}$:}
+For the left-hand groups (true value fixed $\mu_{\beta_1} = 3$), the posterior converges to the truth
+(at 80 sessions: 3.03 and 3.28, HDI width about 0.5--0.6). For the right-hand
+groups (true value fixed $\mu_{\beta_1} = 6$), the convergence is much slower. The HDIs remain wide, about 2 units at 40 sessions, and
+reach the prior's upper bound of 8 up to 40 sessions. At 40 sessions the
+right\_uni posterior mean is 6.9. The main cause is the stimulus design rather
+than the prior. At a slope of 6 the rise from $\psi = 0.25$ to $\psi = 0.75$ spans
+$2\log 3/6 \approx 0.37$ standardized units, less than the spacing between
+stimulus levels (about 0.41), so only the two levels nearest the PSE carry
+information about the slope; at the other levels the curve is already at its
+floor or ceiling. The data can therefore rule out shallower slopes but not
+steeper ones, and the prior's upper bound of 8 then truncates the posterior.
+Replacing the bounded prior with an unbounded one removes the truncation, but not
+the lack of information: that would need stimulus levels spaced more closely
+around the PSE.
+
+\paragraph{Lapse-rate means $\mu_{\gamma_h}$ and $\mu_{\gamma_l}$:} The hyperparameter
+$\mu_{\gamma_h}$ is recovered, with the intervals narrowing slowly as data grows.
+However, $\mu_{\gamma_l}$ is overestimated for the left-hand groups, whose true values
+($-3.8$, $-3.9$) lie well below the prior center of $-2.5$: at 40 sessions
+the posterior means are $-3.30$ and $-3.57$, and only at 80 sessions does left\_uni
+reach $-3.69$. More trials per session do not fix this: at 320 trials
+left\_uni is still at $-2.62$ (true $-3.8$). The right-hand groups show no
+consistent direction of error. The HDIs contain the true value in nearly every
+fit, so the error is inside the stated uncertainty. However, the posterior
+means are systematically too high for the left-hand groups.
+
+The lapse rates are confounded by the shape of the curve to a certain extent, so some identifiability issues are to be expected. The overestimation of $\mu_{\gamma_l}$ suggests a wider prior would be beneficial.
+
+\subsection{Hyperparameter standard deviations}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{hyper_sds_recovery_vs_sessions.png}
+\caption{Posterior mean and 95\% HDI of the between-session standard deviations
+against the number of sessions.}
+\label{fig:sds_sessions}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Between-session sds at 80 sessions: true value and posterior mean
+[95\% HDI], averaged over replicates.}
+\label{tab:sds80}
+\begin{tabular}{lcccc}
+\toprule
+ & left\_uni & left\_bi & right\_uni & right\_bi \\
+\midrule
+$\sigma_{b_0}$ true & 1.00 & 0.50 & 0.25 & 0.75 \\
+\quad posterior & 0.96 [0.77, 1.15] & 0.53 [0.38, 0.70] & 0.23 [0.00, 0.45] & 0.87 [0.62, 1.13] \\
+$\sigma_{b_1}$ true & 0.006 & 0.004 & 0.008 & 0.002 \\
+\quad posterior & 0.16 [0.00, 0.38] & 0.23 [0.00, 0.49] & 0.47 [0.00, 1.06] & 0.43 [0.00, 1.01] \\
+$\sigma_{\gamma_h}$ true & 0.040 & 0.147 & 0.090 & 0.024 \\
+\quad posterior & 0.40 [0.00, 0.91] & 0.63 [0.00, 1.38] & 0.25 [0.00, 0.54] & 0.28 [0.00, 0.65] \\
+$\sigma_{\gamma_l}$ true & 0.103 & 0.027 & 0.014 & 0.050 \\
+\quad posterior & 0.65 [0.00, 1.53] & 0.54 [0.00, 1.28] & 0.37 [0.00, 0.87] & 0.44 [0.00, 1.02] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$\sigma_{b_0}$ is recovered well from 20 sessions on (Table~\ref{tab:sds80}).
+The other three sds, $\sigma_{b_1}$, $\sigma_{\gamma_h}$ and $\sigma_{\gamma_l}$,
+have true values near zero, meaning the simulated sessions barely differ in slope
+or lapse rate. In these cases, the HDIs do contain the true value, but they are very wide, so we cannot effectively recover $\sigma_{b_1}$, $\sigma_{\gamma_h}$ and $\sigma_{\gamma_l}$.
+
+\subsection{Session-level parameters}
+\label{sec:session}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{session_params_error_width_coverage_vs_trials.png}
+\caption{Session-level recovery against trials per session (42 sessions),
+averaged over replicates. Left: RMSE of the posterior mean across sessions.
+Middle: mean 95\% HDI width. Right: fraction of sessions whose HDI contains the
+true value.}
+\label{fig:session_trials}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{session_params_error_width_coverage_vs_sessions.png}
+\caption{As Figure~\ref{fig:session_trials}, against the number of sessions
+(308 trials each).}
+\label{fig:session_sessions}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Session-level recovery at 320 trials per session (42 sessions, both
+replicates): RMSE of the posterior mean / mean HDI width / coverage.}
+\label{tab:session320}
+\begin{tabular}{lcccc}
+\toprule
+ & left\_uni & left\_bi & right\_uni & right\_bi \\
+\midrule
+PSE & 0.14 / 0.50 / 0.89 & 0.12 / 0.42 / 0.92 & 0.05 / 0.16 / 0.92 & 0.09 / 0.32 / 0.94 \\
+JND & 0.017 / 0.16 / 1.00 & 0.031 / 0.17 / 1.00 & 0.011 / 0.08 / 1.00 & 0.011 / 0.11 / 1.00 \\
+$b_0$ & 0.42 / 1.71 / 0.93 & 0.34 / 1.24 / 0.94 & 0.27 / 1.06 / 0.94 & 0.56 / 2.05 / 0.96 \\
+$b_1$ & 0.22 / 1.44 / 1.00 & 0.16 / 1.21 / 1.00 & 0.21 / 2.32 / 1.00 & 0.42 / 3.41 / 1.00 \\
+$\gamma_h$ & 0.004 / 0.055 / 1.00 & 0.009 / 0.073 / 1.00 & 0.011 / 0.081 / 1.00 & 0.013 / 0.073 / 0.99 \\
+$\gamma_l$ & 0.019 / 0.061 / 1.00 & 0.007 / 0.029 / 1.00 & 0.003 / 0.027 / 1.00 & 0.005 / 0.030 / 1.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{PSE, JND, $b_0$, $b_1$.}
+Error and HDI width fall steadily as trials per session grow
+(Figure~\ref{fig:session_trials}); at 320 trials the RMSE of the PSE is
+0.05--0.14 and of the JND 0.01--0.03 (Table~\ref{tab:session320}). The largest
+drop is between 40 and 80 trials; below 80 trials the JND in particular is
+poorly determined (RMSE up to 0.5 at 20 trials). Adding sessions at a fixed 308
+trials (Figure~\ref{fig:session_sessions}) also improves the session estimates,
+because better-estimated hyperparameters give better shrinkage.
+
+\paragraph{Coverage.}
+The coverage of $b_1$, JND and both lapse rates is essentially 1.0: the HDIs are
+wider than needed, a consequence of the overestimated between-session sds. PSE
+coverage at 320 trials is slightly below nominal (0.89--0.94). With 84 sessions
+per group, the standard error of a coverage estimate near 0.95 is about 0.024,
+so 0.89 is about 2.5 standard errors low. This mild undercoverage of the PSE is
+worth keeping in mind but is not large. At 40 sessions, one replicate's upward
+error in $\mu_{b_1}$ for left\_bi (posterior mean 3.45) lowers the coverage of
+$b_1$ and JND in that group to 0.86 and 0.88, which shows that errors at the
+population level carry through to every session of the group.
+
+\paragraph{Lapse rate $\gamma_l$ for left\_uni.}
+Its RMSE stays at about 0.02 regardless of the number of trials
+(Figure~\ref{fig:session_trials}). The true session values are about 0.0055;
+the posterior means average 0.024 at 320 trials, roughly four times too high.
+This is the $\mu_{\gamma_l}$ bias from Section~3 passed down to every session
+through shrinkage. In absolute terms the error is small (a lapse rate of about
+2\% instead of 0.5\%), but relative to the true value it is large.
+
+
+\subsection{Posterior densities}
+
+The following plots show the same fits as full posterior
+densities, darker for larger datasets. They confirm the points above: the
+$\mu_{b_1}$ posteriors of the right-hand groups are truncated at 8, and the
+posteriors of $\sigma_{b_1}$, $\sigma_{\gamma_h}$ and $\sigma_{\gamma_l}$ are
+broad and spread away from zero rather than concentrating near their true
+values.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{Convergence_Plots_B/hyper_means_density_vs_trials.png}
+    \caption{Posteriors of mean hyperparameters as trials vary}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{Convergence_Plots_B/hyper_means_density_vs_sessions.png}
+    \caption{Posteriors of mean hyperparameters as sessions vary}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{Convergence_Plots_B/hyper_sds_density_vs_sessions.png}
+    \caption{Posteriors of sd hyperparameters as sessions vary}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{Convergence_Plots_B/hyper_sds_density_vs_trials.png}
+    \caption{Posteriors of sd hyperparameters as trials vary}
+    \label{fig:placeholder}
+\end{figure}
+
+\subsection{Conclusions for the real data}
+
+At the size of the real dataset (42 sessions of about 308 trials):
+
+\begin{itemize}
+  \item \textbf{Reliable:} per-session PSE and JND; group means $\mu_{b_0}$;
+        $\mu_{b_1}$ for the left-hand groups; the bias spread $\sigma_{b_0}$;
+        the lapse-rate mean $\mu_{\gamma_h}$.
+  \item \textbf{Weakly constrained:} $\mu_{b_1}$ for the right-hand groups, whose
+        HDIs are about 2 units wide and reach the prior bound of 8.
+  \item \textbf{Biased:} $\mu_{\gamma_l}$ and the per-session $\gamma_l$ for the
+        left-hand groups, which are estimated too high, apparently pulled
+        toward the prior centre of $-2.5$.
+  \item \textbf{Not identified:} $\sigma_{b_1}$, $\sigma_{\gamma_h}$,
+        $\sigma_{\gamma_l}$ when their true values are near zero. Posteriors for
+        these reflect the priors and should not be interpreted.
+  \item Session-level HDIs are, if anything, conservative (coverage near or
+        above 95\%), with a mild undercoverage for the PSE.
+\end{itemize}
+
+\paragraph{Possible follow-ups.}
+\begin{enumerate}
+  \item \textit{Done after these simulations:} the $\mu_{\beta_1}$ prior is now
+        $\text{LogNormal}(\log 4,\ 0.5)$, with no upper bound. Rerunning the
+        convergence study would check how the right-hand slopes are recovered
+        without the truncation.
+  \item Test whether the $\gamma_l$ bias comes from the $\mathcal{N}(-2.5,1)$
+        prior on $\mu_\gamma$, by refitting with a wider or lower-centred prior.
+  \item Consider tighter priors on $\sigma_{\beta_1}$ and the lapse-rate sds, which
+        would shrink the session estimates more and narrow their HDIs, if
+        small between-session variation is plausible for the real animals.
+        \textit{Partly done:} $\sigma_{\beta_1}$ now has an
+        $\text{Exponential}(\lambda = 1)$ prior (mean 1, previously 4); the
+        lapse-rate sd priors are unchanged.
+\end{enumerate}
+
+\end{document}
