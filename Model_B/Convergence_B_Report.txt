@@ -110,7 +110,10 @@ following priors in \code{Build\_Model\_B.py} have been changed:
   \item $\mu_{\gamma_h,g},\ \mu_{\gamma_l,g} \sim \mathcal{N}(-3,\ 1.5)$, so the
         typical lapse rate $0.25\,\invlogit(\mu_\gamma)$ has median $0.012$ and 95\%
         range $[0.0007,\ 0.12]$. The wider spread weakens the pull of the prior
-        when the data contain only a few lapses.
+        when the data contain only a few lapses;
+  \item $\sigma_{\gamma_h,g},\ \sigma_{\gamma_l,g} \sim \text{HalfNormal}(0.5)$
+        (median 0.34). For a group whose typical lapse rate is 0.05, this puts
+        about 80\% of sessions between 0.03 and 0.07.
 \end{itemize}
 The convergence results below have not been rerun with the new priors.
 
@@ -465,9 +468,10 @@ At the size of the real dataset (42 sessions of about 308 trials):
   \item Consider tighter priors on $\sigma_{\beta_1}$ and the lapse-rate sds, which
         would shrink the session estimates more and narrow their HDIs, if
         small between-session variation is plausible for the real animals.
-        \textit{Partly done:} $\sigma_{\beta_1}$ now has an
-        $\text{Exponential}(\lambda = 1)$ prior (mean 1, previously 4); the
-        lapse-rate sd priors are unchanged.
+        \textit{Done after these simulations:} $\sigma_{\beta_1}$ now has an
+        $\text{Exponential}(\lambda = 1)$ prior (mean 1, previously 4), and the
+        lapse-rate sds a $\text{HalfNormal}(0.5)$ prior (previously
+        $\text{HalfNormal}(1.25)$).
 \end{enumerate}
 
 \end{document}

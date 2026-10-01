@@ -67,7 +67,7 @@ with pm.Model(coords=coords) as model_B:
     #   gamma = 0.25 * w_gam
     #   w_gam ~ LogitNormal[ mu = mu_gam , sigma = sig_gam ]
     #       mu_gam ~ N[ mu = -3, sigma = 1.5 ]   (typical gamma: median 0.012, 95% in [0.0007, 0.12])
-    #       sig_gam ~ HalfNormal[sig=1.25]
+    #       sig_gam ~ HalfNormal[sig=0.5]   (median 0.34: at a typical gamma of 0.05, sessions mostly within 0.03-0.07)
     # REPARAMETRIZATION LogitNormal: X ~ LogitNormal[ mu , sig ]
     #   Z ~ Normal[0,1]
     #   X = 1 / ( 1+ exp (- (sig*Z + mu) ) )
@@ -77,7 +77,7 @@ with pm.Model(coords=coords) as model_B:
     z_mu_gams = pm.Normal("z_mu_gams", mu=0, sigma=1, dims = ('betas', 'groups'))
     mu_gams = pm.Deterministic("mu_gams", 1.5*z_mu_gams - 3, dims = ('betas', 'groups'))
     z_sig_gams = pm.Normal("z_sig_gams", mu=0, sigma=1, dims = ('betas', 'groups'))
-    sig_gams = pm.Deterministic('sig_gams', pm.math.abs(1.25*z_sig_gams), dims=('betas', 'groups'))
+    sig_gams = pm.Deterministic('sig_gams', pm.math.abs(0.5*z_sig_gams), dims=('betas', 'groups'))
     z_gams = pm.Normal("z_gams", mu=0, sigma=1, dims=("betas", "groups", "sessions"))
     gams = pm.Deterministic("gams", 0.25 * pm.math.invlogit(sig_gams[..., None] * z_gams + mu_gams[..., None]), dims=("betas", "groups", "sessions"),)
     

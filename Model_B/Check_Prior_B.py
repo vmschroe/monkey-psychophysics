@@ -32,7 +32,7 @@ z_mu = z_all[:,1]
 z_sig = z_all[:,2]
 
 mu_gam = 1.5*z_mu+(-3)
-sig_gam = np.abs(1.25*z_sig)
+sig_gam = np.abs(0.5*z_sig)
 gam_samps = 0.25*(1 / (1 + np.exp(-(sig_gam*z_s+mu_gam))))
 
 
@@ -40,7 +40,7 @@ plt.hist(gam_samps, density=True, bins=20)
 
 
 #%% SLOPE AND LAPSE PRIORS, sampled from the actual model on the real design
-# mu_b1 ~ LogNormal(log 4, 0.5), sig_b1 ~ Exp(mean 1), mu_gam ~ N(-3, 1.5)
+# mu_b1 ~ LogNormal(log 4, 0.5), sig_b1 ~ Exp(mean 1), mu_gam ~ N(-3, 1.5), sig_gam ~ HalfNormal(0.5)
 
 from pathlib import Path
 from scipy.stats import lognorm
@@ -60,7 +60,7 @@ sess_idx = data_dict['sess_idx']
 exec(open(MODEL_DIR / "Build_Model_B.py").read())
 
 with model_B:
-    prior = pm.sample_prior_predictive(draws=4000, var_names=['mu_betas', 'sig_betas', 'beta_vec', 'mu_gams', 'gam_h', 'gam_l', 'JND'],
+    prior = pm.sample_prior_predictive(draws=4000, var_names=['mu_betas', 'sig_betas', 'beta_vec', 'mu_gams', 'sig_gams', 'gam_h', 'gam_l', 'JND'],
                                        random_seed=1).prior
 
 mu_b1_samps = prior['mu_betas'].sel(betas='b1').values.ravel()
@@ -128,6 +128,15 @@ session_gam = np.concatenate([prior['gam_h'].values.ravel(), prior['gam_l'].valu
 for name, s in [('typical gamma, N(-3, 1.5)', typical_gam), ('typical gamma, old N(-2.5, 1)', typical_gam_old),
                 ('session gamma', session_gam)]:
     print(f"{name}: median {np.median(s):.4f}, 95% interval {np.round(np.percentile(s, [2.5, 97.5]), 4)}")
+
+# day-to-day spread implied by the sig_gam prior: sessions of a group whose typical lapse rate is 0.05
+sig_gam_samps = prior['sig_gams'].values.ravel()
+mu_at_5pct = np.log(0.2 / 0.8)   # 0.25 * logit^-1(mu) = 0.05
+z_sess = norm.rvs(size=sig_gam_samps.size, random_state=4)
+gam_at_5pct = 0.25 / (1 + np.exp(-(mu_at_5pct + sig_gam_samps * z_sess)))
+print(f"sig_gam prior: median {np.median(sig_gam_samps):.2f}, 95% interval {np.round(np.percentile(sig_gam_samps, [2.5, 97.5]), 2)}")
+print(f"sessions at a typical lapse rate of 0.05: {np.mean((gam_at_5pct > 0.03) & (gam_at_5pct < 0.07)):.0%} within 0.03-0.07, "
+      f"90% interval {np.round(np.percentile(gam_at_5pct, [5, 95]), 3)}")
 
 fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
 bins = np.logspace(-5, np.log10(0.25), 61)
