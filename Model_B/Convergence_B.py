@@ -40,7 +40,7 @@ Notes on reading the results:
       converge to the mean/sd of the 42 sessions actually drawn, not to
       the population values.
     - The true sig_b1 values are tiny (0.002-0.008) next to the prior on
-      sig_b1 (Exponential with mean 4), so they may not be recoverable at
+      sig_b1 (Exponential with mean 1), so they may not be recoverable at
       these session counts.
 
 Runtime: very roughly 1.5 min per 1000 trials per fit with the default
