@@ -38,8 +38,8 @@ with pm.Model(coords=coords) as model_B:
     #       mu_0 ~ Unif[-12,12]
     #       sig_0 ~ Exp[lambda = 1/12]
     #   Beta_1 ~N[mu_1,sig_1]
-    #       mu_1 ~ Unif[0,8]
-    #       sig_1 ~ Exp[lambda = 1/4]
+    #       mu_1 ~ LogNormal[ mu = log(4) , sigma = 0.5 ]   (median 4, 95% in [1.5, 10.7])
+    #       sig_1 ~ Exp[lambda = 1]
     # REPARAMETRIZATION Exponential: X ~ Exp[lam]
     #   U ~ Unif[0,1]
     #   X = ( -1 / lam ) * ln(U)
@@ -49,11 +49,15 @@ with pm.Model(coords=coords) as model_B:
     # REPARAMETRIZATION Normal: X ~ Normal[ mu , sig ]
     #   Z ~ Normal[0,1]
     #   X = sig*Z + mu
-    u_mu_betas = pm.Uniform('u_mu_betas', lower = 0, upper=1, dims = ('betas', 'groups'))
-    mu_betas = pm.Deterministic('mu_betas', pm.math.stack([ -12 + 24 * u_mu_betas[0] , 8 * u_mu_betas[1] ], axis=0), dims = ("betas", "groups"))
+    # REPARAMETRIZATION LogNormal: X ~ LogNormal[ mu , sig ]
+    #   Z ~ Normal[0,1]
+    #   X = exp( sig*Z + mu )
+    u_mu_b0 = pm.Uniform('u_mu_b0', lower = 0, upper=1, dims = ('groups',))
+    z_mu_b1 = pm.Normal('z_mu_b1', mu = 0, sigma = 1, dims = ('groups',))
+    mu_betas = pm.Deterministic('mu_betas', pm.math.stack([ -12 + 24 * u_mu_b0 , pm.math.exp(np.log(4) + 0.5 * z_mu_b1) ], axis=0), dims = ("betas", "groups"))
     #u_sig_betas = pm.Uniform('u_sig_betas', lower=0, upper=1, dims = ('betas', 'groups'))
     u_sig_betas = pm.Uniform("u_sig_betas", 1e-9, 1-1e-9, dims=("betas","groups"))
-    sig_betas = pm.Deterministic('sig_betas', pm.math.stack([ (-1/(1/12)) * pm.math.log(u_sig_betas[0]) , (-1/(1/4)) * pm.math.log(u_sig_betas[1]) ], axis=0), dims = ("betas", "groups"))
+    sig_betas = pm.Deterministic('sig_betas', pm.math.stack([ (-1/(1/12)) * pm.math.log(u_sig_betas[0]) , (-1/1) * pm.math.log(u_sig_betas[1]) ], axis=0), dims = ("betas", "groups"))
     z_betas = pm.Normal('z_betas', mu = 0, sigma = 1, dims = ("betas", "groups", 'sessions'))
     #beta_vec = pm.Deterministic('beta_vec', sig_betas * z_betas + mu_betas, dims = ("betas", "groups", 'sessions'))
     beta_vec = pm.Deterministic("beta_vec", sig_betas[..., None] * z_betas + mu_betas[..., None], dims=("betas", "groups", "sessions"),)
