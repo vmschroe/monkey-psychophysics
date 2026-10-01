@@ -40,7 +40,8 @@ plt.hist(gam_samps, density=True, bins=20)
 
 
 #%% SLOPE AND LAPSE PRIORS, sampled from the actual model on the real design
-# mu_b1 ~ LogNormal(log 4, 0.5), sig_b1 ~ Exp(mean 1), mu_gam ~ N(-3, 1.5), sig_gam ~ HalfNormal(0.5)
+# mu_b0 ~ N(0, 2), sig_b0 ~ HalfNormal(2), mu_b1 ~ LogNormal(log 4, 0.5), sig_b1 ~ Exp(mean 1),
+# mu_gam ~ N(-3, 1.5), sig_gam ~ HalfNormal(0.5)
 
 from pathlib import Path
 from scipy.stats import lognorm
@@ -60,7 +61,7 @@ sess_idx = data_dict['sess_idx']
 exec(open(MODEL_DIR / "Build_Model_B.py").read())
 
 with model_B:
-    prior = pm.sample_prior_predictive(draws=4000, var_names=['mu_betas', 'sig_betas', 'beta_vec', 'mu_gams', 'sig_gams', 'gam_h', 'gam_l', 'JND'],
+    prior = pm.sample_prior_predictive(draws=4000, var_names=['mu_betas', 'sig_betas', 'beta_vec', 'mu_gams', 'sig_gams', 'gam_h', 'gam_l', 'PSE', 'JND'],
                                        random_seed=1).prior
 
 mu_b1_samps = prior['mu_betas'].sel(betas='b1').values.ravel()
@@ -159,6 +160,36 @@ for ax in axes:
     ax.set_yticks([])
 fig.suptitle('Model B prior on the lapse rates', fontsize=14)
 fig.savefig(MODEL_DIR / "Plots_B" / "Prior_Check_B_lapse.png", dpi=200, bbox_inches='tight')
+plt.show()
+
+
+#%% Bias prior, seen through the PSE in raw amplitude units (28 is the category boundary)
+
+with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+    raw_stims = np.unique(pickle.load(f)['data']['stim_amp'])
+amp_mu, amp_sd = raw_stims.mean(), raw_stims.std()   # same standardization as DataProcessing_B.py
+to_amp = lambda x: amp_mu + amp_sd * x
+
+mu_b0_samps = prior['mu_betas'].sel(betas='b0').values.ravel()
+typical_pse = to_amp(-mu_b0_samps / mu_b1_samps)   # typical session of a group, ignoring lapses
+session_pse = to_amp(prior['PSE'].values.ravel())
+day_to_day_sd = amp_sd * prior['sig_betas'].sel(betas='b0').values.ravel() / mu_b1_samps
+outside = lambda s: np.mean((s < raw_stims.min()) | (s > raw_stims.max()))
+print(f"typical PSE: 90% interval {np.round(np.percentile(typical_pse, [5, 95]), 1)}, outside stimulus range {outside(typical_pse):.1%}")
+print(f"session PSE: 90% interval {np.round(np.percentile(session_pse, [5, 95]), 1)}, outside stimulus range {outside(session_pse):.1%}")
+print(f"day-to-day PSE sd (amplitude units): median {np.median(day_to_day_sd):.1f}, 95% up to {np.percentile(day_to_day_sd, 95):.1f}")
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
+bins = np.linspace(-30, 86, 117)
+for ax, s, title in [(axes[0], typical_pse, 'Typical PSE of a group'), (axes[1], session_pse, 'Session PSEs')]:
+    ax.hist(s, bins=bins, weights=np.full(s.size, 1 / s.size), color=BLUE, alpha=0.6)
+    for a in raw_stims:
+        ax.axvline(a, color=GRAY, linewidth=0.8, linestyle=':')
+    ax.set_title(f'{title} ({outside(s):.1%} outside the stimulus range)')
+    ax.set_xlabel('stimulus amplitude (dotted: stimulus levels)')
+    ax.set_yticks([])
+fig.suptitle('Model B prior on the bias, through the PSE', fontsize=14)
+fig.savefig(MODEL_DIR / "Plots_B" / "Prior_Check_B_bias.png", dpi=200, bbox_inches='tight')
 plt.show()
 
 

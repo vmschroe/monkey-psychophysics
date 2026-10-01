@@ -104,6 +104,16 @@ All hyperparameters are independent.
 These are the priors used for the simulations in this report. Since then, the
 following priors in \code{Build\_Model\_B.py} have been changed:
 \begin{itemize}
+  \item $\mu_{\beta_0,g} \sim \mathcal{N}(0,\ 2)$. The stimulus amplitudes are
+        symmetric around 28, the category boundary, which standardizes to
+        $x = 0$; this prior puts the typical PSE between amplitudes 13 and 43
+        with 90\% probability, and outside the stimulus range (6--50) only 3\% of
+        the time. The old $\mathcal{U}[-12,\ 12]$ put almost half of the typical
+        PSEs outside the stimulus range;
+  \item $\sigma_{\beta_0,g} \sim \text{HalfNormal}(2)$, replacing an exponential with
+        mean 12. The implied day-to-day sd of the PSE has median about 5
+        amplitude units (95\% up to about 20), small next to the stimulus range,
+        where the old prior implied about 30;
   \item $\mu_{\beta_1,g} \sim \text{LogNormal}(\log 4,\ 0.5)$ (median 4, 95\% in
         $[1.5,\ 10.7]$, no upper bound);
   \item $\sigma_{\beta_1,g} \sim \text{Exponential}(\lambda = 1)$ (mean 1);
