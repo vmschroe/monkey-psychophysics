@@ -1,0 +1,395 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\invlogit}{\operatorname{logit}^{-1}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\graphicspath{{Fit_Plots_B/}}
+
+\title{Model B Fit to the Real Data}
+\author{Vera Schroeder}
+\date{October 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Summary}
+
+Model B (hierarchical over sessions, with the design-based priors described in
+the convergence report) was fit to all 12{,}937 trials of the Sirius data
+(42 sessions, 4 groups). The main results:
+
+\begin{itemize}
+  \item \textbf{The distractor lowers the PSE.} In the bimanual condition the
+        monkey reports ``high'' at lower amplitudes. Averaged over the 42 sessions
+        the PSE shift (bimanual $-$ unimanual) is $-4.3$ $\mu m$ [$-5.0$, $-3.5$]
+        for the left hand and $-6.1$ $\mu m$ [$-6.8$, $-5.3$] for the right hand.
+        Its posterior mean is negative in 40 of 42 sessions for the left hand and
+        in all 42 for the right hand, and its 95\% HDI excludes 0 in 23 (left) and
+        32 (right) sessions.
+  \item \textbf{The distractor raises $\gamma_h$}, the rate of ``high''
+        responses to the weakest stimuli, by about 0.02 (left) and 0.035
+        (right). For the right hand the HDI excludes 0 in all 42 sessions.
+  \item \textbf{The distractor slightly raises the JND} (less precise
+        discrimination), clearly for the left hand (+1.0 $\mu m$ [0.5, 1.6],
+        largely from a few sessions) and weakly for the right hand
+        (+0.5 $\mu m$ [$-0.1$, 1.0]). It has no effect on $\gamma_l$.
+  \item \textbf{The PSE shift grows with distractor amplitude} (exploratory,
+        Section~\ref{sec:amplitude}): about $-2$ $\mu m$ per 10 $\mu m$ of
+        distractor amplitude for both hands.
+  \item The sampler converged, the model reproduces the data well, and the new
+        priors change the hyperparameter estimates only slightly from the
+        earlier fit.
+\end{itemize}
+
+All intervals are 95\% highest density intervals (HDIs). PSE and JND are in
+micrometres of stimulus amplitude: $\text{PSE}_{\mu m} = 28 + 14.63\,\text{PSE}$
+and $\text{JND}_{\mu m} = 14.63\,\text{JND}$, where 28 and 14.63 are the mean
+and sd of the 8 amplitude levels.
+
+\section{Model and Fit}
+
+The model is the one described in the Model B convergence report: per-session
+psychometric parameters $(\beta_0, \beta_1, \gamma_h, \gamma_l)$ for each
+group, drawn from group-level distributions whose means and sds have the
+design-based priors
+$\mu_{\beta_0} \sim \mathcal{N}(0, 2)$,
+$\sigma_{\beta_0} \sim \text{HalfNormal}(2)$,
+$\mu_{\beta_1} \sim \text{LogNormal}(\log 4, 0.5)$,
+$\sigma_{\beta_1} \sim \text{Exponential}(1)$,
+$\mu_\gamma \sim \mathcal{N}(-3, 1.5)$ and
+$\sigma_\gamma \sim \text{HalfNormal}(0.5)$.
+
+The fit (\code{Main\_Analysis\_B.py}) used NUTS with 4 chains of 1000 tuning and
+5000 kept draws (20{,}000 draws in total) and took 31 minutes.
+
+\subsection{Sampling diagnostics}
+
+There were no divergences, and the tree depth never exceeded 6. Of the 2{,}080
+parameters, all but four have $\hat{R} = 1.00$, bulk ESS $\ge 2{,}210$ and
+tail ESS $\ge 4{,}527$.
+
+The four exceptions are the raw variables \code{z\_sig\_b0} ($\hat{R}$ up to
+1.73), and they are harmless. The model sets
+$\sigma_{\beta_0} = |2\,z|$ with $z \sim \mathcal{N}(0,1)$, so $z$ and $-z$ give
+the same model. The data keep $\sigma_{\beta_0}$ well away from 0, so each chain
+stays on the sign it started on, and the chains disagree only about the sign.
+Everything the model uses, including $\sigma_{\beta_0}$ itself, has
+$\hat{R} = 1.00$ and ESS $\ge 7{,}000$. Defining $\sigma_{\beta_0}$ directly as a
+\code{HalfNormal(2)} variable (as is effectively already done for
+$\sigma_{\beta_1}$) would remove the warning without changing the model.
+
+\subsection{Posterior predictive checks}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{ppc_pooled_by_stimulus.png}
+\caption{Observed proportion of ``high'' responses at each amplitude, pooled over
+sessions (black), against the posterior predictive median and 95\% interval
+(blue). The dashed line is the trained threshold of 28 $\mu m$.}
+\label{fig:ppc}
+\end{figure}
+
+All 32 group-by-amplitude proportions lie inside their 95\% posterior
+predictive intervals (Figure~\ref{fig:ppc}). At the level of single sessions,
+1{,}341 of the 1{,}344 session $\times$ group $\times$ amplitude cells (99.8\%)
+lie inside their intervals. That is more than 95\% because each cell's interval
+comes from a model fit partly to that same cell, so this is a check for gross
+misfit rather than an exact calibration test; no systematic misfit appears.
+
+Leave-one-out cross-validation gives $\text{elpd}_\text{loo} = -3180.0$
+(SE 64.4) with $p_\text{loo} = 179$ and every Pareto $k$ below 0.7. The fit with
+the earlier priors had $-3182.8$ (SE 64.2) and $p_\text{loo} = 195$: the new
+priors predict equally well with fewer effective parameters.
+
+\section{Population-level Results}
+
+\begin{table}[H]
+\centering
+\caption{Typical-session psychometric quantities: the PSE, JND and lapse rates
+at the group-level means. Posterior mean [95\% HDI].}
+\label{tab:population}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+ & PSE ($\mu m$) & JND ($\mu m$) & $\gamma_h$ & $\gamma_l$ \\
+\midrule
+left\_uni  & 32.4 [31.6, 33.3] & 3.29 [2.95, 3.63] & 0.002 [0.000, 0.005] & 0.009 [0.000, 0.019] \\
+left\_bi   & 28.2 [27.2, 29.2] & 3.89 [3.34, 4.46] & 0.023 [0.009, 0.037] & 0.009 [0.001, 0.017] \\
+right\_uni & 31.4 [30.3, 32.5] & 3.56 [3.23, 3.89] & 0.003 [0.000, 0.006] & 0.007 [0.000, 0.015] \\
+right\_bi  & 25.5 [24.5, 26.5] & 3.95 [3.48, 4.44] & 0.036 [0.017, 0.056] & 0.010 [0.003, 0.018] \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+Without the distractor the PSE lies 3--4 $\mu m$ above the trained threshold of
+28 $\mu m$ for both hands: the monkey needs a slightly stronger stimulus than
+the trained boundary before it reports ``high''. With the distractor the PSE
+moves to or below the threshold. Lapse rates are small (below 0.04 everywhere);
+$\gamma_h$ is close to 0 without the distractor.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_PSE_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of the typical-session PSE in each
+group. The posterior is far narrower than the prior, so the data, not the
+prior, determine it.}
+\label{fig:pop_pse}
+\end{figure}
+
+\subsection{Hyperparameters, and comparison with the earlier priors}
+
+\begin{table}[H]
+\centering
+\caption{Hyperparameters under the earlier and current priors: posterior mean
+(sd). Lapse-rate means $\mu_\gamma$ are on the logit scale.}
+\label{tab:hyper}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+ & \multicolumn{2}{c}{left\_uni} & \multicolumn{2}{c}{left\_bi} & \multicolumn{2}{c}{right\_uni} & \multicolumn{2}{c}{right\_bi} \\
+ & earlier & current & earlier & current & earlier & current & earlier & current \\
+\midrule
+$\mu_{\beta_1}$     & 5.15 (0.31) & 4.97 (0.28) & 4.51 (0.34) & 4.32 (0.34) & 4.69 (0.24) & 4.58 (0.23) & 4.40 (0.31) & 4.34 (0.30) \\
+$\sigma_{\beta_0}$  & 0.80 (0.16) & 0.76 (0.15) & 0.77 (0.15) & 0.77 (0.14) & 1.04 (0.16) & 1.01 (0.16) & 0.77 (0.15) & 0.76 (0.15) \\
+$\sigma_{\beta_1}$  & 0.32 (0.24) & 0.29 (0.22) & 1.15 (0.36) & 1.27 (0.28) & 0.20 (0.15) & 0.17 (0.14) & 0.66 (0.33) & 0.62 (0.32) \\
+$\mu_{\gamma_h}$    & $-4.47$ (0.57) & $-5.20$ (0.85) & $-2.46$ (0.45) & $-2.35$ (0.36) & $-4.26$ (0.54) & $-4.73$ (0.73) & $-1.86$ (0.36) & $-1.82$ (0.34) \\
+$\mu_{\gamma_l}$    & $-3.21$ (0.52) & $-3.45$ (0.69) & $-3.29$ (0.50) & $-3.44$ (0.58) & $-3.44$ (0.55) & $-3.72$ (0.73) & $-3.26$ (0.44) & $-3.23$ (0.43) \\
+$\sigma_{\gamma_h}$ & 0.53 (0.41) & 0.36 (0.27) & 1.54 (0.64) & 0.59 (0.40) & 0.52 (0.40) & 0.37 (0.28) & 0.56 (0.40) & 0.36 (0.27) \\
+$\sigma_{\gamma_l}$ & 0.57 (0.43) & 0.37 (0.28) & 0.75 (0.54) & 0.39 (0.30) & 0.58 (0.43) & 0.38 (0.29) & 0.68 (0.45) & 0.43 (0.30) \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+The bias and slope parameters barely change with the new priors
+(Table~\ref{tab:hyper}); the group slopes move down by 0.06--0.19, well
+within one posterior sd. The group slopes are 4.3--5.0 for every group, below
+the steep range ($\mu_{\beta_1} \approx 6$) where the convergence study found
+the slope poorly identified.
+
+The lapse-rate parameters change more. The lapse means $\mu_{\gamma_h}$ of the
+unimanual groups, which have almost no lapses, move lower (left\_uni from
+$-4.47$ to $-5.20$): the new prior $\mathcal{N}(-3, 1.5)$ is wider than the
+earlier $\mathcal{N}(-2.5, 1)$ and no longer pulls them up. Every between-session lapse sd $\sigma_\gamma$ shrinks
+to 0.36--0.59, close to the new prior (median 0.34). The convergence study
+showed that $\sigma_{\gamma_h}$ and $\sigma_{\gamma_l}$ are not identified at
+this data size, so these values mainly reflect the prior and should not be
+interpreted. The one notable change is left\_bi $\sigma_{\gamma_h}$, which
+drops from 1.54 to 0.59.
+
+$\sigma_{\beta_1}$ for left\_bi stands out: 1.27 [0.76, 1.79], far above the
+other groups, which means the left-hand bimanual slope varies a lot between
+sessions. A few sessions have very shallow bimanual slopes; the JND of left\_bi
+on 05-12 is 10.9 $\mu m$, against a median of 4.1 $\mu m$ across sessions.
+
+\section{Effect of the Distractor}
+
+The effect of the distractor is the bimanual $-$ unimanual difference,
+computed draw by draw so that its uncertainty is exact. It is reported in two
+ways:
+\begin{itemize}
+  \item \textbf{average over the 42 sessions:} the mean of the within-session
+        differences, which describes these sessions;
+  \item \textbf{population (typical session):} the difference at the group-level
+        means, which describes a new session from the same population and is
+        therefore more uncertain.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\caption{Distractor effect (bimanual $-$ unimanual). Posterior mean [95\% HDI];
+the last column counts sessions whose HDI lies entirely above / below 0.}
+\label{tab:effect}
+\small
+\begin{tabular}{llccc}
+\toprule
+Hand & Quantity & average over sessions & population & sessions $>0$ / $<0$ \\
+\midrule
+Left  & PSE ($\mu m$) & $-4.29$ [$-5.05$, $-3.52$] & $-4.19$ [$-5.52$, $-2.90$] & 0 / 23 \\
+      & JND ($\mu m$) & 1.03 [0.46, 1.59] & 0.60 [$-0.03$, 1.28] & 5 / 0 \\
+      & $\gamma_h$    & 0.025 [0.009, 0.042] & 0.021 [0.007, 0.035] & 7 / 0 \\
+      & $\gamma_l$    & 0.000 [$-0.014$, 0.013] & 0.000 [$-0.014$, 0.012] & 0 / 0 \\
+\midrule
+Right & PSE ($\mu m$) & $-6.06$ [$-6.80$, $-5.34$] & $-5.91$ [$-7.34$, $-4.40$] & 0 / 32 \\
+      & JND ($\mu m$) & 0.49 [$-0.07$, 1.03] & 0.39 [$-0.19$, 0.96] & 0 / 0 \\
+      & $\gamma_h$    & 0.035 [0.016, 0.054] & 0.033 [0.014, 0.053] & 42 / 0 \\
+      & $\gamma_l$    & 0.003 [$-0.009$, 0.015] & 0.003 [$-0.009$, 0.014] & 0 / 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{effect_densities.png}
+\caption{Posterior of the distractor effect: population level (blue) and average
+over the 42 sessions (orange), with 95\% HDIs shaded.}
+\label{fig:effect_dens}
+\end{figure}
+
+\paragraph{PSE.} The clearest effect. The distractor lowers the PSE by about
+4 $\mu m$ for the left hand and 6 $\mu m$ for the right hand
+(Table~\ref{tab:effect}). The posterior mean of the shift is negative in every
+right-hand session and in 40 of 42 left-hand sessions; the two exceptions are
+early, weak-distractor sessions with shifts below +0.5 $\mu m$
+(Figure~\ref{fig:effect_pse}). This is consistent with a stimulus feeling
+stronger when a distractor is applied to the other hand.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{effect_PSE_by_session.png}
+\caption{PSE shift (bimanual $-$ unimanual) in each session: posterior mean and
+95\% HDI. Filled points: HDI excludes 0. The orange band is the average over
+sessions.}
+\label{fig:effect_pse}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{PSE_uni_bi_by_session.png}
+\caption{Unimanual (blue) and bimanual (red) PSE in each session, with the
+population-level typical-session HDIs as bands and the trained threshold
+(green).}
+\label{fig:pse_both}
+\end{figure}
+
+Figure~\ref{fig:pse_both} shows the two conditions separately. The unimanual
+PSE of the right hand rises over the study, from about 27 $\mu m$ in early April
+to about 35 $\mu m$ in June and July, while the bimanual PSE stays between
+21 and 30 $\mu m$. This is part of the amplitude dependence discussed in
+Section~\ref{sec:amplitude}.
+
+\paragraph{$\gamma_h$.} With the distractor the monkey more often reports
+``high'' for the weakest stimuli: $\gamma_h$ rises from about 0.002 to 0.02--0.04
+(Table~\ref{tab:population}). The rise is clear in every right-hand session
+(Figure~\ref{fig:effect_gamh}). This agrees with the PSE shift: the distractor
+adds to the perceived strength of the stimulus, enough to make even the weakest
+stimuli occasionally seem ``high''. The convergence study found left\_bi
+$\gamma_h$ estimated too low in some datasets, so the left-hand effect may be
+somewhat larger than reported here, not smaller.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{effect_gamh_by_session.png}
+\caption{$\gamma_h$ shift (bimanual $-$ unimanual) in each session.}
+\label{fig:effect_gamh}
+\end{figure}
+
+\paragraph{JND.} The distractor makes discrimination slightly less precise. For
+the left hand the average over sessions is +1.0 $\mu m$ [0.5, 1.6], but this is
+driven by a handful of sessions with very shallow bimanual curves
+(Figure~\ref{fig:effect_jnd}, e.g.\ 05-12 at +7.6 $\mu m$), consistent with the
+large $\sigma_{\beta_1}$ of left\_bi. At the population level the effect is
++0.6 $\mu m$ [$-0.03$, 1.28], with $P(\text{effect} > 0) = 0.97$. For the right
+hand the effect is about +0.4--0.5 $\mu m$ with HDIs that include 0, and no
+single session's HDI excludes 0.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{effect_JND_by_session.png}
+\caption{JND shift (bimanual $-$ unimanual) in each session.}
+\label{fig:effect_jnd}
+\end{figure}
+
+\paragraph{$\gamma_l$.} No effect for either hand (posterior means 0.000 and
+0.003, HDIs centered near 0).
+
+\subsection{Dependence on distractor amplitude (exploratory)}
+\label{sec:amplitude}
+
+The distractor amplitude was not constant: it was 6 $\mu m$ in the first 8
+sessions, 12 $\mu m$ in the next 6, increased gradually to 32 $\mu m$, and then
+alternated between 24 and 32 $\mu m$ (13 sessions at 32, 7 at 24). The model
+does not include distractor amplitude, so this section looks at the fitted
+session-level effects afterwards, with a linear regression of the session
+shifts on amplitude computed separately for each posterior draw.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{effect_vs_distractor_amplitude.png}
+\caption{Session-level PSE and JND shifts against distractor amplitude
+(points slightly spread horizontally where several sessions share an amplitude),
+with the per-draw linear trend and its 95\% band.}
+\label{fig:amp}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Mean PSE shift (bimanual $-$ unimanual, $\mu m$) over the sessions at
+each distractor amplitude.}
+\label{tab:amp}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Distractor amplitude & 6 $\mu m$ (8 sessions) & 12 $\mu m$ (6) & 24 $\mu m$ (7) & 32 $\mu m$ (13) \\
+\midrule
+Left hand  & $-1.1$ [$-2.8$, 0.4] & $-4.2$ [$-5.7$, $-2.7$] & $-4.5$ [$-6.0$, $-3.0$] & $-6.7$ [$-8.0$, $-5.3$] \\
+Right hand & $-3.9$ [$-5.5$, $-2.4$] & $-4.3$ [$-6.1$, $-2.6$] & $-5.9$ [$-7.4$, $-4.3$] & $-7.9$ [$-9.1$, $-6.7$] \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+The PSE shift grows with distractor amplitude, by $-1.9$ $\mu m$
+[$-2.6$, $-1.2$] (left) and $-1.5$ $\mu m$ [$-2.2$, $-0.9$] (right) per 10 $\mu m$
+of distractor (Figure~\ref{fig:amp}, Table~\ref{tab:amp}). At the weakest
+distractor the left-hand shift is not distinguishable from 0. The JND shift shows
+no clear trend with amplitude.
+
+Because amplitude rose over the study, amplitude and session order are
+strongly correlated ($r = 0.91$), so a change over time (learning, adaptation)
+could produce the same pattern. The later alternation between 24 and 32 $\mu m$
+partly separates the two. A regression on both amplitude and session order
+attributes the trend to amplitude ($-2.4$ $\mu m$ [$-4.0$, $-0.8$] per
+10 $\mu m$ for the left hand, $-2.2$ [$-3.6$, $-0.7$] for the right) and finds
+no trend with session order (+0.5 [$-0.7$, 1.6] and +0.6 [$-0.6$, 1.8] $\mu m$
+per 10 sessions). Split by condition, the bimanual PSEs fall with amplitude
+and the unimanual PSEs rise somewhat with it, so a stronger distractor also
+seems to shift the unimanual trials of the same session (for example through
+the monkey's criterion adapting to the session as a whole). Both right-hand
+PSEs also drift upward with session order (unimanual +0.8 [0.0, 1.6], bimanual
++1.4 [0.5, 2.3] $\mu m$ per 10 sessions), a drift that largely cancels in the
+difference. With 42 sessions and
+two strongly correlated predictors these conclusions are tentative; a model
+with distractor amplitude as a session-level covariate would test them
+properly.
+
+\section{Conclusions}
+
+\begin{itemize}
+  \item The fit is reliable: no divergences, $\hat{R} = 1.00$ and large ESS for
+        every quantity of interest, every Pareto $k$ good, and no systematic
+        misfit in the posterior predictive checks.
+  \item The distractor shifts the PSE down by 4--6 $\mu m$ and raises
+        $\gamma_h$ by 0.02--0.035, both clearly and consistently across sessions,
+        consistent with a distractor on the other hand making the stimulus feel
+        stronger.
+  \item The distractor slightly worsens discrimination (JND up by about
+        0.5--1 $\mu m$), most clearly for the left hand, where it is driven by a
+        few sessions.
+  \item The PSE shift appears to grow with distractor amplitude, by about
+        2 $\mu m$ per 10 $\mu m$; this needs confirming with amplitude in the
+        model.
+  \item The new priors change the bias and slope estimates very little. The
+        between-session lapse sds now sit near their prior, which is expected
+        because the convergence study showed that they are not identified.
+\end{itemize}
+
+\paragraph{Possible follow-ups.}
+\begin{enumerate}
+  \item Add distractor amplitude as a session-level covariate on the bimanual
+        $\beta_0$ (and possibly on the unimanual one), to test the amplitude
+        dependence inside the model.
+  \item Define $\sigma_{\beta_0}$ as a HalfNormal variable directly to remove the
+        $\hat{R}$ warning on \code{z\_sig\_b0}.
+  \item Look at the left\_bi sessions with very shallow slopes (05-12, 05-19,
+        05-30) for problems with the data or the session.
+\end{enumerate}
+
+\end{document}

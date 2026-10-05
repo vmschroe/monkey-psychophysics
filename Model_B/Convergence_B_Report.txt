@@ -534,8 +534,9 @@ At the size of the real dataset (42 sessions of about 308 trials):
 
 \paragraph{Possible follow-ups.}
 \begin{enumerate}
-  \item Refit the real data with the current priors; the existing real-data fit
-        uses the earlier ones.
+  \item \emph{Done (October 2026):} the real data were refit with the current
+        priors; see the separate report ``Model B Fit to the Real Data''
+        (\code{Fit\_B\_Report.txt}).
   \item Find out why $\mu_{\gamma_l}$ for right\_uni is overestimated at 80
         sessions in both replicates and under both sets of priors.
   \item Consider removing the session-level variation of the lapse rates
