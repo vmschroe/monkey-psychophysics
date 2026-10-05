@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import os
 import math
 import pickle
+import time
 import ast
 import xarray as xr
 from pathlib import Path
@@ -53,9 +54,11 @@ exec(open(MODEL_DIR / "Build_Model_B.py").read())
 
 #%% Sample from posteriors
 
+sampling_start = time.time()
 with model_B:
     trace = pm.sample(draws = 5000, return_inferencedata=True, chains = 4, cores = 1, progressbar=True, idata_kwargs={"log_likelihood": True})   
-print("FINISHED SAMPLING!")
+sampling_minutes = (time.time() - sampling_start) / 60
+print(f"FINISHED SAMPLING! ({sampling_minutes:.0f} min)")
 
 
 #%% Look at r_hats and effective sample sizes
@@ -482,7 +485,7 @@ plt.show()
 
 #%%
 
-ax = az.plot_ppc(trace, num_pp_samples=100)
+ax = az.plot_ppc(trace, num_pp_samples=100, random_seed=0)
 save_fig(np.ravel(ax)[0].figure, 'ppc_arviz_resp.png')
 plt.show()
 
@@ -491,6 +494,128 @@ LOO_results = az.loo(trace)
 fit_results = {'az_summary_trace': result_df,
                'az_loo_trace': LOO_results,
                'effect_summary': effect_summary}
+#%% Numbers for Fit_B_Report.txt
+# Everything quoted in the report that is not printed by an earlier cell. Section names follow the report.
+
+def mean_hdi(vals, fmt='.2f'):
+    vals = finite(vals)
+    low, high = az.hdi(vals, hdi_prob=0.95)
+    return f"{vals.mean():{fmt}} [{low:{fmt}}, {high:{fmt}}]"
+
+def per_draw_ols(X, Y):
+    """Least-squares coefficients for every posterior draw. X: (sessions, k), Y: (draws, sessions) -> (k, draws)."""
+    return np.linalg.lstsq(X, Y.T, rcond=None)[0]
+
+def draws_by_session(da):
+    return da.stack(sample=('chain', 'draw')).transpose('sample', 'sessions').values
+
+print("--- Data and fit")
+print(f"{len(obs_data)} trials, {len(sessions)} sessions, {len(coords['groups'])} groups")
+print(f"stimulus scale: PSE_um = {x_mu:.0f} + {x_sig:.2f} PSE, JND_um = {x_sig:.2f} JND")
+print(f"{trace.posterior.sizes['chain']} chains x {trace.posterior.sizes['draw']} draws, "
+      f"{trace.posterior.attrs.get('tuning_steps', '?')} tuning steps"
+      + (f", {sampling_minutes:.0f} min" if 'sampling_minutes' in globals() else ""))
+
+print("--- Sampling diagnostics")
+full_summary = az.summary(trace, kind='diagnostics')
+is_z_sig_b0 = full_summary.index.str.startswith('z_sig_b0')
+rest = full_summary[~is_z_sig_b0]
+print(f"divergences: {int(trace.sample_stats['diverging'].sum())}, "
+      f"max tree depth: {int(trace.sample_stats['tree_depth'].max())}")
+print(f"{len(full_summary)} parameters; all but z_sig_b0 ({is_z_sig_b0.sum()}): max r_hat {rest['r_hat'].max():.2f}, "
+      f"min bulk ESS {rest['ess_bulk'].min():.0f}, min tail ESS {rest['ess_tail'].min():.0f}")
+print(f"z_sig_b0: max r_hat {full_summary[is_z_sig_b0]['r_hat'].max():.2f}")
+sig_b0_summary = full_summary.loc[full_summary.index.str.startswith('sig_betas[b0')]
+print(f"sig_betas[b0]: max r_hat {sig_b0_summary['r_hat'].max():.2f}, min bulk ESS {sig_b0_summary['ess_bulk'].min():.0f}")
+
+print("--- Posterior predictive checks, every session x group x amplitude cell")
+cell_trials = pd.DataFrame({'s': sess_idx, 'g': grp_idx, 'a': amp, 'i': np.arange(len(obs_data))}
+                           ).groupby(['s', 'g', 'a'])['i'].apply(np.array)
+n_inside = 0
+for idx in cell_trials:
+    k_rep = y_rep[:, idx].sum(1)
+    low, high = np.quantile(k_rep, [0.025, 0.975])
+    n_inside += low <= obs_data[idx].sum() <= high
+print(f"{n_inside} of {len(cell_trials)} cells inside their 95% posterior predictive interval "
+      f"({n_inside / len(cell_trials):.1%})")
+
+print("--- LOO: current priors vs earlier priors")
+with open(MODEL_DIR / "Results_B_oldpriors.pkl", "rb") as f:
+    fit_results_oldpriors = pickle.load(f)   # the fit with the earlier priors, before 2026-10-05
+for label, loo in [('current', LOO_results), ('earlier', fit_results_oldpriors['az_loo_trace'])]:
+    print(f"{label}: elpd_loo {loo.elpd_loo:.1f} (SE {loo.se:.1f}), p_loo {loo.p_loo:.0f}, "
+          f"max Pareto k {np.max(loo.pareto_k.values):.2f}")
+
+print("--- Population level (typical session), Table tab:population")
+pop_table = pd.DataFrame({q: {g: mean_hdi(pop_post[q].sel(groups=g), '.3f' if q.startswith('gam') else '.2f')
+                              for g in groups} for q in QUANTITIES})
+print(pop_table.to_string())
+
+print("--- Hyperparameters under the earlier and current priors: mean (sd), Table tab:hyper")
+HYPER_ROWS = {'mu_b1': 'mu_betas[b1, {g}]', 'sig_b0': 'sig_betas[b0, {g}]', 'sig_b1': 'sig_betas[b1, {g}]',
+              'mu_gam_h': 'mu_gams[b0, {g}]', 'mu_gam_l': 'mu_gams[b1, {g}]',
+              'sig_gam_h': 'sig_gams[b0, {g}]', 'sig_gam_l': 'sig_gams[b1, {g}]'}
+hyper_summaries = {'earlier': fit_results_oldpriors['az_summary_trace'],
+                   'current': az.summary(trace, var_names=['mu_betas', 'sig_betas', 'mu_gams', 'sig_gams'])}
+hyper_table = pd.DataFrame({(g, label): {row: f"{summ.loc[name.format(g=g), 'mean']:.2f} ({summ.loc[name.format(g=g), 'sd']:.2f})"
+                                         for row, name in HYPER_ROWS.items()}
+                            for g in groups for label, summ in hyper_summaries.items()})
+print(hyper_table.to_string())
+print(f"prior median of sig_gams: {np.median(trace.prior['sig_gams'].values):.2f}")
+print(f"left_bi sig_b1: {mean_hdi(trace.posterior['sig_betas'].sel(betas='b1', groups='left_bi'))}")
+jnd_left_bi = trace.posterior['JND'].sel(groups='left_bi').mean(('chain', 'draw')) * x_sig
+print(f"left_bi JND: largest {float(jnd_left_bi.max()):.1f} um on {str(jnd_left_bi.idxmax('sessions').values)}, "
+      f"median over sessions {float(jnd_left_bi.median()):.1f} um")
+
+print("--- Distractor effect, per session")
+for hand in HANDS:
+    pse_mean = sess_diff[(hand, 'PSE')].mean(('chain', 'draw'))
+    above = pse_mean.sessions.values[pse_mean.values >= 0]
+    print(f"{hand}: PSE shift negative in {int((pse_mean < 0).sum())} of {len(dates)} sessions; "
+          f"non-negative in {list(above)} ({np.round(pse_mean.sel(sessions=above).values, 2)} um)")
+jnd_shift_left = sess_diff[('Left Hand', 'JND')].mean(('chain', 'draw'))
+print(f"Left hand: largest JND shift {float(jnd_shift_left.max()):+.1f} um on {str(jnd_shift_left.idxmax('sessions').values)}")
+for g in groups:
+    for q in ['gam_h', 'gam_l']:
+        m = trace.posterior[q].sel(groups=g).mean(('chain', 'draw')).values
+        print(f"{g} {q}: session posterior means {m.min():.3f} to {m.max():.3f}")
+
+print("--- Joint posteriors in session 06-14 (appendix)")
+for g in groups:
+    pars = {name: trace.posterior[v].sel(groups=g, sessions='06-14', **sel).values.ravel()
+            for name, v, sel in [('gam_h', 'gam_h', {}), ('gam_l', 'gam_l', {}),
+                                 ('b0', 'beta_vec', {'betas': 'b0'}), ('b1', 'beta_vec', {'betas': 'b1'})]}
+    r = pd.DataFrame(pars).corr()
+    pse_um = float(trace.posterior['PSE'].sel(groups=g, sessions='06-14').mean()) * x_sig + x_mu
+    print(f"{g}: PSE {pse_um:.1f} um, r(b0,b1) {r.loc['b0', 'b1']:+.2f}, "
+          f"max |r| lapse vs beta or lapse {r.loc[['gam_h', 'gam_l'], ['b0', 'b1']].abs().values.max():.2f}, "
+          f"r(gam_h,gam_l) {r.loc['gam_h', 'gam_l']:+.2f}")
+hyper_pars = pd.DataFrame({
+    'gam_h': trace.posterior['gam_h'].sel(groups='left_bi', sessions='06-14').values.ravel(),
+    'mu_gam_h': trace.posterior['mu_gams'].sel(groups='left_bi', betas='b0').values.ravel(),
+    'sig_gam_h': trace.posterior['sig_gams'].sel(groups='left_bi', betas='b0').values.ravel()}).corr()
+print(f"left_bi: r(gam_h, mu_gam_h) {hyper_pars.loc['gam_h', 'mu_gam_h']:.2f}, "
+      f"r(gam_h, sig_gam_h) {hyper_pars.loc['gam_h', 'sig_gam_h']:.2f}")
+
+print("--- Dependence on distractor amplitude")
+print("schedule:", ', '.join(f"{a:.0f} um: {n} sessions" for a, n in zip(*np.unique(dist_amp, return_counts=True))))
+print("sessions in order:", ' '.join(f"{a:.0f}" for a in dist_amp))
+session_order = np.arange(len(dates), dtype=float)
+print(f"correlation of amplitude and session order: r = {np.corrcoef(dist_amp, session_order)[0, 1]:.2f}")
+print("mean PSE shift over the sessions at each amplitude (Table tab:amp):")
+for hand in HANDS:
+    d = draws_by_session(sess_diff[(hand, 'PSE')])
+    print(f"  {hand}: " + '; '.join(f"{a:.0f} um ({(dist_amp == a).sum()}): {mean_hdi(d[:, dist_amp == a].mean(1), '.1f')}"
+                                   for a in np.unique(dist_amp) if (dist_amp == a).sum() >= 5))
+X_both = np.c_[np.ones_like(dist_amp), dist_amp, session_order]
+print("regression on amplitude and session order (per 10 um, per 10 sessions):")
+for hand, (uni, bi) in HANDS.items():
+    for label, d in [('bimanual - unimanual', draws_by_session(sess_diff[(hand, 'PSE')])),
+                     ('unimanual', draws_by_session(trace.posterior['PSE'].sel(groups=uni, drop=True)) * x_sig),
+                     ('bimanual', draws_by_session(trace.posterior['PSE'].sel(groups=bi, drop=True)) * x_sig)]:
+        coef = per_draw_ols(X_both, d)
+        print(f"  {hand} PSE {label}: amplitude {mean_hdi(coef[1] * 10, '.1f')}, order {mean_hdi(coef[2] * 10, '.1f')}")
+
 #%%
 with open(MODEL_DIR / "Results_B.pkl","wb") as f:
     pickle.dump(fit_results, f)
