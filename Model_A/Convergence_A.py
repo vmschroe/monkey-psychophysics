@@ -19,10 +19,16 @@ Design:
       adds trials to the smaller one. This isolates the effect of more data
       from the noise of drawing a brand new dataset at every size.
     - Each replicate uses a fresh synthetic run, to show fit-to-fit variability.
+      Each replicate has its own random stream (spawned from SEED), so its
+      data don't depend on how many replicates are run.
+    - Coverage is a count over replicates x groups, so it needs many
+      replicates: with 20, each size/parameter cell has 80 fits and a
+      calibrated model lands within about +-0.05 of 0.95.
 
-Runtime: roughly 7 min per 13k trials with the default sampler settings, so
-the defaults (sum of SIZES ~32k trials, 3 replicates) take about an hour.
-Lower N_REPS / DRAWS for a quick look.
+Runtime: roughly 7 min per 13k trials with the default sampler settings,
+about 17 min per replicate (sum of SIZES ~32k trials) with chains run one
+after another, so the defaults (20 replicates) take about 6 h with CORES = 1
+and about a third of that with CORES = 4. Lower N_REPS / DRAWS for a quick look.
 
 @author: vmschroe
 """
@@ -51,14 +57,19 @@ PLOT_DIR.mkdir(parents=True, exist_ok=True)
 #%% SETTINGS
 
 SIZES = [250, 500, 1000, 2000, 4000, 8000, 16000]   # total trials per dataset
-N_REPS = 3                                          # independent synthetic runs
+N_REPS = 20                                         # independent synthetic runs
+SHOW_REPS = 3                                       # replicates drawn individually in the per-replicate plots
 DRAWS = 1000
 TUNE = 1000
 CHAINS = 4
+CORES = 4                                           # chains sampled in parallel; 1 = one after another
+# Python 3.14's default 'forkserver' re-runs this script in every worker, so fork them instead
+# ('fork' doesn't exist on Windows, which keeps its default)
+MP_CTX = None if os.name == 'nt' else 'fork'
 HDI_PROB = 0.95
 SEED = 20260929
 
-rng = np.random.default_rng(SEED)
+rep_rngs = [np.random.default_rng(s) for s in np.random.SeedSequence(SEED).spawn(N_REPS)]
 
 #%% LOAD DESIGN AND TRUE PARAMETERS
 
@@ -116,6 +127,7 @@ post_samples = {}   # (rep, size) -> {param: array (n_samples, n_groups)}
 var_names = ['beta_vec', 'gam_h', 'gam_l', 'PSE', 'JND']
 
 for rep in range(N_REPS):
+    rng = rep_rngs[rep]
     # one long synthetic run per replicate; smaller datasets are its prefixes
     trial_draw = rng.integers(0, len(design_grp_idx), size=max(SIZES))
     rep_cov_mat = design_cov_mat[trial_draw]
@@ -139,8 +151,8 @@ for rep in range(N_REPS):
         exec(open(MODEL_DIR / "Build_Model_A.py").read())
 
         with model_A:
-            trace = pm.sample(draws=DRAWS, tune=TUNE, chains=CHAINS, cores=1,
-                              random_seed=rng, progressbar=True)
+            trace = pm.sample(draws=DRAWS, tune=TUNE, chains=CHAINS, cores=CORES,
+                              random_seed=rng, progressbar=True, mp_ctx=MP_CTX)
 
         post = split_params(trace.posterior[var_names])
         rhat = split_params(az.rhat(trace, var_names=var_names))
@@ -151,7 +163,7 @@ for rep in range(N_REPS):
         post_samples[(rep, size)] = {}
         for par in PARAM_NAMES:
             samps = post[par].stack(sample=('chain', 'draw')).transpose('sample', 'groups')
-            post_samples[(rep, size)][par] = samps.values
+            post_samples[(rep, size)][par] = samps.values.astype(np.float32)
             for g_i, grp in enumerate(groups):
                 s = samps.sel(groups=grp).values
                 hdi_low, hdi_high = az.hdi(s, hdi_prob=HDI_PROB)
@@ -192,14 +204,20 @@ print(diag.to_string())
 #%% Coverage: fraction of fits whose 95% HDI contains the true value (expect ~0.95)
 
 coverage = results.pivot_table(index='param', columns='size', values='covered', aggfunc='mean')
+n_cover = N_REPS * len(groups)   # fits per size/parameter cell
+# central 95% range of the coverage of n_cover fits from a calibrated model
+cover_lo, cover_hi = binom.ppf([0.025, 0.975], n_cover, HDI_PROB) / n_cover
 print(coverage.loc[PARAM_NAMES].round(2).to_string())
+print(f"{n_cover} fits per cell; a calibrated model gives {cover_lo:.2f}-{cover_hi:.2f} in 95% of cells")
 
 #%% Plot colors: one per group, fixed order; blue ramp (light -> dark) for dataset size
 
 CATEGORICAL = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
 GROUP_COLORS = dict(zip(groups, CATEGORICAL))
 # one color per replicate where replicates share a panel; past 8 they would be indistinguishable, so use one color
-REP_COLORS = CATEGORICAL[:N_REPS] if N_REPS <= len(CATEGORICAL) else [CATEGORICAL[0]] * N_REPS
+# the per-replicate plots overlay only the first SHOW_REPS replicates; the summaries use all of them
+SHOW_REPS = min(SHOW_REPS, N_REPS)
+REP_COLORS = CATEGORICAL[:SHOW_REPS] if SHOW_REPS <= len(CATEGORICAL) else [CATEGORICAL[0]] * SHOW_REPS
 SIZE_RAMP = ['#86b6ef', '#6da7ec', '#5598e7', '#3987e5', '#2a78d6', '#256abf', '#1c5cab', '#184f95', '#104281', '#0d366b']
 SIZE_COLORS = dict(zip(SIZES, [SIZE_RAMP[i] for i in np.linspace(0, len(SIZE_RAMP) - 1, len(SIZES)).round().astype(int)]))
 
@@ -213,15 +231,42 @@ def size_axis(ax):
 def save_plot(fig, name):
     fig.savefig(PLOT_DIR / f"{name}.png", dpi=200, bbox_inches='tight')
 
+#%% Coverage vs dataset size, with the range a calibrated model would give
+
+cover_grp = results.groupby(['param', 'group', 'size'])['covered'].mean()
+
+fig, axes = plt.subplots(2, 3, sharex=True, sharey=True, constrained_layout=True, figsize=(12, 7))
+for ax, par in zip(axes.ravel(), PARAM_NAMES):
+    ax.axhspan(cover_lo, cover_hi, color='#52514e', alpha=0.15, linewidth=0,
+               label=f'calibrated range ({n_cover} fits)')
+    ax.axhline(HDI_PROB, linestyle='--', linewidth=1.5, color='#52514e', label=f'nominal {HDI_PROB:.2f}')
+    for grp in groups:
+        ax.plot(SIZES, cover_grp.loc[(par, grp)].loc[SIZES].values, marker='o', markersize=3, linewidth=1,
+                alpha=0.6, color=GROUP_COLORS[grp], label=f'{grp} ({N_REPS} fits)')
+    ax.plot(SIZES, coverage.loc[par, SIZES].values, marker='o', markersize=5, linewidth=2.5,
+            color='#0b0b0b', label='all groups')
+    size_axis(ax)
+    ax.set_title(par)
+    ax.grid(alpha=0.3)
+for ax in axes[1]:
+    ax.set_xlabel('number of trials (all groups)')
+for ax in axes[:, 0]:
+    ax.set_ylabel(f'fraction of {int(HDI_PROB*100)}% HDIs containing the truth')
+handles, labels = axes[0, 0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='outside right center')
+fig.suptitle(f'Coverage of the {int(HDI_PROB*100)}% HDI vs dataset size ({N_REPS} replicates)', fontsize=14)
+save_plot(fig, "coverage_vs_size_all_params")
+plt.show()
+
 #%% Posterior mean and 95% HDI vs dataset size, one figure per parameter
 
-rep_offsets = np.exp(np.linspace(-0.08, 0.08, N_REPS)) if N_REPS > 1 else [1.0]   # spread reps on the log x-axis
+rep_offsets = np.exp(np.linspace(-0.08, 0.08, SHOW_REPS)) if SHOW_REPS > 1 else [1.0]   # spread reps on the log x-axis
 
 for par in PARAM_NAMES:
     fig, axes = plt.subplots(2, 2, sharex=True, constrained_layout=True, figsize=(9, 6))
     for ax, grp in zip(axes.ravel(), groups):
         sub = results[(results['param'] == par) & (results['group'] == grp)]
-        for rep in range(N_REPS):
+        for rep in range(SHOW_REPS):
             r = sub[sub['rep'] == rep]
             ax.errorbar(r['size'] * rep_offsets[rep], r['mean'],
                         yerr=[r['mean'] - r['hdi_low'], r['hdi_high'] - r['mean']],
@@ -236,7 +281,7 @@ for par in PARAM_NAMES:
     for ax in axes[:, 0]:
         ax.set_ylabel(par)
     axes[0, 0].legend(fontsize=8)
-    fig.suptitle(f'Recovery of {par} vs dataset size', fontsize=14)
+    fig.suptitle(f'Recovery of {par} vs dataset size (first {SHOW_REPS} of {N_REPS} replicates)', fontsize=14)
     save_plot(fig, f"recovery_{par}_mean_hdi_vs_size")
     plt.show()
 
@@ -273,7 +318,7 @@ for par in PARAM_NAMES:
     fig, axes = plt.subplots(2, 2, constrained_layout=True, figsize=(9, 6))
     for g_i, (ax, grp) in enumerate(zip(axes.ravel(), groups)):
         for size in SIZES:
-            for rep in range(N_REPS):
+            for rep in range(SHOW_REPS):
                 vals = post_samples[(rep, size)][par][:, g_i]
                 vals = vals[np.isfinite(vals)]
                 az.plot_kde(vals, ax=ax, plot_kwargs={'color': SIZE_COLORS[size], 'linewidth': 1.5, 'alpha': 0.85},
@@ -287,7 +332,7 @@ for par in PARAM_NAMES:
             ax.get_legend().remove()
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, title='trials', loc='outside right center')
-    fig.suptitle(f'Posterior of {par} as data grows ({N_REPS} replicates overlaid)', fontsize=14)
+    fig.suptitle(f'Posterior of {par} as data grows (first {SHOW_REPS} of {N_REPS} replicates overlaid)', fontsize=14)
     save_plot(fig, f"posterior_density_{par}_by_size")
     plt.show()
 
@@ -325,7 +370,7 @@ fig, axes = plt.subplots(len(SIZES), len(groups), sharex=True, sharey=True, cons
 axes = np.atleast_2d(axes)
 for r, size in enumerate(SIZES):
     for ax, grp in zip(axes[r], groups):
-        for rep in range(N_REPS):
+        for rep in range(SHOW_REPS):
             med, hdi = curve_bands[(rep, size, grp)]
             obs = obs_props[(obs_props['rep'] == rep) & (obs_props['size'] == size) & (obs_props['group'] == grp)]
             ax.fill_between(stim_grid, hdi[:, 0], hdi[:, 1], color=REP_COLORS[rep], alpha=0.15, linewidth=0)
@@ -340,14 +385,14 @@ for r, size in enumerate(SIZES):
 for ax in axes[-1]:
     ax.set_xlabel('stimulus (normalized)')
 handles = [(matplotlib.patches.Patch(color=REP_COLORS[rep], alpha=0.3),
-            matplotlib.lines.Line2D([], [], color=REP_COLORS[rep], linewidth=1.8)) for rep in range(N_REPS)]
-labels = [f'replicate {rep}' for rep in range(N_REPS)]
+            matplotlib.lines.Line2D([], [], color=REP_COLORS[rep], linewidth=1.8)) for rep in range(SHOW_REPS)]
+labels = [f'replicate {rep}' for rep in range(SHOW_REPS)]
 handles += [matplotlib.lines.Line2D([], [], linestyle='--', linewidth=1.5, color='#0b0b0b'),
             matplotlib.lines.Line2D([], [], marker='o', linestyle='', color='#52514e')]
 labels += ['true curve', 'observed proportion']
 fig.legend(handles, labels, loc='outside lower center', ncol=len(labels))
 fig.suptitle(f'Psychometric curve recovery by dataset size: posterior median and {int(HDI_PROB*100)}% HDI '
-             f'({N_REPS} replicates); dot area ∝ trials', fontsize=14)
+             f'(first {SHOW_REPS} of {N_REPS} replicates); dot area ∝ trials', fontsize=14)
 save_plot(fig, "psych_curve_hdi_by_size")
 plt.show()
 
@@ -360,7 +405,7 @@ fig, axes = plt.subplots(len(sizes_show), len(groups), sharex=True, sharey=True,
 axes = np.atleast_2d(axes)
 for r, size in enumerate(sizes_show):
     for ax, grp in zip(axes[r], groups):
-        for rep in range(N_REPS):
+        for rep in range(SHOW_REPS):
             med, hdi = curve_bands[(rep, size, grp)]
             ax.fill_between(stim_grid, hdi[:, 0] - true_curves[grp], hdi[:, 1] - true_curves[grp],
                             color=REP_COLORS[rep], alpha=0.15, linewidth=0)
@@ -373,13 +418,13 @@ for r, size in enumerate(sizes_show):
 for ax in axes[-1]:
     ax.set_xlabel('stimulus (normalized)')
 handles = [(matplotlib.patches.Patch(color=REP_COLORS[rep], alpha=0.3),
-            matplotlib.lines.Line2D([], [], color=REP_COLORS[rep], linewidth=1.8)) for rep in range(N_REPS)]
-labels = [f'replicate {rep}' for rep in range(N_REPS)]
+            matplotlib.lines.Line2D([], [], color=REP_COLORS[rep], linewidth=1.8)) for rep in range(SHOW_REPS)]
+labels = [f'replicate {rep}' for rep in range(SHOW_REPS)]
 handles.append(matplotlib.lines.Line2D([], [], linestyle='--', linewidth=1.5, color='#0b0b0b'))
 labels.append('true curve')
 fig.legend(handles, labels, loc='outside lower center', ncol=len(labels))
 fig.suptitle(f'Deviation of recovered P("high") from the true curve: posterior median and {int(HDI_PROB*100)}% HDI '
-             f'({N_REPS} replicates)', fontsize=14)
+             f'(first {SHOW_REPS} of {N_REPS} replicates)', fontsize=14)
 save_plot(fig, "psych_curve_deviation_from_truth")
 plt.show()
 
