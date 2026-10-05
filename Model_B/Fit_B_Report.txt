@@ -87,6 +87,31 @@ $\hat{R} = 1.00$ and ESS $\ge 7{,}000$. Defining $\sigma_{\beta_0}$ directly as 
 \code{HalfNormal(2)} variable (as is effectively already done for
 $\sigma_{\beta_1}$) would remove the warning without changing the model.
 
+Figures~\ref{fig:trace_sess} and~\ref{fig:trace_hyper} show trace plots for a
+few of the parameters that \code{Main\_Analysis\_B.py} singles out: the four
+chains overlap completely and mix quickly. This includes the lapse rates of
+left\_bi on 05-30, which have the longest right tails of any session, and the
+lapse hyperparameters of left\_bi, whose sd $\sigma_{\gamma_h}$ piles up
+against 0.
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.8\textheight]{trace_session_params_left_bi.png}
+\caption{Trace plots (left: density per chain; right: draws per chain) of the
+session-level $\gamma_h$, $\gamma_l$, $\beta_0$ and $\beta_1$ of left\_bi in
+sessions 04-06, 04-13 and 05-30.}
+\label{fig:trace_sess}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{trace_gam_h_hyper_left_bi.png}
+\caption{Trace plots of left\_bi $\gamma_h$ on 06-14 and of the hyperparameters
+$\mu_{\gamma_h}$ (\code{mu\_gams}, b0) and $\sigma_{\gamma_h}$
+(\code{sig\_gams}, b0) it is drawn from.}
+\label{fig:trace_hyper}
+\end{figure}
+
 \subsection{Posterior predictive checks}
 
 \begin{figure}[H]
@@ -104,6 +129,39 @@ predictive intervals (Figure~\ref{fig:ppc}). At the level of single sessions,
 lie inside their intervals. That is more than 95\% because each cell's interval
 comes from a model fit partly to that same cell, so this is a check for gross
 misfit rather than an exact calibration test; no systematic misfit appears.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{curves_left_04-13.png}\hfill
+\includegraphics[width=0.48\textwidth]{curves_right_04-13.png}
+\caption{Fitted psychometric curves for session 04-13 (left and right hand):
+the curve at the posterior means of the parameters, the pointwise 95\% HDI of
+the curve, and the observed proportions of ``high'' responses (10 trials per
+point). Unimanual in blue, bimanual in red; the dashed line is the trained
+threshold.}
+\label{fig:curves}
+\end{figure}
+
+Figure~\ref{fig:curves} shows the fit in one session (04-13, the session that
+\code{Main\_Analysis\_B.py} plots). With only 10 trials per point the observed
+proportions scatter around the curves, but the curves follow them and the
+bimanual curve lies to the left of the unimanual one for both hands, which is
+the PSE shift of Section~\ref{sec:effect}. Because every session borrows
+strength from the others, single stray points (for example the left unimanual
+proportion of 0.3 at 32 $\mu m$) pull the curve only partly towards them.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{ppc_arviz_resp.png}
+\caption{ArviZ posterior predictive check of the responses (0 = ``low'',
+1 = ``high''), pooled over all trials: observed (black), 100 posterior
+predictive draws (blue) and their mean (orange dashed).}
+\label{fig:ppc_arviz}
+\end{figure}
+
+The overall proportion of ``high'' responses is reproduced
+(Figure~\ref{fig:ppc_arviz}); for binary data this check is coarse, and
+Figure~\ref{fig:ppc} is the more informative one.
 
 Leave-one-out cross-validation gives $\text{elpd}_\text{loo} = -3180.0$
 (SE 64.4) with $p_\text{loo} = 179$ and every Pareto $k$ below 0.7. The fit with
@@ -144,6 +202,35 @@ group. The posterior is far narrower than the prior, so the data, not the
 prior, determine it.}
 \label{fig:pop_pse}
 \end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_JND_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of the typical-session JND.}
+\label{fig:pop_jnd}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_gamh_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of the typical-session $\gamma_h$.}
+\label{fig:pop_gamh}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_gaml_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of the typical-session $\gamma_l$.}
+\label{fig:pop_gaml}
+\end{figure}
+
+The JND is also determined by the data: its posterior is narrow and the prior
+is nearly flat over it (Figure~\ref{fig:pop_jnd}). The lapse rates are small
+quantities with priors concentrated near 0, so the comparison is less clear-cut
+(Figures~\ref{fig:pop_gamh} and~\ref{fig:pop_gaml}), but the data still move
+them. For the bimanual groups the posterior of $\gamma_h$ lies well to the
+right of the bulk of the prior, and its 95\% HDI excludes 0; for the unimanual
+groups it is pushed against 0, narrower than the prior.
 
 \subsection{Hyperparameters, and comparison with the earlier priors}
 
@@ -191,6 +278,7 @@ sessions. A few sessions have very shallow bimanual slopes; the JND of left\_bi
 on 05-12 is 10.9 $\mu m$, against a median of 4.1 $\mu m$ across sessions.
 
 \section{Effect of the Distractor}
+\label{sec:effect}
 
 The effect of the distractor is the bimanual $-$ unimanual difference,
 computed draw by draw so that its uncertainty is exact. It is reported in two
@@ -282,6 +370,22 @@ somewhat larger than reported here, not smaller.
 \label{fig:effect_gamh}
 \end{figure}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{gamh_uni_bi_by_session.png}
+\caption{Unimanual (blue) and bimanual (red) $\gamma_h$ in each session, with
+the population-level typical-session HDIs as bands.}
+\label{fig:gamh_both}
+\end{figure}
+
+The session estimates of $\gamma_h$ (Figure~\ref{fig:gamh_both}) are pulled
+strongly towards their group's typical-session value: the bimanual posterior
+means range only from 0.019 to 0.048 (left) and 0.032 to 0.050 (right). Each
+session has few trials at the weakest amplitudes, and the between-session sd
+$\sigma_{\gamma_h}$ is small and mostly set by its prior, so session-to-session
+differences in $\gamma_h$ cannot be resolved; the clear result is the
+difference between conditions, not differences between sessions.
+
 \paragraph{JND.} The distractor makes discrimination slightly less precise. For
 the left hand the average over sessions is +1.0 $\mu m$ [0.5, 1.6], but this is
 driven by a handful of sessions with very shallow bimanual curves
@@ -299,7 +403,24 @@ single session's HDI excludes 0.
 \end{figure}
 
 \paragraph{$\gamma_l$.} No effect for either hand (posterior means 0.000 and
-0.003, HDIs centered near 0).
+0.003, HDIs centered near 0; Figures~\ref{fig:effect_gaml}
+and~\ref{fig:gaml_both}). Like $\gamma_h$, the session estimates of $\gamma_l$
+barely vary between sessions (posterior means 0.007--0.017).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{effect_gaml_by_session.png}
+\caption{$\gamma_l$ shift (bimanual $-$ unimanual) in each session.}
+\label{fig:effect_gaml}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{gaml_uni_bi_by_session.png}
+\caption{Unimanual (blue) and bimanual (red) $\gamma_l$ in each session, with
+the population-level typical-session HDIs as bands.}
+\label{fig:gaml_both}
+\end{figure}
 
 \subsection{Dependence on distractor amplitude (exploratory)}
 \label{sec:amplitude}
@@ -391,5 +512,61 @@ properly.
   \item Look at the left\_bi sessions with very shallow slopes (05-12, 05-19,
         05-30) for problems with the data or the session.
 \end{enumerate}
+
+\appendix
+\section{Joint Posteriors}
+\label{app:pairs}
+
+\code{Main\_Analysis\_B.py} also plots joint posteriors for session 06-14
+(Figures~\ref{fig:pair_lu}--\ref{fig:pair_hyper}). The correlation of
+$\beta_0$ and $\beta_1$ follows from the stimulus axis being centered on
+28 $\mu m$: it is negative ($r \approx -0.4$) for the unimanual groups, whose
+PSE on this day lies above 28 $\mu m$ (36 $\mu m$), and positive
+($r = 0.1$--$0.3$) for the bimanual groups, whose PSE lies below it
+(25--27 $\mu m$). The lapse rates are only weakly correlated with $\beta_0$ and
+$\beta_1$ ($|r| \le 0.26$, mostly with the slope) and with each other. There is
+no ridge or multimodality that would indicate an identifiability problem.
+
+Figure~\ref{fig:pair_hyper} looks at the left\_bi $\gamma_h$ together with the
+hyperparameters it is drawn from. $\gamma_h$ is positively correlated with
+both $\mu_{\gamma_h}$ ($r = 0.34$) and $\sigma_{\gamma_h}$ ($r = 0.29$): a
+larger session value is easier to reach when the group mean is higher or the
+spread around it is wider. $\sigma_{\gamma_h}$ has its mode at 0 and is barely
+constrained by the data, as the convergence study found. The sampler had no
+trouble with this region (no divergences).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{pair_left_uni_06-14.png}
+\caption{Joint posterior of $\gamma_h$, $\gamma_l$, $\beta_0$ and $\beta_1$ for
+left\_uni, session 06-14.}
+\label{fig:pair_lu}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{pair_left_bi_06-14.png}
+\caption{As Figure~\ref{fig:pair_lu}, for left\_bi.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{pair_right_uni_06-14.png}
+\caption{As Figure~\ref{fig:pair_lu}, for right\_uni.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{pair_right_bi_06-14.png}
+\caption{As Figure~\ref{fig:pair_lu}, for right\_bi.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{pair_gam_h_hyper_left_bi.png}
+\caption{Joint posterior of left\_bi $\gamma_h$ on 06-14 and the hyperparameters
+$\mu_{\gamma_h}$ and $\sigma_{\gamma_h}$.}
+\label{fig:pair_hyper}
+\end{figure}
 
 \end{document}
