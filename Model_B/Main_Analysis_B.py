@@ -25,6 +25,15 @@ except NameError:  # __file__ isn't set when cells are run interactively
     MODEL_DIR = Path.cwd()
 DATA_DIR = MODEL_DIR / "Data_B"
 
+# Figures used in Fit_B_Report.txt are saved here under the names the report uses
+FIT_PLOTS_DIR = MODEL_DIR / "Plots_B" / "Fit_Plots_B"
+SAVE_FIGS = True
+
+def save_fig(fig, name):
+    if SAVE_FIGS:
+        FIT_PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+        fig.savefig(FIT_PLOTS_DIR / name, dpi=200, bbox_inches='tight')
+
 #%% LOAD DATA (delete from this script later)
 #load and unpack data
 with open(DATA_DIR / "ReadyData_Sirius_B.pkl", "rb") as f:
@@ -57,10 +66,12 @@ result_df = az.summary(trace, var_names = ['beta_vec', 'gam_h', 'gam_l', 'PSE', 
     # r_hat = 1 and ess is large, so sampling was successful
 #%% Look at traceplots
 
-az.plot_trace(trace, var_names=('gam_h', 'gam_l', 'beta_vec'), coords = {
+axes = az.plot_trace(trace, var_names=('gam_h', 'gam_l', 'beta_vec'), coords = {
     'groups': ['left_bi'],
     'betas': ["b0", "b1"], 
     'sessions':[sessions[5],sessions[10], '05-30']}, compact=False,  backend_kwargs={"constrained_layout": True})
+save_fig(axes.ravel()[0].figure, 'trace_session_params_left_bi.png')
+plt.show()
 
 
 #%% plot joint posteriors
@@ -68,29 +79,35 @@ az.plot_trace(trace, var_names=('gam_h', 'gam_l', 'beta_vec'), coords = {
 sess_choice = '06-14'
 
 for grp_num, grp_choice in enumerate(coords['groups']):
-     az.plot_pair(trace, var_names=['gam_h', 'gam_l'
+     axes = az.plot_pair(trace, var_names=['gam_h', 'gam_l'
                                     ,'beta_vec'
                                     #,'PSE', 'JND'
                                     ], 
              coords = {'betas': ["b0", "b1"], 'groups': [grp_choice], 'sessions': [sess_choice]}, 
              kind = 'kde', marginals=True)
+     save_fig(axes.ravel()[0].figure, f'pair_{grp_choice}_{sess_choice}.png')
+     plt.show()
      
 
 #%%
 
-az.plot_trace(trace, var_names=('gam_h', 'mu_gams', 'sig_gams'), coords = {
+axes = az.plot_trace(trace, var_names=('gam_h', 'mu_gams', 'sig_gams'), coords = {
     'groups': ['left_bi'],
     'betas': ["b0"], 
     'sessions':['06-14'],}, compact=False,  backend_kwargs={"constrained_layout": True})
+save_fig(axes.ravel()[0].figure, 'trace_gam_h_hyper_left_bi.png')
+plt.show()
 
 
 #%% weird joint posterior at 05-30, could it be from halfnormal in prior? z_sig_gams, sig_gams, z_gams trace?
 
-az.plot_pair(trace, var_names=['gam_h', 'mu_gams', 'sig_gams'], 
+axes = az.plot_pair(trace, var_names=['gam_h', 'mu_gams', 'sig_gams'], 
          coords = {
              'groups': ['left_bi'],
              'betas': ["b0"], 
              'sessions':['06-14'],},  kind = 'kde', marginals=True)
+save_fig(axes.ravel()[0].figure, 'pair_gam_h_hyper_left_bi.png')
+plt.show()
 
 #%% Plot curves per session and group ??????????
 sess = 10
@@ -167,6 +184,7 @@ x_sig = np.std(x_old)
 
 
     
+plt.figure()
 plt.plot(xfit*x_sig+x_mu,yrec['left_uni'],label='Unimanual',color='blue')
 plt.fill_between(xfit*x_sig+x_mu, hdis['left_uni'][:, 0], hdis['left_uni'][:, 1], color='blue', alpha=0.3, label='95% HDI')
 plt.scatter(np.array(freqs.index)*x_sig+x_mu,np.array(freqs[0]),label='Data', color = 'blue')
@@ -181,11 +199,13 @@ plt.xlabel(r'Stimulus Amplitude ($\mu m$)')
 plt.ylabel('Prob[response = "high"]')
 plt.legend(loc='upper left', fontsize=9.5)
 plt.title("Left Hand Psychometric Curves, Session " + sess_label)
+save_fig(plt.gcf(), f'curves_left_{sess_label}.png')
 plt.show()     
 
 
 
 
+plt.figure()
 plt.plot(xfit*x_sig+x_mu,yrec['right_uni'],label='Unimanual',color='blue')
 plt.fill_between(xfit*x_sig+x_mu, hdis['right_uni'][:, 0], hdis['right_uni'][:, 1], color='blue', alpha=0.3, label='95% HDI')
 plt.scatter(np.array(freqs.index)*x_sig+x_mu,np.array(freqs[2]),label='Data', color = 'blue')
@@ -200,6 +220,7 @@ plt.xlabel(r'Stimulus Amplitude ($\mu m$)')
 plt.ylabel('Prob[response = "high"]')
 plt.legend(loc='upper left', fontsize=9.5)
 plt.title("Right Hand Psychometric Curves, Session " + sess_label)
+save_fig(plt.gcf(), f'curves_right_{sess_label}.png')
 plt.show()     
      
 
@@ -210,6 +231,33 @@ with model_B:
     pm.sample_posterior_predictive(trace,extend_inferencedata=True)
     prior = pm.sample_prior_predictive(samples=3000)
 trace.extend(prior)
+
+#%% Posterior predictive check: observed vs predicted P("high"), all sessions pooled
+
+amp = np.round(cov_mat[:, 1] * x_sig + x_mu).astype(int)   # stimulus amplitude in micrometres
+levels = np.unique(amp)
+y_rep = trace.posterior_predictive['resp'].values.reshape(-1, len(obs_data)).astype(np.int8)   # (draws, trials)
+
+fig, axes = plt.subplots(2, 2, sharex=True, sharey=True, constrained_layout=True, figsize=(9, 6))
+for ax, g in zip(axes.ravel(), ['left_uni', 'left_bi', 'right_uni', 'right_bi']):
+    in_grp = grp_idx == coords['groups'].index(g)
+    obs = np.array([obs_data[in_grp & (amp == a)].mean() for a in levels])
+    rep = np.array([y_rep[:, in_grp & (amp == a)].mean(1) for a in levels])   # (levels, draws)
+    lo, med, hi = np.quantile(rep, [0.025, 0.5, 0.975], axis=1)
+    ax.vlines(levels, lo, hi, color='#2a78d6', linewidth=6, alpha=0.35, label='posterior predictive 95% interval')
+    ax.plot(levels, med, '_', color='#2a78d6', markersize=12, markeredgewidth=2, label='posterior predictive median')
+    ax.plot(levels, obs, 'o', color='#0b0b0b', markersize=5, label='observed')
+    ax.axvline(28, linestyle='--', linewidth=1, color='#52514e')
+    ax.set_title(g)
+    ax.grid(alpha=0.3)
+for ax in axes[1]:
+    ax.set_xlabel(r'stimulus amplitude ($\mu m$)')
+for ax in axes[:, 0]:
+    ax.set_ylabel('P(response = "high")')
+axes[0, 0].legend(fontsize=8, loc='upper left')
+fig.suptitle('Posterior predictive check: all sessions pooled', fontsize=13)
+save_fig(fig, 'ppc_pooled_by_stimulus.png')
+plt.show()
 
 #%% Effect of the distractor (bimanual - unimanual): shared setup
 
@@ -230,6 +278,7 @@ QUANTITY_LABELS = {'PSE': r'PSE ($\mu m$)', 'JND': r'JND ($\mu m$)', 'gam_h': r'
 SCALE = {'PSE': x_sig, 'JND': x_sig, 'gam_h': 1.0, 'gam_l': 1.0}
 SHIFT = {'PSE': x_mu, 'JND': 0.0, 'gam_h': 0.0, 'gam_l': 0.0}
 COLORS = {'population': '#2a78d6', 'sessions': '#eb6834', 'prior': '#52514e'}
+FILE_LABELS = {'PSE': 'PSE', 'JND': 'JND', 'gam_h': 'gamh', 'gam_l': 'gaml'}   # quantity names in figure files
 
 def plot_post_hdi(ax, vals, color, label, hdi_prob=0.95):
     """Posterior density with its HDI shaded and a dotted line at the posterior mean."""
@@ -289,6 +338,7 @@ for q in QUANTITIES:
         ax.set_xlabel(QUANTITY_LABELS[q])
     axes[0, 0].legend(fontsize='small')
     fig.suptitle(f"Population level (typical session): {QUANTITY_LABELS[q]}", fontsize=14)
+    save_fig(fig, f'population_{FILE_LABELS[q]}_prior_posterior.png')
     plt.show()
 
 #%% Session level: bimanual - unimanual within every session (main result for Model B)
@@ -323,6 +373,7 @@ for q in QUANTITIES:
     axes[0].legend(fontsize='small', ncol=3)
     fig.suptitle(f"{QUANTITY_LABELS[q]}: bimanual − unimanual within each session (posterior mean and 95% HDI)",
                  fontsize=14)
+    save_fig(fig, f'effect_{FILE_LABELS[q]}_by_session.png')
     plt.show()
 
 #%% Session level: unimanual (blue) and bimanual (red) estimates in every session
@@ -352,6 +403,7 @@ for q in QUANTITIES:
     axes[0].legend(fontsize='small', ncol=3)
     fig.suptitle(f"{QUANTITY_LABELS[q]}: unimanual and bimanual in each session (posterior mean and 95% HDI)",
                  fontsize=14)
+    save_fig(fig, f'{FILE_LABELS[q]}_uni_bi_by_session.png')
     plt.show()
 
 #%% Overall distractor effect: population level vs average over these sessions
@@ -370,6 +422,7 @@ for r, q in enumerate(QUANTITIES):
         if r == 0:
             ax.set_title(hand)
 fig.suptitle("Effect of the distractor (bimanual − unimanual)", fontsize=14)
+save_fig(fig, 'effect_densities.png')
 plt.show()
 
 #%% Effect summary table
@@ -392,9 +445,46 @@ for hand in HANDS:
 effect_summary = pd.DataFrame(effect_rows)
 print(effect_summary.round(3).to_string())
 
+#%% Distractor effect against distractor amplitude (post hoc: amplitude is not in the model)
+
+# Session-level bimanual - unimanual differences, regressed on distractor amplitude separately for
+# every posterior draw, so the trend's uncertainty comes from the posterior.
+dist_amp = sess_summary.set_index(sess_summary.index.astype(str))['dist_amp'].reindex(dates).values.astype(float)
+X_amp = np.c_[np.ones_like(dist_amp), dist_amp]
+amp_grid = np.linspace(dist_amp.min(), dist_amp.max(), 50)
+jitter = (np.arange(len(dist_amp)) % 5 - 2) * 0.25   # spreads sessions that share an amplitude
+
+fig, axes = plt.subplots(2, len(HANDS), constrained_layout=True, figsize=(11, 7))
+for c, hand in enumerate(HANDS):
+    for r, q in enumerate(['PSE', 'JND']):
+        ax = axes[r, c]
+        d = sess_diff[(hand, q)].stack(sample=('chain', 'draw')).transpose('sample', 'sessions').values
+        d_mean = d.mean(0)
+        d_hdi = az.hdi(d[None], hdi_prob=0.95)   # (sessions, 2)
+        coef = np.linalg.lstsq(X_amp, d.T, rcond=None)[0]   # (intercept/slope, draws)
+        slope = coef[1] * 10   # per 10 um of distractor
+        slope_low, slope_high = az.hdi(slope, hdi_prob=0.95)
+        ax.errorbar(dist_amp + jitter, d_mean, yerr=[d_mean - d_hdi[:, 0], d_hdi[:, 1] - d_mean], fmt='o',
+                    markersize=4, color='#2a78d6', elinewidth=1, alpha=0.8, label='session: mean, 95% HDI')
+        lines = coef[0][:, None] + coef[1][:, None] * amp_grid
+        ax.fill_between(amp_grid, *np.quantile(lines, [0.025, 0.975], axis=0), color='#e34948', alpha=0.2, linewidth=0)
+        ax.plot(amp_grid, lines.mean(0), color='#e34948', linewidth=2, label='linear trend (95% band)')
+        ax.axhline(0, linestyle='--', linewidth=1, color=COLORS['prior'])
+        ax.set_title(f'{hand}: slope {slope.mean():.2f} [{slope_low:.2f}, {slope_high:.2f}] per 10 $\\mu m$', fontsize=10)
+        ax.set_ylabel(f'bimanual − unimanual\n{QUANTITY_LABELS[q]}')
+        ax.grid(alpha=0.3)
+        if r == 1:
+            ax.set_xlabel(r'distractor amplitude ($\mu m$)')
+axes[0, 0].legend(fontsize=8)
+fig.suptitle('Distractor effect against distractor amplitude (post hoc; amplitude is not in the model)', fontsize=12)
+save_fig(fig, 'effect_vs_distractor_amplitude.png')
+plt.show()
+
 #%%
 
-az.plot_ppc(trace, num_pp_samples=100)
+ax = az.plot_ppc(trace, num_pp_samples=100)
+save_fig(np.ravel(ax)[0].figure, 'ppc_arviz_resp.png')
+plt.show()
 
 LOO_results = az.loo(trace)
 
