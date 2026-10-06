@@ -86,7 +86,15 @@ print(result_df.to_string())
 #%% Look at traceplots (all groups overlaid)
 
 axes = az.plot_trace(trace, var_names=('gam_h', 'gam_l', 'beta_vec'), compact=True, legend=True,
-                     backend_kwargs={"constrained_layout": True})
+                     backend_kwargs={"constrained_layout": True, "figsize": (13, 7)})
+# move each group legend to the right of its row, where it can't cover the curves or the title
+for ax_dens, ax_draws in axes:
+    leg = ax_dens.get_legend()
+    if leg is not None:
+        handles, labels, title = leg.legend_handles, [t.get_text() for t in leg.get_texts()], leg.get_title().get_text()
+        leg.remove()
+        ax_draws.legend(handles, labels, title=title, loc='center left', bbox_to_anchor=(1.01, 0.5),
+                        fontsize='small', title_fontsize='small')
 save_fig(axes.ravel()[0].figure, 'trace_all_groups.png')
 plt.show()
 
