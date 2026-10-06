@@ -454,3 +454,119 @@ plt.show()
 #%% Fraction of the stimulus range where the true curve lies inside the HDI band
 
 print(curve_summary.pivot_table(index='group', columns='size', values='truth_in_band').round(2).to_string())
+
+#%% Numbers for Convergence_A_Report.txt
+# Everything quoted in the report that is not printed by an earlier cell. Works on freshly fitted or
+# reloaded results. Section names follow the report.
+
+AMP_LEVELS = [6, 12, 18, 24, 32, 38, 44, 50]   # stimulus amplitudes (um); standardized by their mean and sd
+amp_mu, amp_sig = np.mean(AMP_LEVELS), np.std(AMP_LEVELS)
+TABLE_SIZES = SIZES
+
+def by_size(df, values, fmt):
+    """Mean of `values` over groups and replicates, one row per parameter, one column per size.
+    fmt is one format for every row, or a dict of formats by parameter."""
+    t = df.pivot_table(index='param', columns='size', values=values, aggfunc='mean').loc[PARAM_NAMES, TABLE_SIZES]
+    fmts = fmt if isinstance(fmt, dict) else dict.fromkeys(PARAM_NAMES, fmt)
+    return t.apply(lambda row: row.map(lambda v: f"{v:{fmts[row.name]}}"), axis=1).to_string()
+
+print("--- Data and indexing")
+with open(DATA_DIR / "ReadyData_Sirius_A.pkl", "rb") as f:
+    real_grp_idx = pickle.load(f)['grp_idx']
+real_per_group = np.bincount(real_grp_idx).mean()
+print(f"real data: {len(real_grp_idx)} trials, {real_per_group:.0f} per group on average")
+print(f"one standardized stimulus unit = {amp_sig:.2f} um")
+
+print("--- Priors (Build_Model_A.py), by simulation")
+prior_rng = np.random.default_rng(SEED)
+n_prior = 1_000_000
+gam_mu, gam_sd = 0.2, 0.15
+beta_a = gam_mu * (gam_mu * (1 - gam_mu) / gam_sd**2 - 1)
+beta_b = (1 - gam_mu) * (gam_mu * (1 - gam_mu) / gam_sd**2 - 1)
+print(f"Beta(mean {gam_mu}, sd {gam_sd}): a = {beta_a:.2f}, b = {beta_b:.2f}")
+prior_b0 = prior_rng.normal(0, 6, n_prior)
+prior_b1 = prior_rng.normal(4, 2, n_prior)
+prior_gh = 0.25 * prior_rng.beta(beta_a, beta_b, n_prior)
+prior_gl = 0.25 * prior_rng.beta(beta_a, beta_b, n_prior)
+prior_pse = (-prior_b0 + np.log((1 - 2*prior_gh) / (1 - 2*prior_gl))) / prior_b1
+stim_lo, stim_hi = (min(AMP_LEVELS) - amp_mu) / amp_sig, (max(AMP_LEVELS) - amp_mu) / amp_sig
+print(f"P(PSE inside the stimulus range {min(AMP_LEVELS)}-{max(AMP_LEVELS)} um) = "
+      f"{np.mean((prior_pse >= stim_lo) & (prior_pse <= stim_hi)):.2f}")
+print(f"P(beta1 < 0) = {np.mean(prior_b1 < 0):.3f}")
+print(f"gamma: mean {prior_gh.mean():.3f}, median {np.median(prior_gh):.3f}, "
+      f"95% range [{np.quantile(prior_gh, 0.025):.3f}, {np.quantile(prior_gh, 0.975):.3f}]")
+
+print("--- Synthetic data: true values")
+print(pd.DataFrame(true_vals, index=groups).T.round(3).to_string())
+grp_trials = obs_props.groupby(['rep', 'size', 'group'])['n_trials'].sum().groupby('size').mean()
+print(f"trials per group (mean): {grp_trials.loc[SIZES[0]]:.0f} at {SIZES[0]} to {grp_trials.loc[SIZES[-1]]:.0f} at {SIZES[-1]}")
+print(f"{N_REPS} replicates, {N_REPS * len(SIZES)} fits, {n_cover} fits per size/parameter cell")
+
+print("--- Earlier run with 3 replicates (Convergence_A.py at commit 16f9e0e, one shared random stream)")
+early_path = MODEL_DIR / "Results_Convergence_A_3reps.pkl"
+if early_path.exists():
+    with open(early_path, "rb") as f:
+        early = pickle.load(f)['results']
+    early['z'] = early['error'] / early['sd']
+    print("PSE coverage:", early[early['param'] == 'PSE'].groupby('size')['covered'].mean().round(2).to_dict())
+    early_lu = early[(early['param'] == 'PSE') & (early['group'] == 'left_uni')]
+    print("left_uni PSE error in posterior sds, by replicate (rows) and size:")
+    print(early_lu.pivot_table(index='rep', columns='size', values='z').round(1).to_string())
+
+print("--- Sampling diagnostics")
+fits = results.drop_duplicates(['rep', 'size'])
+print(f"{len(fits)} fits: max r_hat {results['r_hat'].max():.3f}, min bulk ESS {results['ess_bulk'].min():.0f}, "
+      f"{int(fits['divergences'].sum())} divergences in total, in fits at sizes "
+      f"{sorted(fits.loc[fits['divergences'] > 0, 'size'].tolist())}")
+
+print("--- Coverage within single groups")
+cover_cells = results.groupby(['param', 'group', 'size'])['covered'].agg(['mean', 'sum', 'count'])
+print(f"{len(cover_cells)} group-level coverage values; the lowest:")
+print(cover_cells.sort_values('mean').head(5).to_string())
+rb = results[(results['group'] == 'right_bi') & (results['size'] == SIZES[-1])]
+for par in ['PSE', 'b0']:
+    r = rb[rb['param'] == par]
+    print(f"right_bi {par} at {SIZES[-1]}: coverage {r['covered'].mean():.2f}, RMSE {np.sqrt(np.mean(r['error']**2)):.3f}, "
+          f"mean posterior sd {r['sd'].mean():.3f}")
+print(f"right_bi PSE coverage at {SIZES[-2]}: {cover_cells.loc[('PSE', 'right_bi', SIZES[-2]), 'mean']:.2f}")
+
+print("--- Bias: mean (posterior mean - true) / posterior sd, Table tab:bias")
+results['z'] = results['error'] / results['sd']
+print(by_size(results, 'z', '+.2f'))
+print(f"{int((results['z'].abs() > 3).sum())} of {len(results)} estimates more than 3 posterior sds from the truth")
+gl_low = [g for g_i, g in enumerate(groups) if true_vals['gam_l'][g_i] == min(true_vals['gam_l'])]
+for g in gl_low:
+    g_i = groups.index(g)
+    trials_big = obs_props[(obs_props['size'] == SIZES[-1]) & (obs_props['group'] == g)]
+    # lapse-free curve near its ceiling (> 0.95): there a "low" response is almost always a gamma_l lapse
+    ceiling = 1 / (1 + np.exp(-(true_vals['b0'][g_i] + true_vals['b1'][g_i] * trials_big['stim']))) > 0.95
+    n_per_rep = trials_big['n_trials'].sum() / N_REPS
+    frac_ceiling = trials_big.loc[ceiling, 'n_trials'].sum() / trials_big['n_trials'].sum()
+    print(f"{g} (gamma_l = {true_vals['gam_l'][g_i]}): at {SIZES[-1]} trials {n_per_rep:.0f} trials, "
+          f"{frac_ceiling:.0%} near the ceiling, about {n_per_rep * frac_ceiling * true_vals['gam_l'][g_i]:.0f} gamma_l lapses")
+z_grp = results[results['size'] == SIZES[-1]].groupby(['param', 'group'])['z'].mean()
+err_grp = results.groupby(['param', 'group', 'size'])[['mean', 'error']].mean()
+print(f"left_uni at {SIZES[-1]}: gamma_l mean {err_grp.loc[('gam_l', 'left_uni', SIZES[-1]), 'mean']:.3f} "
+      f"(true {true_vals['gam_l'][groups.index('left_uni')]}), {z_grp.loc[('gam_l', 'left_uni')]:+.1f} sd; "
+      f"b1 error {err_grp.loc[('b1', 'left_uni', SIZES[-1]), 'error']:+.2f} ({z_grp.loc[('b1', 'left_uni')]:+.1f} sd)")
+print("gamma_l bias at the largest size, other groups (sd):",
+      {g: round(z_grp.loc[('gam_l', g)], 2) for g in groups if g != 'left_uni'})
+print(f"left_uni true curve at the highest stimulus: {true_curves['left_uni'][-1]:.3f}")
+print(f"b1 error at {SIZES[0]} trials:", {g: round(err_grp.loc[('b1', g, SIZES[0]), 'error'], 2) for g in groups})
+
+print("--- Precision: posterior sd, Table tab:sd")
+print(by_size(results, 'sd', {'gam_h': '.3f', 'gam_l': '.3f', 'b0': '.2f', 'b1': '.2f', 'PSE': '.3f', 'JND': '.3f'}))
+sd_by_size = results.pivot_table(index='param', columns='size', values='sd', aggfunc='mean').loc[PARAM_NAMES, SIZES]
+loglog = np.diff(np.log(sd_by_size.values), axis=1) / np.diff(np.log(SIZES))
+print("log-log slope of the sd between consecutive sizes (-0.5 = 1/sqrt(N)):")
+print(pd.DataFrame(loglog, index=PARAM_NAMES, columns=[f"{a}-{b}" for a, b in zip(SIZES, SIZES[1:])]).round(2).to_string())
+real_ratio = real_per_group / grp_trials.loc[SIZES[-1]]
+for par in ['PSE', 'JND']:
+    sd_big = sd_by_size.loc[par, SIZES[-1]]
+    print(f"{par} sd at {SIZES[-1]}: {sd_big:.3f} = {sd_big * amp_sig:.2f} um; scaled to the real data "
+          f"({real_ratio:.2f} times as many trials per group): {sd_big * amp_sig / np.sqrt(real_ratio):.2f} um")
+
+print("--- Psychometric curves, Table tab:curves (mean over groups and replicates)")
+curve_table = curve_summary.groupby('size')[['mean_hdi_width', 'max_abs_error', 'truth_in_band']].mean().T
+curve_table.loc['truth_in_band'] = curve_table.loc['truth_in_band'].round(2)
+print(curve_table.round(3).to_string())

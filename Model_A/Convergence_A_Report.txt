@@ -86,7 +86,7 @@ checked by prior predictive simulation. What they imply:
         the stimulus range (6 to 50 $\mu m$) only 64\% of the time.
   \item $\beta_1$: a symmetric normal, so 2.3\% of the prior mass is on negative
         (decreasing) slopes.
-  \item $\gamma_h, \gamma_l$: mean 0.05, median 0.042, 95\% range
+  \item $\gamma_h, \gamma_l$: mean 0.05, median 0.041, 95\% range
         $[0.003,\ 0.141]$. This is centered well above the lapse rates of trained
         animals (often below 0.01), which matters for $\gamma_l$
         (Section~\ref{sec:bias}).
@@ -199,6 +199,10 @@ chance in one simulated dataset.
 
 \section{Results}
 
+Every figure and number in this report is produced by \code{Convergence\_A.py};
+the cell ``Numbers for Convergence\_A\_Report.txt'' prints the numbers that
+the earlier cells do not, and also runs on the saved results without refitting.
+
 \subsection{Sampling diagnostics}
 
 All 140 fits sampled well: $\hat{R} \le 1.006$, a bulk ESS of at least 1{,}554
@@ -280,8 +284,9 @@ truth, as expected by chance.
 \paragraph{$\gamma_l$ is estimated too high.} The true values (0.005 and 0.01)
 lie in the lower tail of the prior, whose mean is 0.05, and the data contain
 very few lapses of this kind: at 16{,}000 trials a group with $\gamma_l = 0.005$
-has about 4{,}000 trials, roughly half of them at levels where the curve is
-near its ceiling, so only about 10 lapses. The prior therefore pulls the
+has about 4{,}000 trials, but only 13\% (left\_uni) to 37\% (right\_uni) of
+them are at levels where the curve is near its ceiling (above 0.95), so the data
+contain only about 3 to 7 such lapses. The prior therefore pulls the
 estimates up, by about one posterior sd at small sizes, decreasing to 0.36 sd at
 16{,}000 trials (Figure~\ref{fig:gaml}). The posteriors are wide enough that
 coverage stays at nominal.
@@ -325,7 +330,7 @@ for PSE and JND).}
 \toprule
 Trials & 250 & 500 & 1000 & 2000 & 4000 & 8000 & 16000 \\
 \midrule
-$\gamma_h$ & 0.031 & 0.028 & 0.024 & 0.019 & 0.015 & 0.012 & 0.009 \\
+$\gamma_h$ & 0.031 & 0.028 & 0.023 & 0.019 & 0.015 & 0.012 & 0.009 \\
 $\gamma_l$ & 0.029 & 0.024 & 0.018 & 0.013 & 0.010 & 0.007 & 0.005 \\
 $\beta_0$  & 0.83 & 0.59 & 0.45 & 0.31 & 0.22 & 0.15 & 0.11 \\
 $\beta_1$  & 1.39 & 1.17 & 0.95 & 0.71 & 0.53 & 0.38 & 0.27 \\
@@ -369,7 +374,7 @@ the HDI band.}
 \toprule
 Trials & 250 & 500 & 1000 & 2000 & 4000 & 8000 & 16000 \\
 \midrule
-HDI width       & 0.226 & 0.172 & 0.129 & 0.095 & 0.069 & 0.049 & 0.035 \\
+HDI width       & 0.226 & 0.172 & 0.129 & 0.095 & 0.068 & 0.049 & 0.035 \\
 largest error   & 0.126 & 0.100 & 0.077 & 0.054 & 0.042 & 0.027 & 0.021 \\
 truth in band   & 0.97 & 0.97 & 0.95 & 0.97 & 0.96 & 0.96 & 0.93 \\
 \bottomrule
