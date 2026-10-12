@@ -15,6 +15,9 @@ Covariate matrix columns:
 Every session uses a single distractor amplitude on its bimanual trials;
 sess_x_dist holds that value of x_dist for each session.
 
+Also generates the synthetic dataset ReadyData_Synth_C.pkl on the real design,
+with true values derived from Model B's real-data fit (see SynthData_C.py).
+
 @author: vmschroe
 """
 
@@ -22,6 +25,8 @@ import numpy as np
 import pandas as pd
 import pickle
 from pathlib import Path
+
+from SynthData_C import GROUPS, true_hyper_from_B, sample_session_params, response_probs
 
 try:
     MODEL_DIR = Path(__file__).resolve().parent
@@ -86,3 +91,50 @@ ReadyData_Sirius_C = {'cov_mat': cov_mat,
 
 with open(DATA_DIR / "ReadyData_Sirius_C.pkl", "wb") as f:
     pickle.dump(ReadyData_Sirius_C, f)
+
+#%% Generate synthetic dataset
+
+SEED = 20261012
+rng = np.random.default_rng(SEED)
+
+with open(MODEL_DIR.parent / "Model_B" / "Results_B.pkl", "rb") as f:
+    means_B = pickle.load(f)['az_summary_trace']['mean']
+
+sessions = list(dates_sess_idx)
+hparams_fixed_C = true_hyper_from_B(means_B, sessions, sess_x_dist)
+synth_session_params = sample_session_params(hparams_fixed_C, len(sessions), rng)
+synth_psi = response_probs(synth_session_params, cov_mat, grp_idx, sess_idx)
+synth_resp = rng.binomial(1, synth_psi)
+
+print("True hyperparameters (gamma ones on the logit scale)")
+print(hparams_fixed_C.round(3).to_string())
+
+#%% Sanity checks: synthetic vs real response rates
+
+condition = np.where(cov_mat[:, 2] > 0, 'bi', 'uni')
+rates = pd.DataFrame({'hand': np.array(GROUPS)[grp_idx], 'condition': condition, 'stim_amp': stims,
+                      'real': resp, 'synthetic': synth_resp, 'synthetic psi': synth_psi})
+print("\nP(respond 'high') by hand and condition")
+print(rates.groupby(['hand', 'condition'])[['real', 'synthetic', 'synthetic psi']].mean().round(3).to_string())
+print("\nP(respond 'high') by stimulus amplitude, hand and condition")
+print(rates.pivot_table(index='stim_amp', columns=['hand', 'condition'], values=['real', 'synthetic'])
+      .round(2).to_string())
+
+#%% Save synthetic dataset
+
+ReadyData_Synth_C = {'cov_mat': cov_mat,
+                     'grp_idx': grp_idx,
+                     'sess_idx': sess_idx,
+                     'sess_x_dist': sess_x_dist,
+                     'resp': synth_resp,
+                     'names_grp_idx': names_grp_idx,
+                     'dates_sess_idx': dates_sess_idx,
+                     'session_summary': sess_sum,
+                     'x_mu': x_mu,
+                     'x_sig': x_sig,
+                     'hparams_fixed_C': hparams_fixed_C,
+                     'synth_session_params': synth_session_params,
+                     'seed': SEED}
+
+with open(DATA_DIR / "ReadyData_Synth_C.pkl", "wb") as f:
+    pickle.dump(ReadyData_Synth_C, f)
