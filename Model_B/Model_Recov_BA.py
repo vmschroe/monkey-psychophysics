@@ -3,11 +3,39 @@
 """
 Created on Tue Mar  3 12:09:04 2026
 
-Fit models A and B to synthetic data A and B, do model comparisons.
+Model recovery study for Models A (pooled over sessions) and B (hierarchical
+over sessions): can PSIS-LOO tell which model generated a dataset?
+
+Each replicate draws two fresh synthetic datasets on the real trial design
+(stimuli, groups and sessions of ReadyData_Sirius_B.pkl), with true values
+taken from the fits to the real data so the synthetic data resemble it:
+    - data A: responses from Model A's group parameters (b0, b1, gam_h,
+      gam_l), the same for every session; true values are the posterior means
+      of Model A's real-data fit (Results_A.pkl, from Main_Analysis_A.py);
+    - data B: new session-level parameters drawn from Model B's
+      hyperparameters, as in DataProcessing_B.py, then responses from those;
+      true hyperparameters are the posterior means of Model B's real-data fit
+      (Results_B.pkl, from Main_Analysis_B.py).
+These true values only generate data; the priors of both models are unchanged.
+Both models are fitted to both datasets and compared with PSIS-LOO.
+elpd_diff is elpd_loo(B) - elpd_loo(A) on the same data, with its standard
+error dse computed from the pointwise differences, as az.compare does.
+The model with the higher elpd_loo is counted as the one selected.
+
+Outputs, all written by this script:
+    - Results_Model_Recov_BA.pkl: one row per (replicate, dataset) with both
+      models' LOO results and sampling diagnostics;
+    - Model_Recov_Results.txt: settings, per-replicate table, selection
+      counts and diagnostics;
+    - Plots_B/Model_Recov_Plots_BA/elpd_diff_by_replicate.png.
+
+Runtime: roughly 1 min for a Model A fit and 3.5 min for a Model B fit with the
+4 chains run in parallel, so about 10 min per replicate and 1.7 h for the
+default 10 replicates. Results are saved
+after every replicate, so an interrupted run keeps the replicates already done.
 
 @author: vmschroe
 """
-
 
 import numpy as np
 import pymc as pm
@@ -16,10 +44,8 @@ import arviz as az
 import matplotlib
 import matplotlib.pyplot as plt
 import os
-import math
 import pickle
-import ast
-import xarray as xr
+import time
 from pathlib import Path
 
 try:
@@ -28,90 +54,221 @@ except NameError:  # __file__ isn't set when cells are run interactively
     MODEL_DIR = Path.cwd()
 DATA_DIR = MODEL_DIR / "Data_B"
 MODEL_A_DIR = MODEL_DIR.parent / "Model_A"
+PLOT_DIR = MODEL_DIR / "Plots_B" / "Model_Recov_Plots_BA"
+PLOT_DIR.mkdir(parents=True, exist_ok=True)
+RESULTS_PATH = MODEL_DIR / "Results_Model_Recov_BA.pkl"
+SUMMARY_PATH = MODEL_DIR / "Model_Recov_Results.txt"
 
+#%% SETTINGS
 
-# Initialize Model A
+N_REPS = 10
+DRAWS = 1000
+TUNE = 1000
+CHAINS = 4
+CORES = 4
+# Python 3.14's default 'forkserver' re-runs this script in every worker, so fork them instead
+# ('fork' doesn't exist on Windows, which keeps its default)
+MP_CTX = None if os.name == 'nt' else 'fork'
+SEED = 20261012
 
-#%% Load Data and Info A
-#load and unpack data
-with open(MODEL_A_DIR / "Data_A" / "ReadyData_Synth_A.pkl", "rb") as f:
-    data_dict_A = pickle.load(f)
+rng = np.random.default_rng(SEED)
 
-cov_mat = data_dict_A['cov_mat']
-grp_idx = data_dict_A['grp_idx']
-obs_data = data_dict_A['resp']
+#%% LOAD DESIGN AND TRUE PARAMETERS
 
-obs_data_A = obs_data
+with open(DATA_DIR / "ReadyData_Sirius_B.pkl", "rb") as f:
+    real_data = pickle.load(f)
 
-#%% Load Model A
+cov_mat = real_data['cov_mat']
+grp_idx = real_data['grp_idx']
+sess_idx = real_data['sess_idx']
+sessions = list(real_data['dates_sess_idx'])
+n_sessions = len(sessions)
+names_grp_idx = real_data['names_grp_idx']
+groups = sorted(names_grp_idx, key=names_grp_idx.get)   # ['left_uni','left_bi','right_uni','right_bi']
 
-exec(open(MODEL_A_DIR / "Build_Model_A.py").read())
+with open(MODEL_A_DIR / "Results_A.pkl", "rb") as f:
+    real_fit_A = pickle.load(f)['az_summary_trace']['mean']
+with open(MODEL_DIR / "Results_B.pkl", "rb") as f:
+    real_fit_B = pickle.load(f)['az_summary_trace']['mean']
 
-#  Initialize Model B
+def posterior_means(fit, var, beta=None):
+    """Posterior means of one variable from a real-data fit, in the order of groups."""
+    return np.array([fit[f"{var}[{beta + ', ' if beta else ''}{grp}]"] for grp in groups])
 
-#%% Load Data and Info B
-#load and unpack data
-with open(DATA_DIR / "ReadyData_Synth_B.pkl", "rb") as f:
-    data_dict_B = pickle.load(f)
+# Model A truth: one value per group
+true_A = {'b0': posterior_means(real_fit_A, 'beta_vec', 'b0'),
+          'b1': posterior_means(real_fit_A, 'beta_vec', 'b1'),
+          'gam_h': posterior_means(real_fit_A, 'gam_h'),
+          'gam_l': posterior_means(real_fit_A, 'gam_l')}
 
-cov_mat = data_dict_B['cov_mat']
-grp_idx = data_dict_B['grp_idx']
-obs_data = data_dict_B['resp']
+# Model B truth: hyperparameters per group, gamma ones on the logit scale.
+# Build_Model_B.py indexes the gamma hyperparameters with the 'betas' dim: b0 -> gam_h, b1 -> gam_l
+true_hyper = {'mu_b0': posterior_means(real_fit_B, 'mu_betas', 'b0'),
+              'sig_b0': posterior_means(real_fit_B, 'sig_betas', 'b0'),
+              'mu_b1': posterior_means(real_fit_B, 'mu_betas', 'b1'),
+              'sig_b1': posterior_means(real_fit_B, 'sig_betas', 'b1'),
+              'mu_gam_h': posterior_means(real_fit_B, 'mu_gams', 'b0'),
+              'sig_gam_h': posterior_means(real_fit_B, 'sig_gams', 'b0'),
+              'mu_gam_l': posterior_means(real_fit_B, 'mu_gams', 'b1'),
+              'sig_gam_l': posterior_means(real_fit_B, 'sig_gams', 'b1')}
 
-sessions = list(data_dict_B['dates_sess_idx'])
-sess_idx = data_dict_B['sess_idx']
+#%% DATA GENERATORS
 
-obs_data_B = obs_data
+def psychometric(gam_h, gam_l, b0, b1, stim):
+    return gam_h + (1 - gam_h - gam_l) / (1 + np.exp(-(b0 + b1 * stim)))
 
-#%% Load Model B
+def simulate_A(rng):
+    """Responses from Model A's true group parameters, as in DataProcessing_A.py."""
+    psi = psychometric(*(true_A[p][grp_idx] for p in ['gam_h', 'gam_l', 'b0', 'b1']), cov_mat[:, 1])
+    return rng.binomial(1, psi)
 
-exec(open(MODEL_DIR / "Build_Model_B.py").read())
+def simulate_B(rng):
+    """New session-level parameters from Model B's true hyperparameters, then
+    responses, as in DataProcessing_B.py. Session parameters are (n_groups, n_sessions)."""
+    shape = (len(groups), n_sessions)
+    hp = {name: vals[:, None] for name, vals in true_hyper.items()}
+    sp = {
+        'b0': hp['mu_b0'] + hp['sig_b0'] * rng.standard_normal(shape),
+        'b1': hp['mu_b1'] + hp['sig_b1'] * rng.standard_normal(shape),
+        'gam_h': 0.25 / (1 + np.exp(-(hp['sig_gam_h'] * rng.standard_normal(shape) + hp['mu_gam_h']))),
+        'gam_l': 0.25 / (1 + np.exp(-(hp['sig_gam_l'] * rng.standard_normal(shape) + hp['mu_gam_l']))),
+    }
+    psi = psychometric(*(sp[p][grp_idx, sess_idx] for p in ['gam_h', 'gam_l', 'b0', 'b1']), cov_mat[:, 1])
+    return rng.binomial(1, psi)
 
+#%% BUILD BOTH MODELS
 
-#%% fit model A with data A, sample from posteriors
+# The build scripts read these names; running each in its own namespace keeps them
+# from overwriting anything here. The design is shared, so each model is built once
+# and only the responses are swapped between fits.
+def build(path, model_name):
+    ns = {'cov_mat': cov_mat, 'grp_idx': grp_idx, 'sess_idx': sess_idx, 'sessions': sessions,
+          'obs_data': np.zeros(len(grp_idx), dtype=int)}
+    exec(path.read_text(), ns)
+    return ns[model_name]
 
-with model_A:
-    model_A.set_data("obs_data", obs_data_A)
-    trace_mA_dA = pm.sample(return_inferencedata=True, chains = 4, progressbar=True, idata_kwargs={"log_likelihood": True})
-print("FINISHED SAMPLING!")
+MODELS = {'A': build(MODEL_A_DIR / "Build_Model_A.py", 'model_A'),
+          'B': build(MODEL_DIR / "Build_Model_B.py", 'model_B')}
 
-#%% fit model B with data A, sample from posteriors
+def fit_and_loo(model_key, obs):
+    """Fit one model to one dataset; return its pointwise LOO and sampling diagnostics.
+    The trace itself is dropped: its log likelihood is ~400 MB."""
+    model = MODELS[model_key]
+    with model:
+        model.set_data("obs_data", obs)
+        trace = pm.sample(draws=DRAWS, tune=TUNE, chains=CHAINS, cores=CORES, mp_ctx=MP_CTX,
+                          random_seed=int(rng.integers(2**31)), progressbar=True,
+                          idata_kwargs={"log_likelihood": True})
+    loo = az.loo(trace, pointwise=True)
+    free_vars = [rv.name for rv in model.free_RVs]
+    diag = {'max_r_hat': float(az.rhat(trace, var_names=free_vars).to_array().max()),
+            'min_ess_bulk': float(az.ess(trace, var_names=free_vars).to_array().min()),
+            'divergences': int(trace.sample_stats['diverging'].sum())}
+    return loo, diag
 
-with model_B:
-    model_B.set_data("obs_data", obs_data_A)
-    trace_mB_dA = pm.sample(return_inferencedata=True, chains = 4, progressbar=True, idata_kwargs={"log_likelihood": True})
-print("FINISHED SAMPLING!")
+#%% FIT BOTH MODELS TO BOTH DATASETS IN EVERY REPLICATE
 
-#%% data A comparison
+rows = []
 
-df_comp_A = az.compare({"A_pooled": trace_mA_dA, "B_hierarchical": trace_mB_dA})
-az.plot_compare(df_comp_A, insample_dev=False, plot_ic_diff=True, legend=True)
+def save_results():
+    with open(RESULTS_PATH, "wb") as f:
+        pickle.dump({'results': pd.DataFrame(rows), 'groups': groups, 'true_hyper': true_hyper,
+                     'true_A': true_A, 'n_reps': N_REPS,
+                     'draws': DRAWS, 'tune': TUNE, 'chains': CHAINS, 'seed': SEED}, f)
 
+run_start = time.time()
+for rep in range(N_REPS):
+    data = {'A': simulate_A(rng), 'B': simulate_B(rng)}
+    for data_key, obs in data.items():
+        row = {'rep': rep, 'true_model': data_key, 'mean_resp': obs.mean()}
+        loo = {}
+        for model_key in MODELS:
+            t0 = time.time()
+            print(f"--- replicate {rep+1}/{N_REPS}: model {model_key} on data {data_key} ---")
+            loo[model_key], diag = fit_and_loo(model_key, obs)
+            row.update({f'elpd_{model_key}': loo[model_key].elpd_loo, f'se_{model_key}': loo[model_key].se,
+                        f'p_loo_{model_key}': loo[model_key].p_loo,
+                        f'max_pareto_k_{model_key}': float(loo[model_key].pareto_k.max())})
+            row.update({f'{k}_{model_key}': v for k, v in diag.items()})
+            print(f"    done in {(time.time() - t0)/60:.1f} min, {diag['divergences']} divergences, "
+                  f"max r_hat {diag['max_r_hat']:.3f}")
+        diff_i = loo['B'].loo_i.values - loo['A'].loo_i.values   # same trials in the same order
+        row['elpd_diff'] = diff_i.sum()                          # B - A
+        row['dse'] = np.sqrt(len(diff_i) * np.var(diff_i))
+        row['selected'] = 'B' if row['elpd_diff'] > 0 else 'A'
+        rows.append(row)
+    save_results()
 
-#%%
-print(df_comp_A.to_string())
+results = pd.DataFrame(rows)
+print(f"FINISHED SAMPLING! ({(time.time() - run_start)/3600:.1f} h)")
 
-#%% fit model A with data B, sample from posteriors
+#%% (optional) reload saved results instead of refitting
 
-with model_A:
-    model_A.set_data("obs_data", obs_data_B)
-    trace_mA_dB = pm.sample(return_inferencedata=True, chains = 4, progressbar=True, idata_kwargs={"log_likelihood": True})
-print("FINISHED SAMPLING!")
+# with open(RESULTS_PATH, "rb") as f:
+#     saved = pickle.load(f)
+# results, N_REPS = saved['results'], saved['n_reps']
 
-#%% fit model B with data B, sample from posteriors
+#%% Summary tables, written to Model_Recov_Results.txt
 
-with model_B:
-    model_B.set_data("obs_data", obs_data_B)
-    trace_mB_dB = pm.sample(return_inferencedata=True, chains = 4, progressbar=True, idata_kwargs={"log_likelihood": True})
-print("FINISHED SAMPLING!")
+results['z'] = results['elpd_diff'] / results['dse']
+selection = pd.crosstab(results['true_model'], results['selected']).reindex(
+    index=['A', 'B'], columns=['A', 'B'], fill_value=0)
+selection.index.name, selection.columns.name = 'generating model', 'selected model'
 
-#%% data B comparison
+per_rep = results[['rep', 'true_model', 'elpd_A', 'elpd_B', 'p_loo_A', 'p_loo_B',
+                   'elpd_diff', 'dse', 'z', 'selected']].copy()
+per_rep['rep'] += 1
+per_rep = per_rep.sort_values(['true_model', 'rep'])
 
-df_comp_B = az.compare({"A_pooled": trace_mA_dB, "B_hierarchical": trace_mB_dB})
-az.plot_compare(df_comp_B, insample_dev=False, plot_ic_diff=True, legend=True)
+z_summary = results.groupby('true_model')['z'].agg(['min', 'median', 'max'])
+z_summary.index.name = 'generating model'
 
+diag_cols = [f'{d}_{m}' for d in ['max_r_hat', 'min_ess_bulk', 'divergences', 'max_pareto_k'] for m in MODELS]
+diag_summary = results.groupby('true_model')[diag_cols].agg(
+    {c: ('min' if c.startswith('min_ess') else 'max') for c in diag_cols}).T
+diag_summary.columns.name = 'generating model'
 
-#%%
-print(df_comp_B.to_string())
+true_table = pd.concat({'Model A (data A)': pd.DataFrame(true_A, index=groups).T,
+                        'Model B (data B)': pd.DataFrame(true_hyper, index=groups).T})
 
+summary = "\n\n".join([
+    "Model recovery study, Models A (pooled) and B (hierarchical over sessions)",
+    f"Produced by Model_Recov_BA.py: {len(results) // 2} replicates, seed {SEED}, "
+    f"{CHAINS} chains x {DRAWS} draws ({TUNE} tune). Each replicate draws a fresh dataset from each "
+    f"model on the real design ({len(grp_idx)} trials, {n_sessions} sessions).",
+    "True values (posterior means of the real-data fits; gamma hyperparameters on the logit scale)\n"
+    + true_table.to_string(float_format=lambda v: f"{v:.3f}"),
+    "elpd_diff = elpd_loo(B) - elpd_loo(A); dse = its standard error; z = elpd_diff / dse.\n"
+    "Positive elpd_diff favours Model B. 'selected' is the model with the higher elpd_loo.",
+    "Selection counts\n" + selection.to_string(),
+    "z = elpd_diff / dse across replicates\n" + z_summary.round(2).to_string(),
+    "Per replicate\n" + per_rep.to_string(index=False, float_format=lambda v: f"{v:.2f}"),
+    "Sampling and LOO diagnostics (worst across replicates; _A / _B = fitted model)\n"
+    + diag_summary.to_string(float_format=lambda v: f"{v:.3f}"),
+])
+SUMMARY_PATH.write_text(summary + "\n")
+print(summary)
 
+#%% Plot: elpd_diff (B - A) with +-2 dse for every replicate, one panel per generating model
+
+MODEL_COLORS = {'A': '#2a78d6', 'B': '#eb6834'}
+
+fig, axes = plt.subplots(1, 2, sharey=False, constrained_layout=True, figsize=(11, 4.2))
+for ax, true_model in zip(axes, ['A', 'B']):
+    d = results[results['true_model'] == true_model].sort_values('rep')
+    ax.errorbar(d['rep'] + 1, d['elpd_diff'], yerr=2 * d['dse'], fmt='o', markersize=6,
+                linewidth=1.5, capsize=0, color=MODEL_COLORS[true_model])
+    ax.axhline(0, linestyle='--', linewidth=1.5, color='#52514e')
+    n_correct = int((d['selected'] == true_model).sum())
+    ax.set_title(f'Data generated by Model {true_model}: {n_correct}/{len(d)} select {true_model}')
+    ax.set_xlabel('replicate')
+    ax.set_xticks(d['rep'] + 1)
+    ax.grid(alpha=0.3)
+axes[0].set_ylabel('elpd_loo(B) − elpd_loo(A)\n(> 0 favours B)')
+# legend in neutral ink: the panel colours differ, the encoding is the same
+handles = [matplotlib.lines.Line2D([], [], marker='o', markersize=6, linewidth=1.5, color='#52514e'),
+           matplotlib.lines.Line2D([], [], linestyle='--', linewidth=1.5, color='#52514e')]
+fig.legend(handles, ['elpd_diff ± 2 dse', 'no difference'], loc='outside lower center', ncol=2)
+fig.suptitle('Model recovery: LOO comparison of Models A and B', fontsize=14)
+fig.savefig(PLOT_DIR / "elpd_diff_by_replicate.png", dpi=200, bbox_inches='tight')
+plt.show()
