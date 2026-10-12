@@ -1,0 +1,69 @@
+Model recovery study, Models A (pooled) and B (hierarchical over sessions)
+
+Produced by Model_Recov_BA.py: 10 replicates, seed 20261012, 4 chains x 1000 draws (1000 tune). Each replicate draws a fresh dataset from each model on the real design (12937 trials, 42 sessions).
+
+True values (posterior means of the real-data fits; gamma hyperparameters on the logit scale)
+                            left_uni  left_bi  right_uni  right_bi
+Model A (data A) b0           -1.422   -0.156     -0.967     0.608
+                 b1            4.588    3.956      3.980     3.982
+                 gam_h         0.002    0.041      0.003     0.045
+                 gam_l         0.009    0.016      0.006     0.012
+Model B (data B) mu_b0        -1.487   -0.099     -1.056     0.686
+                 sig_b0        0.763    0.772      1.011     0.759
+                 mu_b1         4.968    4.321      4.580     4.340
+                 sig_b1        0.285    1.266      0.173     0.615
+                 mu_gam_h     -5.203   -2.350     -4.729    -1.816
+                 sig_gam_h     0.359    0.591      0.371     0.362
+                 mu_gam_l     -3.445   -3.442     -3.717    -3.228
+                 sig_gam_l     0.373    0.393      0.381     0.431
+
+elpd_diff = elpd_loo(B) - elpd_loo(A); dse = its standard error; z = elpd_diff / dse.
+Positive elpd_diff favours Model B. 'selected' is the model with the higher elpd_loo.
+
+Selection counts
+selected model    A   B
+generating model       
+A                 9   1
+B                 0  10
+
+z = elpd_diff / dse across replicates
+                   min  median    max
+generating model                     
+A                -3.41   -1.08   0.36
+B                 8.16    9.44  11.12
+
+Per replicate
+ rep true_model   elpd_A   elpd_B  p_loo_A  p_loo_B  elpd_diff   dse     z selected
+   1          A -3353.10 -3353.47    14.41    77.18      -0.37  3.71 -0.10        A
+   2          A -3339.23 -3346.06    14.36    53.93      -6.83  2.01 -3.41        A
+   3          A -3345.62 -3343.99    13.60    83.57       1.63  4.47  0.36        B
+   4          A -3389.43 -3389.77    13.89    71.17      -0.34  3.31 -0.10        A
+   5          A -3382.69 -3388.13    14.84    57.91      -5.45  2.12 -2.57        A
+   6          A -3259.49 -3262.99    14.44    66.49      -3.50  2.57 -1.36        A
+   7          A -3384.79 -3390.04    14.65    56.77      -5.26  2.26 -2.32        A
+   8          A -3397.48 -3400.26    14.51    67.01      -2.78  3.36 -0.83        A
+   9          A -3290.48 -3292.66    14.72    66.45      -2.18  3.15 -0.69        A
+  10          A -3315.94 -3319.47    13.96    61.58      -3.53  2.64 -1.34        A
+   1          B -3307.19 -3113.19    13.74   175.07     194.00 20.59  9.42        B
+   2          B -3342.14 -3173.50    13.92   173.93     168.64 18.23  9.25        B
+   3          B -3362.28 -3212.06    14.51   179.76     150.22 18.41  8.16        B
+   4          B -3440.78 -3243.95    14.74   187.29     196.83 20.28  9.71        B
+   5          B -3325.95 -3128.28    13.55   180.01     197.67 20.97  9.42        B
+   6          B -3119.99 -2933.04    12.50   167.87     186.95 19.77  9.46        B
+   7          B -3221.21 -3057.28    13.93   166.71     163.93 18.25  8.98        B
+   8          B -3368.76 -3133.33    14.50   182.04     235.43 21.72 10.84        B
+   9          B -3515.13 -3232.77    12.80   189.61     282.36 25.39 11.12        B
+  10          B -3421.80 -3213.97    14.10   176.25     207.83 20.75 10.01        B
+
+Sampling and LOO diagnostics (worst across replicates; _A / _B = fitted model). r_hat and ESS
+leave out Model B's z_sig_*, whose sign is unidentified; max_r_hat_z_sig_B shows them separately.
+generating model         A        B
+max_r_hat_A          1.003    1.004
+max_r_hat_B          1.009    1.009
+min_ess_bulk_A    2445.881 2411.348
+min_ess_bulk_B     912.590  856.848
+divergences_A        0.000    0.000
+divergences_B        0.000    0.000
+max_pareto_k_A       0.278    0.395
+max_pareto_k_B       0.576    0.645
+max_r_hat_z_sig_B    1.059    1.739
