@@ -110,6 +110,30 @@ from fits to the real data:
         in their distractor effect by about as much as the hand-level effect itself.
 \end{itemize}
 
+\paragraph{Prior predictive check.} \code{Check\_Prior\_C.py} samples the prior from the
+model on the real design and looks at the PSE shifts it implies
+(Figure~\ref{fig:prior_check}). Because uni- and bimanual trials share the slope and
+lapse rates, a session's shift is $-\beta_2 d_s / \beta_1$. For a typical session the
+prior puts the shift within $[-15.6, 16.2]$ $\mu m$ (90\%) with a 32 $\mu m$ distractor
+(median size 5.1 $\mu m$) and within $[-2.9, 3.0]$ $\mu m$ with a 6 $\mu m$ one; shifts
+above 10 $\mu m$ have prior probability 0.24 at 32 $\mu m$ and 0.002 at 6 $\mu m$.
+Sessions at the same amplitude differ in their shift by a between-session sd with
+median 5.1 $\mu m$ at 32 $\mu m$. Of the prior session PSEs, 10.2\% (unimanual) and
+15.5\% (bimanual) fall outside the stimulus range of 6--50 $\mu m$. The prior is
+therefore weakly informative about the size and sign of the effect, but the model's
+form ties the shift to the amplitude: a weak distractor can only have a small effect,
+before any data are seen.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{Prior_Check_C_distractor.png}
+\caption{Prior on the distractor effect. Left: PSE shift of a typical session against
+distractor amplitude (median, 50\% and 90\% intervals). Middle: session shifts in the
+6 and 32 $\mu m$ sessions. Right: 30 prior draws of the unimanual and bimanual curves
+of one 32 $\mu m$ session.}
+\label{fig:prior_check}
+\end{figure}
+
 \subsection{Graphical Model}
 
 \begin{center}

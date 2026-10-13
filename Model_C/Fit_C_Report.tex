@@ -88,6 +88,38 @@ bulk ESS $\ge 3{,}410$ and tail ESS $\ge 5{,}231$. Unlike Model B, whose raw
 \code{z\_sig\_b0} variables showed $\hat{R}$ warnings from an unidentified sign,
 Model C defines its HalfNormal sds directly, so no such warning appears.
 
+Figures~\ref{fig:trace_sess}--\ref{fig:trace_gamh} show trace plots for a few
+parameters: the left hand's session parameters in session 04-13 (12 $\mu m$
+distractor; the session whose curves are shown below) and 05-12 (32 $\mu m$), the
+hyperparameters of $\beta_2$, and the lapse rate $\gamma_h$ with its hyperparameters.
+The four chains overlap and mix quickly, including for $\sigma_{\gamma_h}$, which
+piles up against 0. The gray ticks on the axes mark the 2 divergent draws; they lie
+in no particular region of the posterior.
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.8\textheight]{trace_session_params_left.png}
+\caption{Trace plots (left: density per chain; right: draws per chain) of the left
+hand's session-level $\gamma_h$, $\gamma_l$, $\beta_0$, $\beta_1$ and $\beta_2$ in
+sessions 04-13 and 05-12.}
+\label{fig:trace_sess}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{trace_b2_hyper_left.png}
+\caption{Trace plots of the left hand's $\mu_{\beta_2}$ and $\sigma_{\beta_2}$.}
+\label{fig:trace_b2}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{trace_gam_h_hyper_left.png}
+\caption{Trace plots of the left hand's $\gamma_h$ on 04-13 and of the hyperparameters
+$\mu_{\gamma_h}$ and $\sigma_{\gamma_h}$ it is drawn from.}
+\label{fig:trace_gamh}
+\end{figure}
+
 \subsection{Posterior predictive check}
 \label{sec:ppc}
 
@@ -129,6 +161,59 @@ the model can only use one lapse rate for both conditions. The fitted typical la
 rates ($\gamma_h = 0.009$ and 0.011, Table~\ref{tab:pop}) lie between the near-zero
 unimanual and the higher bimanual rates that Model B estimates separately: too high
 for unimanual trials and too low for bimanual ones.
+
+\paragraph{Within single sessions.}
+Each session $\times$ hand $\times$ condition $\times$ amplitude cell holds about 10
+trials. Of the 1{,}344 cells, 1{,}331 (99.0\%) have their observed count of ``high''
+inside the 95\% posterior predictive interval, and 2.0\% and 1.7\% of the PIT values
+are below 0.025 and above 0.975, against 2.5\% each for a calibrated model
+(Figure~\ref{fig:ppc_sessions}). Each cell's interval comes from a model fit partly to
+that same cell, so this is a check for gross misfit, and none appears: the lowest
+coverage, 0.93, is for right-hand bimanual trials at 6 $\mu m$. The misfit of
+Table~\ref{tab:ppc} is systematic but small in any one session, and only shows when the
+sessions are pooled.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ppc_session_cells.png}
+\caption{Posterior predictive check within single sessions. Left: PIT values of the
+observed number of ``high'' responses in each session $\times$ hand $\times$ condition
+$\times$ amplitude cell (flat at 1 for a calibrated model). Right: fraction of the 42
+sessions whose observed count lies inside its 95\% predictive interval.}
+\label{fig:ppc_sessions}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{curves_left_04-13.png}\hfill
+\includegraphics[width=0.48\textwidth]{curves_right_04-13.png}
+\caption{Fitted psychometric curves for session 04-13 (12 $\mu m$ distractor): the
+curve at the posterior means of the parameters, the pointwise 95\% HDI of the curve,
+and the observed proportions of ``high'' responses (9--10 trials per point).
+Unimanual in blue, bimanual in red; the dashed line is the trained threshold.}
+\label{fig:curves}
+\end{figure}
+
+Figure~\ref{fig:curves} shows the fit in one session, 04-13, the session shown in
+the Model B report. The two curves of a hand have the same slope and asymptotes and
+differ only in position. The bimanual curve lies to the left of the unimanual one,
+with session PSEs of 30.6 (unimanual) and 27.1 (bimanual) $\mu m$ for the left hand
+and 25.0 and 21.2 $\mu m$ for the right. With about 10 trials per point the observed
+proportions scatter around the curves; single stray points, such as the left
+unimanual proportion of 0.3 at 32 $\mu m$, pull the curve only partly towards them.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{ppc_arviz_resp.png}
+\caption{ArviZ posterior predictive check of the responses (0 = ``low'',
+1 = ``high''), pooled over all trials: observed (black), 100 posterior predictive
+draws (blue) and their mean (orange dashed).}
+\label{fig:ppc_arviz}
+\end{figure}
+
+The overall proportion of ``high'' responses is reproduced
+(Figure~\ref{fig:ppc_arviz}); for binary data this check is coarse, and
+Figure~\ref{fig:ppc} is the more informative one.
 
 \section{Population-level Results}
 
@@ -181,8 +266,44 @@ the trained threshold of 28 $\mu m$ (Table~\ref{tab:pop}). The sessions differ i
 Model C's convergence study, $\sigma_{\gamma_h}$ and $\sigma_{\gamma_l}$ are not identified;
 their posteriors largely reflect the prior.
 
-The data are informative about $\mu_{\beta_2}$: its posterior sd is 0.097 for both
-hands, against a prior sd of 1.
+The data determine all five typical-session quantities rather than the priors:
+the posterior sd is 4.5--6.6\% of the prior sd for the unimanual PSE, 5.9--7.3\% for
+the JND, 9--12\% for the lapse rates and 9.6--9.7\% for $\mu_{\beta_2}$
+(Figures~\ref{fig:pop_pse}--\ref{fig:pop_b2}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_PSE_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of a typical session's unimanual PSE.}
+\label{fig:pop_pse}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_JND_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of a typical session's JND, the same in
+both conditions.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_gamh_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of a typical session's $\gamma_h$.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_gaml_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of a typical session's $\gamma_l$.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{population_mub2_prior_posterior.png}
+\caption{Prior (gray) and posterior (blue) of the hand-level distractor coefficient
+$\mu_{\beta_2}$; the dashed line marks 0.}
+\label{fig:pop_b2}
+\end{figure}
 
 \section{Effect of the Distractor}
 \label{sec:effect}
@@ -228,8 +349,120 @@ poorly determined when its distractor is weak and is then pulled toward the hand
 mean; the 6 $\mu m$ sessions in Figure~\ref{fig:shift_amp} sit almost exactly on the
 line.
 
+\subsection{Does the shift scale with amplitude?}
+\label{sec:ampcheck}
+
+Model C assumes the shift is proportional to the distractor amplitude. A direct check
+needs a measure of the shift that does not depend on the model: for the sessions at
+each of the four most used amplitudes, the difference between the proportions of
+``high'' responses on bimanual and unimanual trials, over all stimuli. It reflects the
+PSE shift and, to a lesser extent, the higher lapse rate $\gamma_h$ on bimanual trials.
+Table~\ref{tab:ampcheck} compares the observed difference with its posterior predictive
+distribution; Figure~\ref{fig:ampcheck} shows the proportions behind it.
+
+\begin{table}[H]
+\centering
+\caption{Bimanual $-$ unimanual difference in the proportion of ``high'' responses, in the
+sessions at each distractor amplitude: observed, and posterior predictive median and
+95\% interval. $P$: posterior predictive probability of a difference below the
+observed one.}
+\label{tab:ampcheck}
+\begin{tabular}{llccccc}
+\toprule
+hand & distractor & sessions & observed & predicted & 95\% interval & $P$ \\
+\midrule
+left  & 6 $\mu m$  & 8  & 0.011 & 0.035 & [0.002, 0.068] & 0.07 \\
+left  & 12 $\mu m$ & 6  & 0.081 & 0.050 & [0.014, 0.087] & 0.95 \\
+left  & 24 $\mu m$ & 7  & 0.092 & 0.082 & [0.046, 0.119] & 0.71 \\
+left  & 32 $\mu m$ & 13 & 0.148 & 0.131 & [0.099, 0.164] & 0.85 \\
+right & 6 $\mu m$  & 8  & 0.073 & 0.040 & [0.009, 0.071] & 0.98 \\
+right & 12 $\mu m$ & 6  & 0.088 & 0.063 & [0.027, 0.103] & 0.90 \\
+right & 24 $\mu m$ & 7  & 0.113 & 0.114 & [0.076, 0.151] & 0.49 \\
+right & 32 $\mu m$ & 13 & 0.161 & 0.153 & [0.122, 0.184] & 0.69 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ppc_by_distractor_amplitude.png}
+\caption{Observed proportions of ``high'' responses (dots) against the posterior
+predictive median and 95\% interval (bars), in the sessions at each distractor
+amplitude. Unimanual in blue, bimanual in red.}
+\label{fig:ampcheck}
+\end{figure}
+
+Seven of the eight observed differences lie inside their predictive intervals. The
+exception is the right hand at 6 $\mu m$: the observed difference, 0.073, lies above the
+interval [0.009, 0.071], and the model predicts a smaller difference in 98\% of its
+replicates. In Figure~\ref{fig:ampcheck} this shows at 18 $\mu m$, where the right-hand
+bimanual proportion lies well above its predicted range. For the right hand, then, even a
+weak distractor shifts responses more than a proportional model allows, the presence
+effect suggested by the comparison with Model B. The left hand at 6 $\mu m$ goes the
+other way: its observed difference is smaller than predicted ($P = 0.07$), so for the
+left hand a proportional shift is, if anything, too large at weak distractors.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{effect_PSE_by_session.png}
+\caption{PSE shift (bimanual $-$ unimanual) within each session, in date order with
+the distractor amplitude in brackets: posterior mean and 95\% HDI (filled: HDI
+excludes 0). The orange band is the average over the 42 sessions.}
+\label{fig:shift_sess}
+\end{figure}
+
+In date order (Figure~\ref{fig:shift_sess}) the session shifts follow the
+amplitude schedule: small in the first eight sessions, which all used 6 $\mu m$,
+and largest in the 32 $\mu m$ sessions from May onwards.
+
 By construction, Model C cannot show an effect of the distractor on the JND or the
 lapse rates.
+
+\subsection{Session estimates}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{PSE_by_session.png}
+\caption{Unimanual (blue) and bimanual (red) PSE in each session: posterior mean
+and 95\% HDI. The dashed line is the trained threshold.}
+\label{fig:pse_sess}
+\end{figure}
+
+The session PSEs range from 26.6 to 36.6 $\mu m$ (left) and 22.7 to 36.7 $\mu m$
+(right) on unimanual trials, and from 22.6 to 33.5 and 20.7 to 31.1 $\mu m$ on
+bimanual trials (Figure~\ref{fig:pse_sess}). Both conditions move together from
+session to session, which the within-session shift cancels.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{JND_by_session.png}
+\caption{JND in each session, shared by both conditions: posterior mean and 95\% HDI.
+The band is a typical session's 95\% HDI.}
+\label{fig:jnd_sess}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{gamh_by_session.png}
+\caption{$\gamma_h$ in each session, shared by both conditions.}
+\label{fig:gamh_sess}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{gaml_by_session.png}
+\caption{$\gamma_l$ in each session, shared by both conditions.}
+\label{fig:gaml_sess}
+\end{figure}
+
+The left-hand JNDs vary between sessions ($\sigma_{\beta_1} = 0.90$), from 2.95 to
+6.59 $\mu m$, with the two shallowest sessions in mid-May; the right-hand ones barely
+vary, from 3.65 to 4.31 $\mu m$ (Figure~\ref{fig:jnd_sess}). The session lapse rates
+are almost identical within a hand (Figures~\ref{fig:gamh_sess}
+and~\ref{fig:gaml_sess}): the posterior means of $\gamma_h$ range only from 0.0087 to
+0.0116 (left) and 0.0107 to 0.0149 (right). With $\sigma_{\gamma_h}$ and
+$\sigma_{\gamma_l}$ not identified, every session is pulled to its hand's typical
+value, so these plots say little about real day-to-day differences in lapses.
 
 \section{Comparison with Model B}
 
@@ -332,7 +565,9 @@ present, on top of its amplitude.
           \item one slope for both conditions, which costs fit on the rising part of
                 the left-hand unimanual curve;
           \item a shift proportional to amplitude: for the right hand at 6 $\mu m$,
-                Model C's shift is less than half of Model B's.
+                Model C's shift is less than half of Model B's, and the observed
+                bimanual $-$ unimanual difference lies outside Model C's predictive
+                interval (Section~\ref{sec:ampcheck}).
         \end{enumerate}
   \item The size of the shift at weak distractors, and Model C's lapse rates and JNDs,
         should therefore not be taken at face value until these assumptions are
@@ -351,5 +586,46 @@ present, on top of its amplitude.
 \end{enumerate}
 Each revision changes the model, so it would need a new convergence study before
 being fit to the real data again.
+
+\appendix
+\section{Joint Posteriors}
+\label{app:pairs}
+
+\code{Main\_Analysis\_C.py} also plots joint posteriors for session 04-13
+(Figures~\ref{fig:pair_left}--\ref{fig:pair_hyper}). The new parameter $\beta_2$ is
+negatively correlated with $\beta_0$ ($r = -0.35$ left, $-0.25$ right): a session's
+bimanual position is $\beta_0 + \beta_2 d_s$, so a higher bias can be traded for a
+smaller distractor effect, but the unimanual trials pin down $\beta_0$ well enough to
+keep the correlation moderate. All other correlations between the session parameters
+are at most 0.32 in absolute value (that of $\beta_0$ and $\beta_1$ for the right
+hand). There is no ridge or multimodality that would indicate an identifiability
+problem.
+
+The left hand's $\gamma_h$ on 04-13 is correlated with its hyperparameter
+$\mu_{\gamma_h}$ ($r = 0.60$) but hardly with $\sigma_{\gamma_h}$ ($r = -0.09$)
+(Figure~\ref{fig:pair_hyper}): with $\sigma_{\gamma_h}$ small, the session value
+follows the hand's typical value.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{pair_left_04-13.png}
+\caption{Joint posterior of $\gamma_h$, $\gamma_l$, $\beta_0$, $\beta_1$ and $\beta_2$
+for the left hand, session 04-13.}
+\label{fig:pair_left}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{pair_right_04-13.png}
+\caption{As Figure~\ref{fig:pair_left}, for the right hand.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{pair_gam_h_hyper_left.png}
+\caption{Joint posterior of the left hand's $\gamma_h$ on 04-13 and the
+hyperparameters $\mu_{\gamma_h}$ and $\sigma_{\gamma_h}$.}
+\label{fig:pair_hyper}
+\end{figure}
 
 \end{document}
