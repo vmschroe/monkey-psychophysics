@@ -456,7 +456,7 @@ for sweep, info in SWEEPS.items():
     plt.show()
 
 
-#%% Numbers for Convergence_B_Report.txt
+#%% Numbers for Convergence_B_Report.tex
 # Everything quoted in the report that is not printed by an earlier cell. The statements about what the
 # priors imply come from Check_Prior_B.py. Works on freshly fitted or reloaded results. Section names
 # follow the report.

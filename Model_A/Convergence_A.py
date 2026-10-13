@@ -455,7 +455,7 @@ plt.show()
 
 print(curve_summary.pivot_table(index='group', columns='size', values='truth_in_band').round(2).to_string())
 
-#%% Numbers for Convergence_A_Report.txt
+#%% Numbers for Convergence_A_Report.tex
 # Everything quoted in the report that is not printed by an earlier cell. Works on freshly fitted or
 # reloaded results. Section names follow the report.
 

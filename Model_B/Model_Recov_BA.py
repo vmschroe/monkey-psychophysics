@@ -283,7 +283,7 @@ fig.suptitle('Model recovery: LOO comparison of Models A and B', fontsize=14)
 fig.savefig(PLOT_DIR / "elpd_diff_by_replicate.png", dpi=200, bbox_inches='tight')
 plt.show()
 
-#%% Numbers for Model_Recov_BA_Report.txt
+#%% Numbers for Model_Recov_BA_Report.tex
 # Everything quoted in the report that Model_Recov_Results.txt and the plot do not show. Works on freshly
 # fitted or reloaded results.
 

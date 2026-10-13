@@ -4,7 +4,7 @@
 Created on Mon Feb  2 19:04:20 2026
 
 Fit Model A (one psychometric curve per group, all sessions pooled) to the real
-data. Every figure and number in Fit_A_Report.txt is produced by this script;
+data. Every figure and number in Fit_A_Report.tex is produced by this script;
 figures are saved to Plots_A/Fit_Plots_A under the names the report uses.
 
 @author: vmschroe
@@ -30,7 +30,7 @@ except NameError:  # __file__ isn't set when cells are run interactively
     MODEL_DIR = Path.cwd()
 DATA_DIR = MODEL_DIR / "Data_A"
 
-# Figures used in Fit_A_Report.txt are saved here under the names the report uses
+# Figures used in Fit_A_Report.tex are saved here under the names the report uses
 FIT_PLOTS_DIR = MODEL_DIR / "Plots_A" / "Fit_Plots_A"
 SAVE_FIGS = True
 
@@ -425,7 +425,7 @@ fig.suptitle('Effect of the distractor: Model A and Model B (posterior mean and 
 save_fig(fig, 'effect_A_vs_B.png')
 plt.show()
 
-#%% Numbers for Fit_A_Report.txt
+#%% Numbers for Fit_A_Report.tex
 # Everything quoted in the report that is not printed by an earlier cell.
 
 print("--- Data and fit")

@@ -26,7 +26,7 @@ except NameError:  # __file__ isn't set when cells are run interactively
     MODEL_DIR = Path.cwd()
 DATA_DIR = MODEL_DIR / "Data_B"
 
-# Figures used in Fit_B_Report.txt are saved here under the names the report uses
+# Figures used in Fit_B_Report.tex are saved here under the names the report uses
 FIT_PLOTS_DIR = MODEL_DIR / "Plots_B" / "Fit_Plots_B"
 SAVE_FIGS = True
 
@@ -494,7 +494,7 @@ LOO_results = az.loo(trace)
 fit_results = {'az_summary_trace': result_df,
                'az_loo_trace': LOO_results,
                'effect_summary': effect_summary}
-#%% Numbers for Fit_B_Report.txt
+#%% Numbers for Fit_B_Report.tex
 # Everything quoted in the report that is not printed by an earlier cell. Section names follow the report.
 
 def mean_hdi(vals, fmt='.2f'):

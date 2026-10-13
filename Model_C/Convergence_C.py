@@ -477,7 +477,7 @@ save_plot(fig, "session_b2_true_vs_recovered")
 plt.show()
 
 
-#%% Numbers for Convergence_C_Report.txt
+#%% Numbers for Convergence_C_Report.tex
 # Everything quoted in the report that is not printed by an earlier cell. Works on freshly fitted or
 # reloaded results.
 
