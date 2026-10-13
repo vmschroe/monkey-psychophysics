@@ -1,0 +1,47 @@
+% ---------------------------------------------------------------------------
+% Model C: distractor amplitude as a covariate; comparison with Model B
+% Reports: Model_C/Convergence_C_Report.tex, Model_C/Fit_C_Report.tex
+% ---------------------------------------------------------------------------
+\section{Model C: Distractor Amplitude as a Covariate}
+
+\begin{frame}{Model C}
+  \[
+    \psi(x, d) = \gamma_h + (1 - \gamma_h - \gamma_l)\,
+                 \invlogit(\beta_0 + \beta_1 x + \beta_2 d)
+  \]
+  \begin{itemize}
+    \item $d$: distractor amplitude (0 on unimanual trials); one group per hand.
+    \item Uni- and bimanual trials share slope and lapse rates: the distractor only
+          shifts the curve, by an amount proportional to $d$.
+  \end{itemize}
+  \vfill
+  \todo{why: test the amplitude trend from Model B inside a model}
+\end{frame}
+
+\figframe{Model C: prior on the distractor effect}
+  {\plotsC/Convergence_Plots_C/Prior_Check_C_distractor.png}
+  {\todo{weakly informative; a weak distractor can only shift a little (Convergence\_C\_Report)}}
+
+\figframe{Model C: convergence on synthetic data}
+  {\plotsC/Convergence_Plots_C/hyper_means_recovery_vs_sessions.png}
+  {\todo{all hand-level means recovered, $\mu_{\beta_2}$ well (Convergence\_C\_Report, ``Conclusions'')}}
+
+\figframe{Model C: per-session $\beta_2$ is weak for small distractors}
+  {\plotsC/Convergence_Plots_C/session_b2_true_vs_recovered.png}
+  {\todo{shrinkage toward the hand mean at 6~$\mu m$}}
+
+\figframe{Model C: the shift grows with distractor amplitude}
+  {\plotsC/Fit_Plots_C/pse_shift_vs_amplitude.png}
+  {\todo{$\mu_{\beta_2}$ and the typical shift at 6 and 32~$\mu m$ (Fit\_C\_Report, ``Effect of the Distractor'')}}
+
+\figframe{Model C misfits at the weakest stimuli}
+  {\plotsC/Fit_Plots_C/ppc_pooled_by_stimulus.png}
+  {\todo{shared lapse rates: 6 of 32 proportions outside (Fit\_C\_Report, ``Posterior predictive check'')}}
+
+\figframe{Model C against Model B}
+  {\plotsC/Fit_Plots_C/pse_shift_C_vs_B.png}
+  {\todo{LOO favors B by 37 (SE 12); 6~$\mu m$ shifts too small (Fit\_C\_Report, Comparison)}}
+
+\figframe{Model C: shift by distractor amplitude, observed vs predicted}
+  {\plotsC/Fit_Plots_C/ppc_by_distractor_amplitude.png}
+  {\todo{right hand at 6~$\mu m$ outside: a presence effect (Fit\_C\_Report, amplitude check)}}

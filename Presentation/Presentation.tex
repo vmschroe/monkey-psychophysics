@@ -1,0 +1,79 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+% ---------------------------------------------------------------------------
+% Results of Models A, B and C.
+% Compile from this folder: pdflatex Presentation.tex (twice).
+% Figures come straight from the models' plot folders (\plotsA, \plotsB,
+% \plotsC), so rerunning an analysis script updates the slides. Numbers on
+% the slides should be copied from the reports, which are reproducible from
+% the scripts; every \todo box says which report section to take them from.
+% ---------------------------------------------------------------------------
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tikz}
+
+% ---- style: Beamer's default theme, colors from the plots' palette --------
+\usetheme{default}
+\definecolor{plotblue}{HTML}{2A78D6}
+\definecolor{plotorange}{HTML}{EB6834}
+\definecolor{plotred}{HTML}{E34948}
+\definecolor{ink}{HTML}{0B0B0B}
+\definecolor{muted}{HTML}{52514E}
+\setbeamercolor{frametitle}{fg=plotblue}
+\setbeamercolor{title}{fg=plotblue}
+\setbeamercolor{structure}{fg=plotblue}
+\setbeamercolor{normal text}{fg=ink}
+\setbeamercolor{section in toc}{fg=ink}
+\setbeamerfont{frametitle}{series=\bfseries}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}[circle]
+\setbeamertemplate{footline}{%
+  \hfill{\color{muted}\scriptsize\insertsection\quad\insertframenumber/\inserttotalframenumber}\hspace{1em}\vspace{0.6em}}
+
+% ---- figure folders ----------------------------------------------------------
+\newcommand{\plotsA}{../Model_A/Plots_A}
+\newcommand{\plotsB}{../Model_B/Plots_B}
+\newcommand{\plotsC}{../Model_C/Plots_C}
+
+% ---- helpers -----------------------------------------------------------------
+\newcommand{\invlogit}{\operatorname{logit}^{-1}}
+\newcommand{\code}[1]{\texttt{#1}}
+% visible placeholder for text or numbers still to write; delete when filled
+\newcommand{\todo}[1]{{\setlength{\fboxsep}{2pt}\colorbox{plotred!15}{\color{plotred}\scriptsize\textbf{TODO:} #1}}}
+% a frame with one figure filling it, plus an optional one-line takeaway
+\newcommand{\figframe}[3]{%
+  \begin{frame}{#1}
+    \centering
+    \includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{#2}
+    \par\vspace{0.4em}{\small #3}
+  \end{frame}}
+
+% ---- title ---------------------------------------------------------------------
+\title{Modeling the Effect of a Distractor on Tactile Categorization}
+\subtitle{Models A, B and C}
+\author{Vera Schroeder}
+\date{\todo{date and venue}}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\input{sections/00_intro}
+\input{sections/01_model_A}
+\input{sections/02_model_B}
+\input{sections/03_model_C}
+\input{sections/04_summary}
+
+\appendix
+\input{sections/99_backup}
+
+\end{document}

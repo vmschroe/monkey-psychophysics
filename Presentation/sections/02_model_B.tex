@@ -1,0 +1,44 @@
+% ---------------------------------------------------------------------------
+% Model B: hierarchical over sessions; comparison with Model A
+% Reports: Model_B/Convergence_B_Report.tex, Model_B/Fit_B_Report.tex,
+%          Model_B/Model_Recov_BA_Report.tex
+% ---------------------------------------------------------------------------
+\section{Model B: Sessions Hierarchical}
+
+\begin{frame}{Model B}
+  \begin{itemize}
+    \item A curve for every group \emph{and session}, drawn from group-level
+          distributions (means and between-session sds).
+    \item Design-based priors, checked by prior predictive simulation.
+  \end{itemize}
+  \vfill
+  \todo{plate diagram or equations (Convergence\_B\_Report, ``Model Structure'')}
+\end{frame}
+
+\figframe{Model B: convergence on synthetic data}
+  {\plotsB/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png}
+  {\todo{what is recovered at the real data size (Convergence\_B\_Report, ``Conclusions'')}}
+
+\figframe{Model B: per-session recovery}
+  {\plotsB/Convergence_Plots_B/session_params_error_width_coverage_vs_trials.png}
+  {\todo{per-session PSE and JND reliable at $\sim$300 trials}}
+
+\figframe{Model B: fit to the real data}
+  {\plotsB/Fit_Plots_B/ppc_pooled_by_stimulus.png}
+  {\todo{all 32 proportions inside; 99.8\% of session cells (Fit\_B\_Report, ``Posterior predictive checks'')}}
+
+\figframe{Model B: PSE shift in every session}
+  {\plotsB/Fit_Plots_B/effect_PSE_by_session.png}
+  {\todo{shift negative in 40/42 (left) and 42/42 (right) sessions (Fit\_B\_Report, Summary)}}
+
+\figframe{Model B: the shift grows with distractor amplitude (exploratory)}
+  {\plotsB/Fit_Plots_B/effect_vs_distractor_amplitude.png}
+  {\todo{about $-2~\mu m$ per 10~$\mu m$; confounded with session order}}
+
+\figframe{Model B against Model A}
+  {\plotsB/Fit_Plots_B/effect_A_vs_B.png}
+  {\todo{same effects; B better by LOO, 164 (SE 19) (Fit\_B\_Report, ``Comparison with Model A'')}}
+
+\figframe{Is B's advantage real? Model recovery}
+  {\plotsB/Model_Recov_Plots_BA/elpd_diff_by_replicate.png}
+  {\todo{B wins on all data from B, ties or loses on data from A (Model\_Recov\_BA\_Report)}}

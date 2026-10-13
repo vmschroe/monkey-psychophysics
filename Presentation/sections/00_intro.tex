@@ -1,0 +1,60 @@
+% ---------------------------------------------------------------------------
+% Introduction: task, data, question, modeling approach
+% ---------------------------------------------------------------------------
+\section{Task and Data}
+
+\begin{frame}{The task}
+  \begin{itemize}
+    \item The monkey feels a vibration on one finger and reports whether it is
+          ``high'' or ``low'' relative to a trained boundary of 28~$\mu m$.
+    \item Unimanual trials: stimulus only. Bimanual trials: a distractor vibration on
+          the other hand at the same time.
+    \item Question: how does the distractor change the categorization?
+  \end{itemize}
+  \vfill
+  \todo{schematic of a trial (stimulus hand, distractor hand, response)}
+\end{frame}
+
+\begin{frame}{The data}
+  \begin{itemize}
+    \item One monkey (Sirius), 42 sessions, 12{,}937 trials.
+    \item 8 stimulus amplitudes, 6--50~$\mu m$; 4 groups: hand $\times$
+          (unimanual, bimanual).
+    \item Each session uses a single distractor amplitude (6--32~$\mu m$) on its
+          bimanual trials.
+  \end{itemize}
+  \vfill
+  \todo{figure: raw proportions of ``high'' by amplitude and group}
+\end{frame}
+
+\begin{frame}{Psychometric function}
+  Every model describes $P(\text{``high''})$ at stimulus $x$ (standardized
+  amplitude) by
+  \[
+    \psi(x) = \gamma_h + (1 - \gamma_h - \gamma_l)\,\invlogit(\beta_0 + \beta_1 x)
+  \]
+  \begin{itemize}
+    \item $\gamma_h$, $\gamma_l$: lapse rates (``high'' to the weakest, ``low'' to the
+          strongest stimuli)
+    \item Summaries: PSE (where $\psi = 0.5$) and JND (half the distance between
+          $\psi = 0.25$ and $0.75$), in $\mu m$
+  \end{itemize}
+  \vfill
+  \todo{one example curve with PSE and JND marked}
+\end{frame}
+
+\begin{frame}{Three models}
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    Model & Sessions & Distractor \\
+    \midrule
+    A & pooled: one curve per group & uni and bi fit separately \\
+    B & hierarchical: one curve per group and session & uni and bi fit separately \\
+    C & hierarchical, one group per hand & covariate: shift $\beta_2 d$ \\
+    \bottomrule
+  \end{tabular}
+  \vfill
+  \raggedright
+  For each model: convergence study on synthetic data, then the fit to the real data.
+\end{frame}

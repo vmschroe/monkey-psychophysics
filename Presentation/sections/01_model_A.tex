@@ -1,0 +1,32 @@
+% ---------------------------------------------------------------------------
+% Model A: pooled over sessions
+% Reports: Model_A/Convergence_A_Report.tex, Model_A/Fit_A_Report.tex
+% ---------------------------------------------------------------------------
+\section{Model A: Sessions Pooled}
+
+\begin{frame}{Model A}
+  \begin{itemize}
+    \item One psychometric curve per group (hand $\times$ condition), shared by all
+          42 sessions: 16 parameters.
+    \item Priors: $\beta_0 \sim \mathcal{N}(0, 6)$, $\beta_1 \sim \mathcal{N}(4, 2)$,
+          $\gamma = 0.25\,w$ with $w \sim \text{Beta}$.
+  \end{itemize}
+  \vfill
+  \todo{one-line motivation: simplest model, a baseline}
+\end{frame}
+
+\figframe{Model A: convergence on synthetic data}
+  {\plotsA/Convergence_Plots_A/coverage_vs_size_all_params.png}
+  {\todo{takeaway; numbers from Convergence\_A\_Report, ``Conclusions''}}
+
+\figframe{Model A: fit to the real data}
+  {\plotsA/Fit_Plots_A/ppc_pooled_by_stimulus.png}
+  {\todo{pooled check passes: all 32 proportions inside (Fit\_A\_Report, ``Model Checks'')}}
+
+\figframe{Model A: effect of the distractor}
+  {\plotsA/Fit_Plots_A/effect_densities.png}
+  {\todo{PSE shift, $\gamma_h$ and JND effects (Fit\_A\_Report, Summary)}}
+
+\figframe{Model A misses the variation between sessions}
+  {\plotsA/Fit_Plots_A/ppc_session_cells.png}
+  {\todo{within single sessions responses vary more than A predicts (Fit\_A\_Report, ``Model Checks'')}}
