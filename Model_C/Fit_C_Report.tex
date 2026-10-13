@@ -1,0 +1,355 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\invlogit}{\operatorname{logit}^{-1}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\graphicspath{{Plots_C/Fit_Plots_C/}}
+
+\title{Model C Fit to the Real Data}
+\author{Vera Schroeder}
+\date{October 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Summary}
+
+Model C (hierarchical over sessions, one group per hand, distractor amplitude as a
+covariate) was fit to all 12{,}937 trials of the Sirius data (42 sessions). The main
+results:
+
+\begin{itemize}
+  \item \textbf{The PSE shift grows with distractor amplitude.} The hand-level
+        distractor coefficient is clearly positive, $\mu_{\beta_2} = 0.90$
+        [0.71, 1.09] (left) and 1.18 [0.99, 1.37] (right). For a typical session
+        the bimanual PSE lies 1.2 (left) and 1.7 (right) $\mu m$ below the unimanual
+        one with a 6 $\mu m$ distractor, and 6.6 and 8.9 $\mu m$ below with 32
+        $\mu m$. Averaged over the 42 sessions the shift is $-4.5$ $\mu m$ (left) and
+        $-5.7$ $\mu m$ (right), close to Model B's estimates.
+  \item \textbf{The fit is reliable but the model misfits in specific places.} The
+        sampler converged without problems. However, the bimanual trials at the
+        weakest stimuli contain more ``high'' responses than Model C predicts, and
+        LOO prefers Model B by 37.1 (SE 11.9), with most of the difference at the
+        6 and 12 $\mu m$ stimuli.
+  \item \textbf{The misfit follows from three assumptions of Model C}: unimanual and
+        bimanual trials share their lapse rates, they share their slope, and the
+        PSE shift is proportional to the distractor amplitude, so it shrinks to 0
+        for a weak distractor. For the right hand, the 6 $\mu m$ sessions shift by
+        3.9 $\mu m$ on average under Model B but only 1.7 $\mu m$ under Model C.
+  \item The amplitude dependence itself is robust, but its size at small amplitudes,
+        and the shared lapse rates and slopes, should be revisited before Model C's
+        estimates are used for inference (Section~\ref{sec:conclusions}).
+\end{itemize}
+
+Every figure and number in this report is produced by \code{Main\_Analysis\_C.py};
+the cell ``Numbers for Fit\_C\_Report.tex'' prints the numbers that the earlier
+cells do not. All intervals are 95\% highest density intervals (HDIs). PSE and JND
+are in micrometres of stimulus amplitude: $\text{PSE}_{\mu m} = 28 + 14.63\,\text{PSE}$
+and $\text{JND}_{\mu m} = 14.63\,\text{JND}$, where 28 and 14.63 are the mean and sd of
+the 8 amplitude levels.
+
+\section{Model and Fit}
+
+The model is the one described in the Model C convergence report. For hand $j$ and
+session $s$,
+\[
+  \psi(x, d) = \gamma_{h,js} + (1 - \gamma_{h,js} - \gamma_{l,js})\,
+  \invlogit\big(\beta_{0,js} + \beta_{1,js}\, x + \beta_{2,js}\, d\big),
+\]
+where $x$ is the standardized stimulus amplitude and $d$ the distractor amplitude
+divided by 14.63 ($d = 0$ on unimanual trials; every session uses a single distractor
+amplitude on its bimanual trials). The five session parameters are drawn from
+hand-level normal (for $\beta$) and logit-normal (for $\gamma$) distributions. The
+priors on $\beta_0$, $\beta_1$ and the lapse rates are those of Model B, and
+$\mu_{\beta_2} \sim \mathcal{N}(0, 1)$, $\sigma_{\beta_2} \sim \text{HalfNormal}(1)$.
+
+Because $\beta_2 d$ only shifts the curve, the PSE shift of a session is
+$-\beta_2 d_s / \beta_1$ standardized units, and its JND and lapse rates are the same
+in both conditions.
+
+The fit used NUTS with 4 chains of 1000 tuning and 5000 kept draws (20{,}000 draws in
+total) and took 9 minutes. The data have 3{,}230--3{,}237 trials in each hand
+$\times$ condition cell.
+
+\subsection{Sampling diagnostics}
+
+There were 2 divergences in the 20{,}000 draws, and the tree depth never exceeded 5.
+All 1{,}300 variables, including the raw sampler variables, have $\hat{R} = 1.000$,
+bulk ESS $\ge 3{,}410$ and tail ESS $\ge 5{,}231$. Unlike Model B, whose raw
+\code{z\_sig\_b0} variables showed $\hat{R}$ warnings from an unidentified sign,
+Model C defines its HalfNormal sds directly, so no such warning appears.
+
+\subsection{Posterior predictive check}
+\label{sec:ppc}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{ppc_pooled_by_stimulus.png}
+\caption{Observed proportion of ``high'' responses at each amplitude, pooled over
+sessions (black), against the posterior predictive median and 95\% interval (blue),
+by hand and condition. The dashed line is the trained threshold of 28 $\mu m$.}
+\label{fig:ppc}
+\end{figure}
+
+Of the 32 hand $\times$ condition $\times$ amplitude proportions, 26 lie inside their
+95\% posterior predictive intervals (Figure~\ref{fig:ppc}). The six outside are all at
+the weak end of the stimulus range (Table~\ref{tab:ppc}): on bimanual trials Model C
+predicts too few ``high'' responses at 6--18 $\mu m$, and on left unimanual trials at
+6 $\mu m$ it predicts a few where the monkey gave none.
+
+\begin{table}[H]
+\centering
+\caption{Proportions outside their 95\% posterior predictive interval.}
+\label{tab:ppc}
+\begin{tabular}{llcccc}
+\toprule
+hand & condition & amplitude ($\mu m$) & observed & predicted median & 95\% interval \\
+\midrule
+left  & unimanual & 6  & 0.000 & 0.010 & [0.002, 0.025] \\
+left  & bimanual  & 6  & 0.042 & 0.015 & [0.002, 0.027] \\
+left  & bimanual  & 12 & 0.052 & 0.028 & [0.012, 0.045] \\
+right & bimanual  & 6  & 0.042 & 0.017 & [0.005, 0.032] \\
+right & bimanual  & 12 & 0.065 & 0.040 & [0.020, 0.062] \\
+right & bimanual  & 18 & 0.183 & 0.136 & [0.101, 0.175] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is the pattern expected if the distractor raises the lapse rate $\gamma_h$ but
+the model can only use one lapse rate for both conditions. The fitted typical lapse
+rates ($\gamma_h = 0.009$ and 0.011, Table~\ref{tab:pop}) lie between the near-zero
+unimanual and the higher bimanual rates that Model B estimates separately: too high
+for unimanual trials and too low for bimanual ones.
+
+\section{Population-level Results}
+
+\begin{table}[H]
+\centering
+\caption{Hand-level hyperparameters: posterior mean [95\% HDI]. The lapse-rate
+hyperparameters are on the logit scale.}
+\label{tab:hyper}
+\begin{tabular}{lcc}
+\toprule
+ & left & right \\
+\midrule
+$\mu_{\beta_0}$ & $-1.30$ [$-1.56$, $-1.04$] & $-0.92$ [$-1.29$, $-0.55$] \\
+$\mu_{\beta_1}$ & 4.39 [3.95, 4.85] & 4.25 [3.92, 4.62] \\
+$\mu_{\beta_2}$ & 0.90 [0.71, 1.09] & 1.18 [0.99, 1.37] \\
+$\sigma_{\beta_0}$ & 0.60 [0.39, 0.81] & 1.07 [0.79, 1.36] \\
+$\sigma_{\beta_1}$ & 0.90 [0.57, 1.26] & 0.35 [0.00, 0.69] \\
+$\sigma_{\beta_2}$ & 0.30 [0.08, 0.51] & 0.23 [0.00, 0.45] \\
+$\mu_{\gamma_h}$ & $-3.33$ [$-4.07$, $-2.69$] & $-3.11$ [$-3.91$, $-2.43$] \\
+$\mu_{\gamma_l}$ & $-3.42$ [$-4.36$, $-2.60$] & $-3.41$ [$-4.18$, $-2.67$] \\
+$\sigma_{\gamma_h}$ & 0.34 [0.00, 0.82] & 0.34 [0.00, 0.82] \\
+$\sigma_{\gamma_l}$ & 0.40 [0.00, 0.96] & 0.47 [0.00, 1.03] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{A typical session (all parameters at their hand-level means): unimanual
+PSE, JND and lapse rates, posterior mean [95\% HDI]. The JND and lapse rates are the
+same on bimanual trials in Model C.}
+\label{tab:pop}
+\begin{tabular}{lcc}
+\toprule
+ & left & right \\
+\midrule
+PSE, unimanual ($\mu m$) & 32.34 [31.51, 33.17] & 31.15 [29.92, 32.40] \\
+JND ($\mu m$) & 3.75 [3.39, 4.11] & 3.88 [3.59, 4.19] \\
+$\gamma_h$ & 0.0091 [0.0033, 0.0147] & 0.0113 [0.0042, 0.0189] \\
+$\gamma_l$ & 0.0086 [0.0023, 0.0155] & 0.0085 [0.0029, 0.0143] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The unimanual PSE of a typical session lies 4.3 (left) and 3.2 (right) $\mu m$ above
+the trained threshold of 28 $\mu m$ (Table~\ref{tab:pop}). The sessions differ in their bias
+($\sigma_{\beta_0} = 0.60$ and 1.07) and, for the left hand, in their slope
+($\sigma_{\beta_1} = 0.90$): the left-hand session JNDs range from 2.95 to
+6.59 $\mu m$, the right-hand ones only from 3.65 to 4.31 $\mu m$. As in Model B and in
+Model C's convergence study, $\sigma_{\gamma_h}$ and $\sigma_{\gamma_l}$ are not identified;
+their posteriors largely reflect the prior.
+
+The data are informative about $\mu_{\beta_2}$: its posterior sd is 0.097 for both
+hands, against a prior sd of 1.
+
+\section{Effect of the Distractor}
+\label{sec:effect}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{pse_shift_vs_amplitude.png}
+\caption{PSE shift (bimanual $-$ unimanual) against the session's distractor amplitude.
+Blue: every session, posterior mean and 95\% HDI (sessions sharing an amplitude are
+spread slightly). Red: a typical session, posterior mean and 95\% HDI.}
+\label{fig:shift_amp}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{PSE shift (bimanual $-$ unimanual, $\mu m$) of a typical session at the most
+used distractor amplitudes: posterior mean [95\% HDI].}
+\label{tab:shift}
+\begin{tabular}{lcc}
+\toprule
+distractor ($\mu m$) & left & right \\
+\midrule
+6  & $-1.23$ [$-1.49$, $-0.98$] & $-1.66$ [$-1.90$, $-1.41$] \\
+12 & $-2.46$ [$-2.98$, $-1.97$] & $-3.32$ [$-3.79$, $-2.83$] \\
+24 & $-4.93$ [$-5.96$, $-3.93$] & $-6.64$ [$-7.59$, $-5.65$] \\
+32 & $-6.57$ [$-7.95$, $-5.24$] & $-8.85$ [$-10.12$, $-7.54$] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The distractor lowers the PSE, and by more the stronger it is
+(Figure~\ref{fig:shift_amp}, Table~\ref{tab:shift}). The shift is larger for the right
+hand at every amplitude. Averaged over the 42 sessions it is $-4.51$ [$-5.15$, $-3.86$]
+$\mu m$ for the left hand and $-5.74$ [$-6.39$, $-5.11$] $\mu m$ for the right. At the
+session level, the shift's HDI lies below 0 in 40 of 42 sessions (left) and all 42
+(right).
+
+The sessions vary only a little around the hand-level line: $\sigma_{\beta_2}$ is 0.30
+(left) and 0.23 (right), so the spread of the session shifts in
+Figure~\ref{fig:shift_amp} mostly reflects the sessions' different distractor
+amplitudes rather than different $\beta_2$. The convergence study showed that a session's $\beta_2$ is
+poorly determined when its distractor is weak and is then pulled toward the hand
+mean; the 6 $\mu m$ sessions in Figure~\ref{fig:shift_amp} sit almost exactly on the
+line.
+
+By construction, Model C cannot show an effect of the distractor on the JND or the
+lapse rates.
+
+\section{Comparison with Model B}
+
+Model B fits unimanual and bimanual trials as separate groups, each with its own
+per-session parameters, and has no amplitude covariate. Both models were fit to the
+same trials in the same order.
+
+\paragraph{Leave-one-out cross-validation.}
+Model C has $\text{elpd}_\text{loo} = -3217.0$ (SE 65.7) with $p_\text{loo} = 138.6$ and
+every Pareto $k$ at most 0.33; Model B has $-3180.0$ (SE 64.3) with
+$p_\text{loo} = 178.7$. Model C is worse by 37.1 (SE 11.9), 3.1 standard errors,
+despite needing fewer effective parameters.
+
+\begin{table}[H]
+\centering
+\caption{$\text{elpd}_\text{loo}(\text{C}) - \text{elpd}_\text{loo}(\text{B})$ summed over the
+trials at each amplitude, by hand and condition. Negative values favor Model B.}
+\label{tab:loo}
+\begin{tabular}{rcccc}
+\toprule
+ & \multicolumn{2}{c}{left} & \multicolumn{2}{c}{right} \\
+amplitude ($\mu m$) & bimanual & unimanual & bimanual & unimanual \\
+\midrule
+6  & $-6.6$ & $-3.5$ & $-5.1$ & $-2.3$ \\
+12 & $-4.2$ & $-3.0$ & $-1.8$ & $-2.8$ \\
+18 & 0.7 & $-1.6$ & $-3.4$ & $-0.3$ \\
+24 & $-1.0$ & 0.8 & 1.9 & 0.8 \\
+32 & $-0.1$ & $-3.4$ & 0.3 & 1.7 \\
+38 & $-0.3$ & $-1.4$ & 0.2 & 1.6 \\
+44 & 0.0 & $-3.8$ & 0.4 & $-1.5$ \\
+50 & $-0.1$ & 0.3 & 0.1 & 0.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Model C loses 29.2 of its 37.1 at the 6 and 12 $\mu m$ stimuli (Table~\ref{tab:loo}):
+17.6 on bimanual and 11.6 on unimanual trials. This is the shared-lapse misfit of
+Section~\ref{sec:ppc}, seen from both sides. The next largest losses are on left
+unimanual trials at 32 and 44 $\mu m$ ($-3.4$ and $-3.8$), on the rising part of the
+curve. With one slope for both conditions, Model C cannot give the left-hand unimanual
+curve a different steepness than the bimanual one, which Model B allows.
+
+\paragraph{Session PSE shifts.}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{pse_shift_C_vs_B.png}
+\caption{Session PSE shifts (bimanual $-$ unimanual), posterior means: Model C
+against Model B, colored by the session's distractor amplitude. The dashed line is the
+identity; $r$ is the correlation.}
+\label{fig:CvsB}
+\end{figure}
+
+The two models agree on the average shift ($-4.51$ against $-4.29$ $\mu m$ for the left
+hand, $-5.74$ against $-6.06$ for the right) and, for the left hand, closely on the
+session shifts ($r = 0.91$, Figure~\ref{fig:CvsB}). For the right hand ($r = 0.80$) they
+disagree at the weakest distractor:
+
+\begin{table}[H]
+\centering
+\caption{Session PSE shifts ($\mu m$) at the weakest and strongest distractor: mean and
+range of the posterior means over the sessions with that amplitude.}
+\label{tab:small}
+\begin{tabular}{llcc}
+\toprule
+hand & distractor & Model B & Model C \\
+\midrule
+left  & 6 $\mu m$ (8 sessions)  & $-1.13$ ($-3.82$ to 0.41) & $-1.34$ ($-1.59$ to $-1.18$) \\
+left  & 32 $\mu m$ (13 sessions) & $-6.67$ ($-10.12$ to $-0.44$) & $-7.40$ ($-11.80$ to $-2.91$) \\
+right & 6 $\mu m$ (8 sessions)  & $-3.91$ ($-6.74$ to $-2.06$) & $-1.75$ ($-1.88$ to $-1.64$) \\
+right & 32 $\mu m$ (13 sessions) & $-7.90$ ($-11.28$ to $-3.72$) & $-8.58$ ($-10.58$ to $-6.36$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For the right hand, Model B estimates the 6 $\mu m$ sessions to shift by 3.91 $\mu m$ on
+average, Model C by only 1.75 (Table~\ref{tab:small}). Model C's shift is proportional
+to the amplitude, so a weak distractor must give a small shift, and with $\beta_2$
+poorly determined in these sessions they all fall onto the hand-level line. Model B,
+which estimates each session's shift freely, suggests that for the right hand even a
+weak distractor shifts the PSE substantially: an effect of the distractor being
+present, on top of its amplitude.
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+\begin{itemize}
+  \item The fit is reliable: 2 divergences in 20{,}000 draws, $\hat{R} = 1.000$ and
+        bulk ESS $\ge 3{,}410$ for every variable, every Pareto $k$ good.
+  \item The PSE shift grows with distractor amplitude for both hands
+        ($\mu_{\beta_2} > 0$ with posterior probability 1.000), more steeply for the
+        right hand. This is the main new result of Model C, and it supports the
+        exploratory amplitude trend in the Model B report.
+  \item Model C predicts the data worse than Model B (elpd difference $-37.1$,
+        SE 11.9). The misfit sits where three of its assumptions meet the data:
+        \begin{enumerate}
+          \item one lapse rate for both conditions, while the distractor raises
+                $\gamma_h$: too few ``high'' responses are predicted at weak stimuli on
+                bimanual trials, and too many on unimanual ones;
+          \item one slope for both conditions, which costs fit on the rising part of
+                the left-hand unimanual curve;
+          \item a shift proportional to amplitude: for the right hand at 6 $\mu m$,
+                Model C's shift is less than half of Model B's.
+        \end{enumerate}
+  \item The size of the shift at weak distractors, and Model C's lapse rates and JNDs,
+        should therefore not be taken at face value until these assumptions are
+        relaxed.
+\end{itemize}
+
+\paragraph{Recommended revisions.}
+\begin{enumerate}
+  \item Lapse rates per hand and condition (unimanual, bimanual). The evidence for this
+        is the strongest.
+  \item A distractor-presence term, $\beta_3 \cdot \mathbb{1}[\text{bimanual}]$, so that
+        the PSE shift is $-(\beta_3 + \beta_2 d)/\beta_1$ rather than proportional to
+        $d$.
+  \item Possibly a separate slope on bimanual trials, which would let the distractor
+        change the JND.
+\end{enumerate}
+Each revision changes the model, so it would need a new convergence study before
+being fit to the real data again.
+
+\end{document}
