@@ -3,13 +3,25 @@
 % ---------------------------------------------------------------------------
 \section{Task and Data}
 
-\begin{frame}{The task}
+\begin{frame}{The task: 2AFC categorization of vibration amplitude}
   \begin{itemize}
-    \item The monkey feels a vibration on one finger and reports whether it is
+    \item stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50 \} \mu m$
+    \begin{itemize}
+      \item administered to one finger of one hand (left or right)
+    \end{itemize}
+    \item distractor $x_\text{dist} \in \{0, x_\text{d}\} \mu m$ 
+    \begin{itemize}
+      \item $x_\text{d} \in \{6, 12, 18, 24, 32\} \mu m$ value fixed for each session
+      \item administered to the other (non-stimulus) hand
+    \end{itemize}
+    \item if present, distractor administered simultaneously with the stimulus
+    \item monkey categorizes the stimulus as either
           ``high'' or ``low'' relative to a trained boundary of 28~$\mu m$.
-    \item Unimanual trials: stimulus only. Bimanual trials: a distractor vibration on
-          the other hand at the same time.
-    \item Question: how does the distractor change the categorization?
+    \begin{itemize}
+      \item "low" response: correct for $x_\text{stim} < 28 \mu m$
+      \item "high" response: correct for $x_\text{stim} > 28 \mu m$.
+    \end{itemize}    
+    \item correct responses are rewarded with water or juice
   \end{itemize}
   \vfill
   \todo{schematic of a trial (stimulus hand, distractor hand, response)}
