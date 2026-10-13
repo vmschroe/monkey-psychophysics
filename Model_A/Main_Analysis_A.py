@@ -56,13 +56,14 @@ cov_mat = data_dict['cov_mat']
 grp_idx = data_dict['grp_idx']
 obs_data = data_dict['resp']
 
-# Model A ignores sessions, but Model B's data file has the same trials in the same order plus the
+# Model A ignores sessions, but the raw data have the same trials in the same order plus the
 # session of each trial; it is used only to check how well Model A fits single sessions
-with open(MODEL_DIR.parent / "Model_B" / "Data_B" / "ReadyData_Sirius_B.pkl", "rb") as f:
-    data_dict_B = pickle.load(f)
-assert all(np.array_equal(data_dict[k], data_dict_B[k]) for k in ['cov_mat', 'grp_idx', 'resp'])
-sess_idx = data_dict_B['sess_idx']
-sessions = list(data_dict_B['dates_sess_idx'])
+with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+    raw_data = pickle.load(f)
+assert np.array_equal(raw_data['data']['response'].to_numpy(), obs_data)
+assert np.array_equal(raw_data['data']['group_idx'].to_numpy(), grp_idx)
+sess_idx = raw_data['data']['sess_idx'].to_numpy()
+sessions = raw_data['session_summary'].sort_values('sess_idx').index.tolist()
 
 #%%
 
@@ -383,47 +384,13 @@ fig.suptitle('Posterior predictive check within single sessions (Model A pools t
 save_fig(fig, 'ppc_session_cells.png')
 plt.show()
 
-#%% Compare with Model B: leave-one-out cross-validation and the distractor effect
+#%% Leave-one-out cross-validation, and arviz's posterior predictive plot
 
 ax = az.plot_ppc(trace, num_pp_samples=100, random_seed=0)
 save_fig(np.ravel(ax)[0].figure, 'ppc_arviz_resp.png')
 plt.show()
 
 LOO_results = az.loo(trace, pointwise=True)
-
-with open(MODEL_DIR.parent / "Model_B" / "Results_B.pkl", "rb") as f:
-    fit_results_B = pickle.load(f)   # written by Model_B/Main_Analysis_B.py
-loo_B = fit_results_B['az_loo_trace']
-elpd_diff_i = loo_B.loo_i.values - LOO_results.loo_i.values   # same trials in the same order
-elpd_diff = elpd_diff_i.sum()
-elpd_diff_se = np.sqrt(len(elpd_diff_i) * np.var(elpd_diff_i))
-
-# effect of the distractor: Model A (pooled) next to Model B (average over sessions, typical session)
-effect_B = fit_results_B['effect_summary'].set_index(['hand', 'quantity'])
-ESTIMATES = [('Model A (pooled)', '#0b0b0b'), ('Model B: average over sessions', '#eb6834'),
-             ('Model B: typical session', '#2a78d6')]
-fig, axes = plt.subplots(len(HANDS), len(QUANTITIES), constrained_layout=True, figsize=(13, 5))
-for r, hand in enumerate(HANDS):
-    for ax, q in zip(axes[r], QUANTITIES):
-        a = effect_summary.set_index(['hand', 'quantity']).loc[(hand, q)]
-        b = effect_B.loc[(hand, q)]
-        rows = [(a['mean'], a['hdi_low'], a['hdi_high']),
-                (b['sess_avg_mean'], b['sess_avg_hdi_low'], b['sess_avg_hdi_high']),
-                (b['pop_mean'], b['pop_hdi_low'], b['pop_hdi_high'])]
-        for y, ((m, low, high), (label, color)) in enumerate(zip(rows, ESTIMATES)):
-            ax.errorbar(m, -y, xerr=[[m - low], [high - m]], fmt='o', color=color, capsize=3, label=label)
-        ax.axvline(0, linestyle='--', linewidth=1, color=COLORS['prior'])
-        ax.set_yticks([])
-        ax.set_ylim(-2.6, 0.6)
-        ax.set_xlabel(f'bimanual − unimanual\n{QUANTITY_LABELS[q]}')
-        ax.grid(alpha=0.3, axis='x')
-        if q == QUANTITIES[0]:
-            ax.set_ylabel(hand)
-handles, labels = axes[0, 0].get_legend_handles_labels()
-fig.legend(handles, labels, loc='outside lower center', ncol=3)
-fig.suptitle('Effect of the distractor: Model A and Model B (posterior mean and 95% HDI)', fontsize=13)
-save_fig(fig, 'effect_A_vs_B.png')
-plt.show()
 
 #%% Numbers for Fit_A_Report.tex
 # Everything quoted in the report that is not printed by an earlier cell.
@@ -472,27 +439,6 @@ print(inside_by_amp.round(2).to_string())
 print("--- LOO")
 print(f"Model A: elpd_loo {LOO_results.elpd_loo:.1f} (SE {LOO_results.se:.1f}), p_loo {LOO_results.p_loo:.1f}, "
       f"max Pareto k {np.max(LOO_results.pareto_k.values):.2f}")
-print(f"Model B: elpd_loo {loo_B.elpd_loo:.1f} (SE {loo_B.se:.1f}), p_loo {loo_B.p_loo:.0f}")
-print(f"Model B - Model A: {elpd_diff:.1f} (SE {elpd_diff_se:.1f})")
-
-print("--- Model A vs Model B, group values (Model B: average of the 42 session posterior means)")
-summary_B = fit_results_B['az_summary_trace']
-for q in QUANTITIES:
-    b_vals = {g: summary_B.loc[summary_B.index.str.startswith(f'{q}[{g},'), 'mean'].mean() * SCALE[q] + SHIFT[q]
-              for g in groups}
-    f = '.3f' if q.startswith('gam') else '.2f'
-    print(f"{q}: " + '; '.join(f"{g} A {draws_of(g, q).mean():{f}}, B {b_vals[g]:{f}}" for g in groups))
-print("--- Distractor effect: Model A vs Model B average over sessions vs Model B typical session")
-for hand in HANDS:
-    for q in QUANTITIES:
-        a = effect_summary.set_index(['hand', 'quantity']).loc[(hand, q)]
-        b = effect_B.loc[(hand, q)]
-        f = '.3f' if q.startswith('gam') else '.2f'
-        print(f"{hand} {q}: A {a['mean']:{f}} [{a['hdi_low']:{f}}, {a['hdi_high']:{f}}] (width {a['hdi_high'] - a['hdi_low']:{f}}) | "
-              f"B avg {b['sess_avg_mean']:{f}} [{b['sess_avg_hdi_low']:{f}}, {b['sess_avg_hdi_high']:{f}}] "
-              f"(width {b['sess_avg_hdi_high'] - b['sess_avg_hdi_low']:{f}}) | "
-              f"B pop {b['pop_mean']:{f}} [{b['pop_hdi_low']:{f}}, {b['pop_hdi_high']:{f}}] "
-              f"(width {b['pop_hdi_high'] - b['pop_hdi_low']:{f}})")
 
 #%%
 

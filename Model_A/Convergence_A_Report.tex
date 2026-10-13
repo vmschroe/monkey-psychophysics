@@ -79,8 +79,7 @@ The Beta distribution has shape parameters $a = 1.22$, $b = 4.89$. Scaling by 0.
 keeps each lapse parameter in $(0, 0.25)$, so the curve is increasing and the
 PSE and JND below are well defined.
 
-These priors predate the design-based priors of Model B and have not been
-checked by prior predictive simulation. What they imply:
+These priors have not been checked by prior predictive simulation. What they imply:
 \begin{itemize}
   \item $\beta_0$: very wide. Together with the slope prior it puts the PSE inside
         the stimulus range (6 to 50 $\mu m$) only 64\% of the time.
@@ -148,7 +147,7 @@ Both are in units of the standardized stimulus; one unit is 14.6 $\mu m$.
 
 \subsection{Implementation}
 
-As in Model B, the amplitudes are standardized, and $\beta_0, \beta_1$ are written as
+The amplitudes are standardized, and $\beta_0, \beta_1$ are written as
 deterministic transforms of standard normal variables. The model is fit with
 NUTS, 4 chains of 1000 tuning and 1000 kept draws.
 
@@ -305,8 +304,7 @@ against a true 0.005 (still 1.1 posterior sds too high), and its slope $\beta_1$
 is 0.12 too high (0.6 sd). The left\_uni curve only reaches about 0.97 at the
 highest stimulus, so the data cannot tell whether the remaining shortfall is a
 lapse ($\gamma_l$) or a curve that has not yet reached its ceiling (the slope),
-and a higher $\gamma_l$ is compensated by a steeper slope. Model B showed the
-same problem for the same group. For the other three groups the $\gamma_l$ bias
+and a higher $\gamma_l$ is compensated by a steeper slope. For the other three groups the $\gamma_l$ bias
 falls to 0.3 sd or less by 16{,}000 trials. The slope bias at small sizes
 (1.3--1.5 too high at 250 trials for both left-hand groups) comes from the
 prior mean of 4 pulling the true slope of 3 upward.
@@ -404,17 +402,15 @@ At the size of the real data (12{,}937 trials, about 3{,}230 per group):
         curves (slope about 6), based on a single cell (right\_bi at 16{,}000
         trials); worth checking with more replicates or other true values.
   \item These conclusions hold only at the one set of true values tested, and
-        Model A assumes the curve is the same in every session. When the real
-        sessions differ (as the Model B fit shows they do in PSE), Model A's
-        HDIs will be too narrow, because between-session variation is treated as
+        Model A assumes the curve is the same in every session. If the real
+        sessions differ, Model A's HDIs will be too narrow, because between-session variation is treated as
         trial noise.
 \end{itemize}
 
 \paragraph{Possible follow-ups.}
 \begin{enumerate}
-  \item Give Model A design-based priors as was done for Model B (in particular
-        a lapse prior centered nearer 0.01 and a positive slope prior), with
-        prior predictive checks, and rerun this study.
+  \item Give Model A design-based priors (in particular a lapse prior centered
+        nearer 0.01 and a positive slope prior), with prior predictive checks, and rerun this study.
   \item Draw the true parameters from the prior for each replicate
         (simulation-based calibration), so calibration is tested across the
         whole parameter range rather than at one point.

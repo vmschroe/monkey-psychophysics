@@ -489,11 +489,72 @@ ax = az.plot_ppc(trace, num_pp_samples=100, random_seed=0)
 save_fig(np.ravel(ax)[0].figure, 'ppc_arviz_resp.png')
 plt.show()
 
-LOO_results = az.loo(trace)
+LOO_results = az.loo(trace, pointwise=True)
 
 fit_results = {'az_summary_trace': result_df,
                'az_loo_trace': LOO_results,
                'effect_summary': effect_summary}
+
+#%% Compare with Model A (sessions pooled): leave-one-out cross-validation, estimates, distractor effect
+
+with open(MODEL_DIR.parent / "Model_A" / "Results_A.pkl", "rb") as f:
+    fit_results_A = pickle.load(f)   # written by Model_A/Main_Analysis_A.py
+loo_A = fit_results_A['az_loo_trace']
+elpd_diff_i = LOO_results.loo_i.values - loo_A.loo_i.values   # same trials in the same order
+elpd_diff = elpd_diff_i.sum()
+elpd_diff_se = np.sqrt(len(elpd_diff_i) * np.var(elpd_diff_i))
+
+# group values: Model A's posterior mean against the average of Model B's session posterior means
+summary_A = fit_results_A['az_summary_trace']
+group_values = pd.DataFrame(
+    {(q, model): {g: (summary_A.loc[f'{q}[{g}]', 'mean'] if model == 'A' else
+                      result_df.loc[result_df.index.str.startswith(f'{q}[{g},'), 'mean'].mean()) * SCALE[q] + SHIFT[q]
+                  for g in groups}
+     for q in QUANTITIES for model in ['A', 'B']})
+
+# effect of the distractor: Model A (pooled) next to Model B (average over sessions, typical session)
+effect_A = fit_results_A['effect_summary'].set_index(['hand', 'quantity'])
+effect_B = effect_summary.set_index(['hand', 'quantity'])
+ESTIMATES = [('Model A (pooled)', '#0b0b0b'), ('Model B: average over sessions', '#eb6834'),
+             ('Model B: typical session', '#2a78d6')]
+fig, axes = plt.subplots(len(HANDS), len(QUANTITIES), constrained_layout=True, figsize=(13, 5))
+for r, hand in enumerate(HANDS):
+    for ax, q in zip(axes[r], QUANTITIES):
+        a, b = effect_A.loc[(hand, q)], effect_B.loc[(hand, q)]
+        rows = [(a['mean'], a['hdi_low'], a['hdi_high']),
+                (b['sess_avg_mean'], b['sess_avg_hdi_low'], b['sess_avg_hdi_high']),
+                (b['pop_mean'], b['pop_hdi_low'], b['pop_hdi_high'])]
+        for y, ((m, low, high), (label, color)) in enumerate(zip(rows, ESTIMATES)):
+            ax.errorbar(m, -y, xerr=[[m - low], [high - m]], fmt='o', color=color, capsize=3, label=label)
+        ax.axvline(0, linestyle='--', linewidth=1, color=COLORS['prior'])
+        ax.set_yticks([])
+        ax.set_ylim(-2.6, 0.6)
+        ax.set_xlabel(f'bimanual − unimanual\n{QUANTITY_LABELS[q]}')
+        ax.grid(alpha=0.3, axis='x')
+        if q == QUANTITIES[0]:
+            ax.set_ylabel(hand)
+handles, labels = axes[0, 0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='outside lower center', ncol=3)
+fig.suptitle('Effect of the distractor: Model A and Model B (posterior mean and 95% HDI)', fontsize=13)
+save_fig(fig, 'effect_A_vs_B.png')
+plt.show()
+
+print("--- Comparison with Model A")
+print(f"Model A: elpd_loo {loo_A.elpd_loo:.1f} (SE {loo_A.se:.1f}), p_loo {loo_A.p_loo:.1f}")
+print(f"Model B: elpd_loo {LOO_results.elpd_loo:.1f} (SE {LOO_results.se:.1f}), p_loo {LOO_results.p_loo:.0f}")
+print(f"Model B - Model A: {elpd_diff:.1f} (SE {elpd_diff_se:.1f}), {elpd_diff / elpd_diff_se:.1f} SE")
+print("group values (Table tab:B_vs_A; PSE, JND in um):")
+print(group_values.round(3).to_string())
+print("distractor effect: A | B average over sessions | B typical session, mean [95% HDI] (width)")
+for hand in HANDS:
+    for q in QUANTITIES:
+        a, b = effect_A.loc[(hand, q)], effect_B.loc[(hand, q)]
+        f = '.3f' if q.startswith('gam') else '.2f'
+        print(f"{hand} {q}: A {a['mean']:{f}} [{a['hdi_low']:{f}}, {a['hdi_high']:{f}}] ({a['hdi_high'] - a['hdi_low']:{f}}) | "
+              f"B avg {b['sess_avg_mean']:{f}} [{b['sess_avg_hdi_low']:{f}}, {b['sess_avg_hdi_high']:{f}}] "
+              f"({b['sess_avg_hdi_high'] - b['sess_avg_hdi_low']:{f}}) | "
+              f"B pop {b['pop_mean']:{f}} [{b['pop_hdi_low']:{f}}, {b['pop_hdi_high']:{f}}] "
+              f"({b['pop_hdi_high'] - b['pop_hdi_low']:{f}})")
 #%% Numbers for Fit_B_Report.tex
 # Everything quoted in the report that is not printed by an earlier cell. Section names follow the report.
 

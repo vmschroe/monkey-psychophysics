@@ -45,6 +45,9 @@ the convergence report) was fit to all 12{,}937 trials of the Sirius data
   \item \textbf{The PSE shift grows with distractor amplitude} (exploratory,
         Section~\ref{sec:amplitude}): about $-2$ $\mu m$ per 10 $\mu m$ of
         distractor amplitude for both hands.
+  \item \textbf{Model B predicts the data much better than Model A}, which pools
+        the sessions (Section~\ref{sec:vs_A}): leave-one-out cross-validation favors
+        it by 164 (SE 19). The two models agree on the distractor effects.
   \item The sampler converged, the model reproduces the data well, and the new
         priors change the hyperparameter estimates only slightly from the
         earlier fit.
@@ -484,6 +487,80 @@ two strongly correlated predictors these conclusions are tentative; a model
 with distractor amplitude as a session-level covariate would test them
 properly.
 
+\section{Comparison with Model A}
+\label{sec:vs_A}
+
+Model A fits one psychometric curve per group to all sessions pooled (report
+``Model A Fit to the Real Data''). The cell ``Compare with Model A'' of
+\code{Main\_Analysis\_B.py} compares the two fits, reading Model A's from
+\code{Results\_A.pkl}.
+
+\paragraph{Leave-one-out cross-validation.}
+Model A has $\text{elpd}_\text{loo} = -3344.0$ (SE 64.5) with $p_\text{loo} = 13.4$;
+Model B has $-3180.0$ (SE 64.3) with $p_\text{loo} = 179$. Both were fit to the same
+trials in the same order, so the difference can be computed trial by trial: Model B
+is better by 164.1 (SE 19.2), 8.5 standard errors. Model B's 179 effective
+parameters against Model A's 13 are more than paid for by its better predictions:
+the sessions really differ. The separate model recovery study
+(\code{Model\_Recov\_BA\_Report.tex}) shows that this difference is not produced by
+Model B's extra flexibility alone.
+
+\paragraph{Estimates.}
+
+\begin{table}[H]
+\centering
+\caption{Posterior means of the group quantities: Model A (sessions pooled)
+against the average of Model B's 42 session estimates.}
+\label{tab:B_vs_A}
+\begin{tabular}{lcccccccc}
+\toprule
+ & \multicolumn{2}{c}{PSE ($\mu m$)} & \multicolumn{2}{c}{JND ($\mu m$)} & \multicolumn{2}{c}{$\gamma_h$} & \multicolumn{2}{c}{$\gamma_l$} \\
+ & A & B & A & B & A & B & A & B \\
+\midrule
+left\_uni  & 32.58 & 32.45 & 3.56 & 3.31 & 0.002 & 0.002 & 0.009 & 0.010 \\
+left\_bi   & 28.38 & 28.16 & 4.39 & 4.34 & 0.041 & 0.027 & 0.016 & 0.010 \\
+right\_uni & 31.57 & 31.44 & 4.10 & 3.57 & 0.003 & 0.003 & 0.006 & 0.008 \\
+right\_bi  & 25.50 & 25.38 & 4.36 & 4.06 & 0.045 & 0.038 & 0.012 & 0.011 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The PSEs agree to within 0.22 $\mu m$ (Table~\ref{tab:B_vs_A}). The JNDs of
+Model A are larger, by 0.05--0.52 $\mu m$, most for right\_uni. This is what
+pooling does: averaging curves whose PSEs differ from session to session gives
+a shallower curve than any single session has, so the pooled JND mixes the
+monkey's precision within a session with the drift of its PSE between
+sessions. Model B separates the two. Model A's bimanual $\gamma_h$ is also
+higher (0.041 against 0.027 for left\_bi), probably for a related reason: in
+sessions whose PSE is unusually low, ``high'' responses at the weakest
+stimuli are more common, and the pooled curve can only absorb them as lapses.
+
+\paragraph{Distractor effect.}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{effect_A_vs_B.png}
+\caption{Distractor effect under Model A (black), and under Model B averaged
+over the 42 sessions (orange) and for a typical session (blue): posterior mean
+and 95\% HDI.}
+\label{fig:effect_AB}
+\end{figure}
+
+The distractor effects agree well (Figure~\ref{fig:effect_AB}). The PSE shift is
+$-4.19$ (A) against $-4.29$ (B, average over sessions) for the left hand and
+$-6.07$ against $-6.06$ for the right hand, with HDIs of nearly the same width
+(about 1.5 $\mu m$). The $\gamma_h$ effect is somewhat larger under Model A
+(0.038 against 0.025 for the left hand), and the JND effect somewhat smaller
+(0.83 against 1.03 for the left hand, 0.27 against 0.49 for the right), but
+the HDIs overlap widely and the conclusions are the same.
+
+The difference between the models lies in what the estimates describe. Model
+A's effects, like Model B's average over sessions, describe these 42 sessions.
+For a new session from the same population, Model B's typical-session effect is
+the relevant one, and its HDI is about twice as wide for the PSE (2.6 and
+2.9 $\mu m$ against 1.5): the uncertainty about how sessions vary, which Model A
+cannot express.
+
 \section{Conclusions}
 
 \begin{itemize}
@@ -500,6 +577,10 @@ properly.
   \item The PSE shift appears to grow with distractor amplitude, by about
         2 $\mu m$ per 10 $\mu m$; this needs confirming with amplitude in the
         model.
+  \item Model B predicts the data much better than Model A (elpd difference 164,
+        SE 19) and agrees with it on the distractor effects. Model A's JNDs and
+        bimanual $\gamma_h$ are somewhat inflated by pooling, so Model B should be
+        used for inference.
   \item The new priors change the bias and slope estimates very little. The
         between-session lapse sds now sit near their prior, which is expected
         because the convergence study showed that they are not identified.
