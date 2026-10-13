@@ -60,16 +60,18 @@ with pm.Model(coords=coords) as model_C:
     #   Z ~ Normal[0,1]
     #   X = exp( sig*Z + mu )
     # REPARAMETRIZATION HalfNormal: X ~ HalfNormal[ sig ]
-    #   Z ~ Normal[0,1]
-    #   X = abs(  sig * Z  )
+    #   Z ~ HalfNormal[1]
+    #   X = sig * Z
+    #   (not abs(sig * Z) with Z ~ Normal[0,1]: then the sign of Z is unidentified and chains
+    #   settle on opposite signs, giving false r_hat warnings)
     z_mu_b0 = pm.Normal('z_mu_b0', mu = 0, sigma = 1, dims = ('groups',))
     z_mu_b1 = pm.Normal('z_mu_b1', mu = 0, sigma = 1, dims = ('groups',))
     z_mu_b2 = pm.Normal('z_mu_b2', mu = 0, sigma = 1, dims = ('groups',))
     mu_betas = pm.Deterministic('mu_betas', pm.math.stack([ 2 * z_mu_b0 , pm.math.exp(np.log(4) + 0.5 * z_mu_b1) , 1 * z_mu_b2 ], axis=0), dims = ("betas", "groups"))
-    z_sig_b0 = pm.Normal('z_sig_b0', mu = 0, sigma = 1, dims = ('groups',))
+    z_sig_b0 = pm.HalfNormal('z_sig_b0', sigma = 1, dims = ('groups',))
     u_sig_b1 = pm.Uniform("u_sig_b1", 1e-9, 1-1e-9, dims=('groups',))
-    z_sig_b2 = pm.Normal('z_sig_b2', mu = 0, sigma = 1, dims = ('groups',))
-    sig_betas = pm.Deterministic('sig_betas', pm.math.stack([ pm.math.abs(2 * z_sig_b0) , (-1/1) * pm.math.log(u_sig_b1) , pm.math.abs(1 * z_sig_b2) ], axis=0), dims = ("betas", "groups"))
+    z_sig_b2 = pm.HalfNormal('z_sig_b2', sigma = 1, dims = ('groups',))
+    sig_betas = pm.Deterministic('sig_betas', pm.math.stack([ 2 * z_sig_b0 , (-1/1) * pm.math.log(u_sig_b1) , 1 * z_sig_b2 ], axis=0), dims = ("betas", "groups"))
     z_betas = pm.Normal('z_betas', mu = 0, sigma = 1, dims = ("betas", "groups", 'sessions'))
     beta_vec = pm.Deterministic("beta_vec", sig_betas[..., None] * z_betas + mu_betas[..., None], dims=("betas", "groups", "sessions"),)
 
@@ -83,12 +85,14 @@ with pm.Model(coords=coords) as model_C:
     #   Z ~ Normal[0,1]
     #   X = 1 / ( 1+ exp (- (sig*Z + mu) ) )
     # REPARAMETRIZATION HalfNormal: X ~ HalfNormal[ sig ]
-    #   Z ~ Normal[0,1]
-    #   X = abs(  sig * Z  )
+    #   Z ~ HalfNormal[1]
+    #   X = sig * Z
+    #   (not abs(sig * Z) with Z ~ Normal[0,1]: then the sign of Z is unidentified and chains
+    #   settle on opposite signs, giving false r_hat warnings)
     z_mu_gams = pm.Normal("z_mu_gams", mu=0, sigma=1, dims = ('lapses', 'groups'))
     mu_gams = pm.Deterministic("mu_gams", 1.5*z_mu_gams - 3, dims = ('lapses', 'groups'))
-    z_sig_gams = pm.Normal("z_sig_gams", mu=0, sigma=1, dims = ('lapses', 'groups'))
-    sig_gams = pm.Deterministic('sig_gams', pm.math.abs(0.5*z_sig_gams), dims=('lapses', 'groups'))
+    z_sig_gams = pm.HalfNormal("z_sig_gams", sigma=1, dims = ('lapses', 'groups'))
+    sig_gams = pm.Deterministic('sig_gams', 0.5*z_sig_gams, dims=('lapses', 'groups'))
     z_gams = pm.Normal("z_gams", mu=0, sigma=1, dims=("lapses", "groups", "sessions"))
     gams = pm.Deterministic("gams", 0.25 * pm.math.invlogit(sig_gams[..., None] * z_gams + mu_gams[..., None]), dims=("lapses", "groups", "sessions"),)
 

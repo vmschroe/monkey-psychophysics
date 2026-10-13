@@ -189,9 +189,13 @@ Both are in units of the standardized stimulus.
 
 \subsection{Implementation}
 
-As in Model B, all distributions are written as deterministic transforms of a
-standard normal or uniform random variable (non-centered parameterizations), so the
-NUTS sampler only works with uniform or standard normal variables.
+As in Model B, the distributions are written as deterministic transforms of
+standard random variables (non-centered parameterizations). Unlike Model B, the
+HalfNormal sds $\sigma_{\beta_0}$, $\sigma_{\beta_2}$, $\sigma_{\gamma_h}$ and
+$\sigma_{\gamma_l}$ are scaled HalfNormal(1) variables rather than absolute values of
+standard normals: with the absolute value the sign is not identified, chains settle
+on opposite signs, and the sampler diagnostics report a failure that does not affect
+the model. The two forms define the same prior.
 
 \section{Synthetic Data Generation}
 
@@ -266,9 +270,9 @@ coverages are pooled over them (84 sessions per hand in the trials sweep). Cover
 of the hyperparameters are over 4 fits per size (2 hands $\times$ 2 replicates).
 
 \subsection{Sampling Diagnostics}
-All 20 fits sampled without divergences, with $\hat{R} \le 1.009$ and a bulk ESS of
-at least 659 for every hyperparameter, and $\hat{R} \le 1.007$ for every
-session-level parameter. The whole study takes about 0.7 hours.
+The 20 fits had 2 divergences in total, one each in a 5-session and a 10-session fit,
+too few to bias the results. $\hat{R} \le 1.008$ and the bulk ESS is at least 532
+for every hyperparameter, and $\hat{R} \le 1.007$ for every session-level parameter. The whole study takes about 0.7 hours.
 
 \begin{table}[H]
 \centering
@@ -278,17 +282,17 @@ taken over the hyperparameters.}
 \toprule
 Sweep & Size & max $\hat{R}$ & min ESS & divergences \\
 \midrule
-sessions & 5   & 1.005 & 1044 & 0 \\
-sessions & 10  & 1.007 & 1144 & 0 \\
-sessions & 20  & 1.004 & 1523 & 0 \\
-sessions & 40  & 1.005 & 1327 & 0 \\
-sessions & 80  & 1.006 & 1171 & 0 \\
+sessions & 5   & 1.005 & 1467 & 1 \\
+sessions & 10  & 1.004 & 1194 & 1 \\
+sessions & 20  & 1.004 & 1447 & 0 \\
+sessions & 40  & 1.003 & 1524 & 0 \\
+sessions & 80  & 1.003 & 1309 & 0 \\
 \midrule
-trials & 20  & 1.003 & 1322 & 0 \\
-trials & 40  & 1.004 & 935  & 0 \\
-trials & 80  & 1.006 & 942  & 0 \\
-trials & 160 & 1.007 & 912  & 0 \\
-trials & 320 & 1.009 & 659  & 0 \\
+trials & 20  & 1.007 & 598  & 0 \\
+trials & 40  & 1.008 & 532  & 0 \\
+trials & 80  & 1.008 & 553  & 0 \\
+trials & 160 & 1.006 & 794  & 0 \\
+trials & 320 & 1.005 & 847  & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -322,11 +326,11 @@ mean [95\% HDI], averaged over replicates. Lapse-rate means are on the logit sca
  & \multicolumn{2}{c}{left} & \multicolumn{2}{c}{right} \\
  & true & posterior & true & posterior \\
 \midrule
-$\mu_{\beta_0}$ & $-1.49$ & $-1.56$ [$-1.88$, $-1.22$] & $-1.06$ & $-0.94$ [$-1.31$, $-0.59$] \\
-$\mu_{\beta_1}$ & 4.64 & 4.66 [4.18, 5.21] & 4.46 & 4.46 [4.07, 4.85] \\
-$\mu_{\beta_2}$ & 0.93 & 0.93 [0.71, 1.17] & 1.13 & 1.11 [0.74, 1.46] \\
-$\mu_{\gamma_h}$ & $-2.80$ & $-2.89$ [$-3.41$, $-2.39$] & $-2.41$ & $-2.59$ [$-3.10$, $-2.12$] \\
-$\mu_{\gamma_l}$ & $-3.20$ & $-3.38$ [$-4.28$, $-2.60$] & $-3.20$ & $-3.05$ [$-3.76$, $-2.39$] \\
+$\mu_{\beta_0}$ & $-1.49$ & $-1.56$ [$-1.90$, $-1.24$] & $-1.06$ & $-0.94$ [$-1.29$, $-0.57$] \\
+$\mu_{\beta_1}$ & 4.64 & 4.65 [4.16, 5.18] & 4.46 & 4.46 [4.06, 4.86] \\
+$\mu_{\beta_2}$ & 0.93 & 0.93 [0.71, 1.18] & 1.13 & 1.11 [0.74, 1.47] \\
+$\mu_{\gamma_h}$ & $-2.80$ & $-2.89$ [$-3.45$, $-2.41$] & $-2.41$ & $-2.60$ [$-3.10$, $-2.11$] \\
+$\mu_{\gamma_l}$ & $-3.20$ & $-3.39$ [$-4.34$, $-2.60$] & $-3.20$ & $-3.04$ [$-3.73$, $-2.37$] \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -336,14 +340,14 @@ their HDIs contain the true value in every fit at 40 and 80 sessions
 (Table~\ref{tab:means40}). In the trials sweep, $\mu_{\beta_0}$ misses the truth in
 one of the four fits at each of 20, 40 and 80 trials. The
 HDIs narrow steadily with the number of sessions; averaged over hands and replicates,
-the width for $\mu_{\beta_0}$ falls from 2.45 at 5 sessions to 0.69 at 40 and 0.46 at
+the width for $\mu_{\beta_0}$ falls from 2.49 at 5 sessions to 0.69 at 40 and 0.46 at
 80.
 
 \paragraph{Distractor effect $\mu_{\beta_2}$.} The new parameter is the
-best-determined mean relative to its size: at 40 sessions the HDIs are 0.46 (left)
-and 0.72 (right) wide, around true values of 0.93 and 1.13, so both exclude 0. At 5
+best-determined mean relative to its size: at 40 sessions the HDIs are 0.47 (left)
+and 0.73 (right) wide, around true values of 0.93 and 1.13, so both exclude 0. At 5
 sessions the HDI width is still 1.46 and the HDIs reach 0. In the trials
-sweep, where the number of sessions is fixed at 42, the width only falls from 1.37
+sweep, where the number of sessions is fixed at 42, the width only falls from 1.36
 at 20 trials to 0.62 at 320: like the other means, $\mu_{\beta_2}$ is limited by the
 number of sessions more than by trials per session.
 
@@ -353,8 +357,8 @@ true slopes here, about 4.5, give a rise from $\psi = 0.25$ to 0.75 wide enough 
 several stimulus levels.
 
 \paragraph{Lapse-rate means.} $\mu_{\gamma_h}$ and $\mu_{\gamma_l}$ are recovered,
-but they are the least precise means: at 80 sessions their HDIs are still 0.70--0.83
-($\mu_{\gamma_h}$) and 0.91--1.24 ($\mu_{\gamma_l}$) wide on the logit scale. Lapses
+but they are the least precise means: at 80 sessions their HDIs are still 0.71--0.82
+($\mu_{\gamma_h}$) and 0.91--1.25 ($\mu_{\gamma_l}$) wide on the logit scale. Lapses
 are rare and only show at the stimulus levels where the sigmoid has reached its floor
 or ceiling.
 
@@ -379,36 +383,37 @@ replicates whose HDI contains the true value.}
  & \multicolumn{3}{c}{left} & \multicolumn{3}{c}{right} \\
  & true & posterior & cov. & true & posterior & cov. \\
 \midrule
-$\sigma_{\beta_0}$ & 0.76 & 0.74 [0.57, 0.91] & 0.5 & 1.01 & 0.94 [0.75, 1.14] & 1.0 \\
-$\sigma_{\beta_1}$ & 0.78 & 0.83 [0.57, 1.10] & 1.0 & 0.39 & 0.17 [0.00, 0.41] & 1.0 \\
-$\sigma_{\beta_2}$ & 0.62 & 0.52 [0.36, 0.68] & 0.5 & 0.83 & 0.87 [0.68, 1.07] & 1.0 \\
-$\sigma_{\gamma_h}$ & 0.48 & 0.38 [0.00, 0.83] & 1.0 & 0.37 & 0.31 [0.00, 0.69] & 1.0 \\
-$\sigma_{\gamma_l}$ & 0.38 & 0.34 [0.00, 0.83] & 1.0 & 0.41 & 0.29 [0.00, 0.68] & 1.0 \\
+$\sigma_{\beta_0}$ & 0.76 & 0.74 [0.58, 0.92] & 1.0 & 1.01 & 0.94 [0.76, 1.14] & 1.0 \\
+$\sigma_{\beta_1}$ & 0.78 & 0.83 [0.57, 1.09] & 1.0 & 0.39 & 0.17 [0.00, 0.40] & 0.5 \\
+$\sigma_{\beta_2}$ & 0.62 & 0.51 [0.36, 0.67] & 0.5 & 0.83 & 0.86 [0.68, 1.06] & 1.0 \\
+$\sigma_{\gamma_h}$ & 0.48 & 0.38 [0.00, 0.83] & 1.0 & 0.37 & 0.31 [0.00, 0.68] & 1.0 \\
+$\sigma_{\gamma_l}$ & 0.38 & 0.35 [0.00, 0.85] & 1.0 & 0.41 & 0.29 [0.00, 0.69] & 1.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{$\sigma_{\beta_0}$, $\sigma_{\beta_1}$, $\sigma_{\beta_2}$.} The between-session
 sds of the three logistic coefficients are identified: their HDIs narrow with the
-number of sessions and, at 80 sessions, are 0.32--0.53 wide. Two caveats
+number of sessions and, at 80 sessions, are 0.32--0.52 wide. Two caveats
 (Table~\ref{tab:sds80}):
 \begin{itemize}
-  \item For the left hand, one of the two replicates misses the true $\sigma_{\beta_0}$
-        and $\sigma_{\beta_2}$ at 80 sessions. In Figure~\ref{fig:sds_sessions} the
+  \item For the left hand, one of the two replicates misses the true $\sigma_{\beta_2}$
+        at 80 sessions. In Figure~\ref{fig:sds_sessions} the
         left-hand $\sigma_{\beta_2}$ estimates lie below the truth at most sizes in
         both replicates. Whether this is a bias or the particular draws of session
         effects cannot be told from two replicates.
   \item For the right hand, $\sigma_{\beta_1}$ drifts down as sessions are added, to
-        0.17 at 80 sessions against a true 0.39, with the HDI just reaching the truth.
+        0.17 at 80 sessions against a true 0.39. Both replicates' HDIs end near the
+        truth, and one of them just misses it.
         The smallest true sd of the three is the hardest to separate from zero.
 \end{itemize}
 In the trials sweep, $\sigma_{\beta_0}$ misses the truth in two of the four fits at 40
-and at 80 trials, and none at 160 and 320.
+trials, one at 80, and none at 160 and 320.
 
 \paragraph{Lapse-rate sds $\sigma_{\gamma_h}$, $\sigma_{\gamma_l}$.} Not identified at these
-data sizes. Their HDIs always start at 0 and are still 0.68--0.83 wide at 80 sessions;
-averaged over hands, the width shrinks only from about 1.0 at 5 sessions to 0.76 at
-80, and the posterior means barely move. Their true
+data sizes. Their HDIs always start at 0 and are still 0.68--0.85 wide at 80 sessions;
+averaged over hands, the width shrinks only from about 1.0 at 5 sessions to 0.76--0.77
+at 80, and the posterior means barely move. Their true
 values (0.37--0.48) happen to be close to the prior median (0.34), so the 100\%
 coverage says little: the posteriors largely reflect the prior.
 
@@ -442,31 +447,31 @@ replicates): RMSE of the posterior mean / mean HDI width / coverage.}
 \toprule
  & left & right \\
 \midrule
-PSE, unimanual & 0.083 / 0.32 / 0.93 & 0.090 / 0.35 / 0.99 \\
-PSE, bimanual & 0.089 / 0.36 / 0.96 & 0.098 / 0.38 / 0.93 \\
-JND & 0.036 / 0.14 / 0.93 & 0.025 / 0.10 / 0.94 \\
-$\beta_0$ & 0.42 / 1.60 / 0.93 & 0.44 / 1.67 / 0.94 \\
-$\beta_1$ & 0.63 / 2.60 / 0.96 & 0.46 / 1.82 / 0.92 \\
-$\beta_2$ & 0.45 / 1.65 / 0.95 & 0.54 / 2.00 / 0.95 \\
+PSE, unimanual & 0.083 / 0.32 / 0.92 & 0.090 / 0.35 / 0.98 \\
+PSE, bimanual & 0.090 / 0.36 / 0.95 & 0.098 / 0.38 / 0.94 \\
+JND & 0.036 / 0.14 / 0.96 & 0.024 / 0.10 / 0.93 \\
+$\beta_0$ & 0.42 / 1.59 / 0.94 & 0.44 / 1.68 / 0.94 \\
+$\beta_1$ & 0.63 / 2.60 / 0.98 & 0.46 / 1.83 / 0.95 \\
+$\beta_2$ & 0.45 / 1.63 / 0.94 & 0.54 / 1.99 / 0.96 \\
 $\gamma_h$ & 0.006 / 0.028 / 0.99 & 0.007 / 0.036 / 0.99 \\
-$\gamma_l$ & 0.004 / 0.020 / 0.99 & 0.005 / 0.024 / 0.99 \\
+$\gamma_l$ & 0.004 / 0.020 / 0.98 & 0.005 / 0.023 / 0.98 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{PSE and JND.} The per-session PSEs are recovered well in both conditions:
 at 320 trials the RMSE is 0.08--0.10 standardized units, with
-coverage 0.93--0.99 (Table~\ref{tab:session320}). The bimanual PSE is only slightly less
+coverage 0.92--0.98 (Table~\ref{tab:session320}). The bimanual PSE is only slightly less
 precise than the unimanual one, although it also depends on $\beta_2$. The JND
-RMSE is 0.025--0.036. Error and HDI width fall steadily with trials per session
+RMSE is 0.024--0.036. Error and HDI width fall steadily with trials per session
 (Figure~\ref{fig:session_trials}).
 
 \paragraph{$\beta_0$, $\beta_1$, $\beta_2$.} The individual coefficients are much less
 precise than the PSEs computed from them (HDI widths 1.6--2.6 at 320 trials, against
 0.32--0.38 for the PSEs): the data constrain the point where the curve crosses 0.5
 better than the separate coefficients that place it there. Coverage is close to nominal at 320 trials
-(0.92--0.96). At 40 and 80 trials it is lower for $\beta_0$ (0.85 and 0.86, averaged
-over hands) and the unimanual PSE (0.83 and 0.88).
+(0.94--0.98). At 40 and 80 trials it is lower for $\beta_0$ (0.86 at both, averaged
+over hands) and the unimanual PSE (0.81 and 0.87).
 
 \paragraph{Session-level $\beta_2$ and the distractor amplitude.}
 Each session's $\beta_2$ is informed only by the shift between its unimanual and
@@ -476,9 +481,8 @@ small $d_s$ therefore leaves $\beta_2$ poorly determined
 2.6 wide for sessions with a 6~$\mu$m distractor and 1.2 for 32~$\mu$m, and the
 correlation between $d_s$ and HDI width is $-0.88$. Poorly determined sessions are
 pulled toward the hand mean, so across sessions the posterior means vary less than
-the true values: regressed on the true $\beta_2$, they have a slope of 0.44 (left)
-and 0.58 (right) instead of 1. Coverage stays near nominal overall (0.95 for both
-hands), so the HDIs reflect this uncertainty correctly.
+the true values: regressed on the true $\beta_2$, they have a slope of 0.43 (left)
+and 0.58 (right) instead of 1. Coverage stays near nominal overall (0.94 and 0.96), so the HDIs reflect this uncertainty correctly.
 
 \begin{figure}[H]
 \centering
@@ -498,26 +502,26 @@ sweep (both replicates pooled). The dashed line is the identity.}
 \toprule
 amplitude ($\mu$m) & $n$ & RMSE & mean HDI width & coverage \\
 \midrule
-6  & 42 & 0.69 & 2.62 & 0.95 \\
+6  & 42 & 0.69 & 2.58 & 0.98 \\
 12 & 30 & 0.44 & 2.08 & 1.00 \\
 16 & 6  & 0.68 & 1.85 & 0.83 \\
-18 & 6  & 0.53 & 1.72 & 1.00 \\
-20 & 12 & 0.36 & 1.62 & 1.00 \\
-22 & 6  & 0.46 & 1.58 & 0.83 \\
-24 & 18 & 0.36 & 1.44 & 0.94 \\
+18 & 6  & 0.53 & 1.69 & 1.00 \\
+20 & 12 & 0.37 & 1.62 & 1.00 \\
+22 & 6  & 0.46 & 1.56 & 0.83 \\
+24 & 18 & 0.36 & 1.43 & 0.94 \\
 26 & 4  & 0.54 & 1.33 & 0.75 \\
-28 & 2  & 0.38 & 1.19 & 1.00 \\
-32 & 42 & 0.32 & 1.19 & 0.95 \\
+28 & 2  & 0.37 & 1.17 & 1.00 \\
+32 & 42 & 0.32 & 1.19 & 0.93 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Lapse rates $\gamma_h$ and $\gamma_l$.} At 320 trials the session lapse
-rates have RMSE 0.004--0.007 and coverage 0.99. In the sessions sweep the coverage of
-$\gamma_h$ is lower at 40 and 80 sessions (0.87 and 0.88, averaged over hands). With
+rates have RMSE 0.004--0.007 and coverage 0.98--0.99. In the sessions sweep the coverage
+of $\gamma_h$ is lower at 40 and 80 sessions (0.86 and 0.87, averaged over hands). With
 $\sigma_{\gamma_h}$ not identified, the session values are pulled strongly toward the
 hand's typical value, so a miss in that value likely carries over to every session of
-the hand; at 40 sessions, for example, the right hand's $\mu_{\gamma_h}$ averages $-2.59$
+the hand; at 40 sessions, for example, the right hand's $\mu_{\gamma_h}$ averages $-2.60$
 against a true $-2.41$.
 
 \subsection{Posterior densities}
@@ -566,7 +570,7 @@ Model C:
 \begin{itemize}
   \item \textbf{Reliable:} per-session PSEs in both conditions and JNDs; all five
         hand-level means, including the distractor effect $\mu_{\beta_2}$, whose HDI
-        (0.46--0.72 wide at 40 sessions) is narrow enough to tell an effect of the
+        (0.47--0.73 wide at 40 sessions) is narrow enough to tell an effect of the
         size simulated here from 0; the between-session sds of $\beta_0$, $\beta_1$
         and $\beta_2$, with the caveats above.
   \item \textbf{Weakly determined:} the individual session coefficients, especially
@@ -575,7 +579,8 @@ Model C:
         without their HDIs.
   \item \textbf{Not identified:} $\sigma_{\gamma_h}$ and $\sigma_{\gamma_l}$. Their
         posteriors largely reflect the priors and should not be interpreted.
-  \item The sampler had no difficulties at any data size.
+  \item The sampler had no real difficulties: 2 divergences in 20 fits, both in the
+        smallest datasets.
 \end{itemize}
 
 \paragraph{What this study does not test.} The synthetic data follow Model C
