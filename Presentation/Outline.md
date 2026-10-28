@@ -234,45 +234,145 @@ Small note under the table: Posterior mean [95% HDI]. 12,937 trials, 4 chains ×
 
 # Section: Model B: Sessions Hierarchical
 
-## 25. Model B
-- A curve for every group *and session*, drawn from group-level distributions (means and between-session sds).
-- Design-based priors, checked by prior predictive simulation.
+### Subsection: Model Structure
 
-TODO: plate diagram or equations (Convergence_B_Report, "Model Structure")
+## 25. Model B: graphical model
+- TikZ plate diagram: hyperparameters $\mu_{\beta_0}, \sigma_{\beta_0}, \mu_{\beta_1}, \sigma_{\beta_1}, \mu_{\gamma_h}, \sigma_{\gamma_h}, \mu_{\gamma_l}, \sigma_{\gamma_l}$ → session parameters $\beta_{0,s}, \beta_{1,s}, \gamma_{h,s}, \gamma_{l,s}$ → $\psi_i$ ← $x_i$; $\psi_i$ → $r_i$ (observed)
+  - plates: trials $i$ in session $s$, inside sessions $s = 1,\dots,42$, inside "each of the 4 groups"
+- Small note below: Circles: random variables (shaded: observed); rectangle: deterministic; $x_i$: fixed covariate. The same model is fit independently to each group.
 
-## 26. Model B: convergence on synthetic data
-- Figure: Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png
-- Caption: TODO: what is recovered at the real data size (Convergence_B_Report, "Conclusions")
+## 26. Model B: likelihood
+For each group (left/right × unimanual/bimanual), fit independently to its $n \approx 3,230$ trials, now with a parameter set for every session $s$:
+Likelihood: probability of obtaining responses $\vec{r}$ given parameters $\vec{\theta} = (\vec{\theta}_s)_{s=1}^{42}$, $\vec{\theta}_s = (\beta_{0,s}, \beta_{1,s}, \gamma_{h,s}, \gamma_{l,s})$
+$r_i \sim \mathbf{Bernoulli}[\psi(x_i;\vec{\theta}_{s[i]})]$ ($s[i]$: the session of trial $i$), so:
 
-## 27. Model B: per-session recovery
-- Figure: Model_B/Plots_B/Convergence_Plots_B/session_params_error_width_coverage_vs_trials.png
-- Caption: TODO: per-session PSE and JND reliable at ~300 trials
+  $\mathbf{P}[r_i = z] = \psi(x_i;\vec{\theta}_{s[i]})^{z}\,(1-\psi(x_i;\vec{\theta}_{s[i]}))^{1-z}, \qquad z \in \{0, 1\}$
 
-## 28. Model B: fit to the real data
-- Figure: Model_B/Plots_B/Fit_Plots_B/ppc_pooled_by_stimulus.png
-- Caption: TODO: all 32 proportions inside; 99.8% of session cells (Fit_B_Report, "Posterior predictive checks")
+  $L(\vec{\theta};\vec{r}) = \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}_{s[i]}]$
+  $\qquad = \prod_{s=1}^{42} \prod_{i:\, s[i]=s} \psi(x_i;\vec{\theta}_s)^{r_i}\,(1-\psi(x_i;\vec{\theta}_s))^{1-r_i}$
 
-## 29. Model B: PSE shift in every session
-- Figure: Model_B/Plots_B/Fit_Plots_B/effect_PSE_by_session.png
-- Caption: TODO: shift negative in 40/42 (left) and 42/42 (right) sessions (Fit_B_Report, Summary)
+## 27. Model B: priors
+Session parameters drawn from the group's population (non-centered in the code):
 
-## 30. Model B: the shift grows with distractor amplitude (exploratory)
-- Figure: Model_B/Plots_B/Fit_Plots_B/effect_vs_distractor_amplitude.png
-- Caption: TODO: about −2 μm per 10 μm; confounded with session order
+  $\beta_{0,s} \sim \mathcal{N}(\mu_{\beta_0}, \sigma_{\beta_0})$, $\quad \gamma_{h,s} = 0.25\, w_{h,s},\ w_{h,s} \sim \text{LogitNormal}(\mu_{\gamma_h}, \sigma_{\gamma_h})$
+  $\beta_{1,s} \sim \mathcal{N}(\mu_{\beta_1}, \sigma_{\beta_1})$, $\quad \gamma_{l,s} = 0.25\, w_{l,s},\ w_{l,s} \sim \text{LogitNormal}(\mu_{\gamma_l}, \sigma_{\gamma_l})$
 
-## 31. Model B against Model A
-- Figure: Model_B/Plots_B/Fit_Plots_B/effect_A_vs_B.png
-- Caption: TODO: same effects; B better by LOO, 164 (SE 19) (Fit_B_Report, "Comparison with Model A")
+Hyperpriors, the same in every group:
 
-## 32. Is B's advantage real? Model recovery
-- Figure: Model_B/Plots_B/Model_Recov_Plots_BA/elpd_diff_by_replicate.png
-- Caption: TODO: B wins on all data from B, ties or loses on data from A (Model_Recov_BA_Report)
+  $\mu_{\beta_0} \sim \mathcal{N}(0, 2)$, $\quad \sigma_{\beta_0} \sim \text{HalfNormal}(2)$
+  $\mu_{\beta_1} \sim \text{LogNormal}(\log 4, 0.5)$, $\quad \sigma_{\beta_1} \sim \text{Exponential}(1)$
+  $\mu_{\gamma_h}, \mu_{\gamma_l} \sim \mathcal{N}(-3, 1.5)$, $\quad \sigma_{\gamma_h}, \sigma_{\gamma_l} \sim \text{HalfNormal}(0.5)$
+
+- Chosen from the design, checked by prior predictive simulation, not fit to the data
+- $\mu_{\beta_0}$: typical PSE within 13–43 μm with 90% probability
+- $\mu_{\beta_1} > 0$: median 4, 95% in $[1.5, 10.6]$; $\sigma_{\beta_1}$ keeps 98% of session slopes positive
+- Typical lapse rate: median 0.012, 95% in $[0.0007, 0.12]$
+
+### Subsection: Synthetic Data
+(numbers from Model_B/Convergence_B_Report)
+
+## 28. Model B on synthetic data: the study
+- Fixed true hyperparameters per group (group slopes $\mu_{\beta_1} = 3$ for the left hand, 6 for the right); session parameters drawn from them
+- Two sweeps, each run twice with new data:
+  - sessions: 5, 10, 20, 40, 80 sessions of 308 trials (tests the hyperparameters)
+  - trials: 42 sessions of 20, 40, 80, 160, 320 trials (tests the session parameters)
+- The real data (42 sessions of about 308 trials) are closest to the 40-session and 320-trial fits
+- All 20 fits sampled well: no divergences, $\hat{R} \le 1.010$, bulk ESS $\ge 579$
+
+## 29. Model B on synthetic data: group means
+- Figure (no caption, title cropped): Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png
+
+## 30. Model B on synthetic data: between-session sds
+- Figure (no caption, title cropped): Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png
+
+## 31. Model B on synthetic data: session-level recovery
+At 320 trials per session (42 sessions, both replicates): RMSE of the posterior mean / mean 95% HDI width / coverage
+
+| | left unimanual | left bimanual | right unimanual | right bimanual |
+|---|---|---|---|---|
+| PSE | 0.14 / 0.49 / 0.90 | 0.12 / 0.42 / 0.90 | 0.05 / 0.16 / 0.93 | 0.09 / 0.32 / 0.94 |
+| JND | 0.014 / 0.15 / 1.00 | 0.034 / 0.17 / 1.00 | 0.013 / 0.08 / 1.00 | 0.010 / 0.10 / 1.00 |
+| $\beta_0$ | 0.41 / 1.67 / 0.93 | 0.34 / 1.20 / 0.92 | 0.26 / 1.01 / 0.95 | 0.55 / 1.99 / 0.94 |
+| $\beta_1$ | 0.19 / 1.39 / 1.00 | 0.23 / 1.18 / 1.00 | 0.29 / 2.11 / 1.00 | 0.35 / 2.97 / 1.00 |
+| $\gamma_h$ | 0.003 / 0.047 / 1.00 | 0.012 / 0.052 / 1.00 | 0.009 / 0.071 / 1.00 | 0.013 / 0.062 / 1.00 |
+| $\gamma_l$ | 0.016 / 0.048 / 1.00 | 0.003 / 0.019 / 1.00 | 0.004 / 0.021 / 1.00 | 0.003 / 0.023 / 1.00 |
+
+Small note: PSE and JND in standardized units (1 unit = 14.6 μm).
+
+## 32. Model B on synthetic data: what is recoverable
+At the size of the real data (42 sessions of about 308 trials):
+- **Recoverable:** per-session PSE and JND; the group means $\mu_{\beta_0}$; $\mu_{\beta_1}$ for the left hand; the bias spread $\sigma_{\beta_0}$; $\mu_{\gamma_h}$ except for left bimanual
+- **Weakly constrained:** $\mu_{\beta_1}$ for steep curves (slope 6, right hand): the curve rises within one stimulus spacing, so only 2 levels inform it
+- **Biased in some datasets:** a lapse rate whose side of the curve never reaches its asymptote: $\gamma_l$ for left unimanual (too high), $\gamma_h$ for left bimanual (too low)
+- **Not identified:** $\sigma_{\beta_1}$, $\sigma_{\gamma_h}$, $\sigma_{\gamma_l}$ when their true values are near 0; their posteriors reflect the prior
+- Session-level HDIs mostly conservative; PSE coverage slightly low (0.90–0.94)
+
+### Subsection: Real Data
+(numbers from Model_B/Fit_B_Report)
+
+## 33. Model B on the real data: a typical session
+Table, quantities at the group-level means, posterior mean [95% HDI]:
+
+| | PSE (μm) | JND (μm) | $\gamma_h$ | $\gamma_l$ |
+|---|---|---|---|---|
+| left unimanual | 32.4 [31.6, 33.3] | 3.29 [2.95, 3.63] | 0.002 [0.000, 0.005] | 0.009 [0.000, 0.019] |
+| left bimanual | 28.2 [27.2, 29.2] | 3.89 [3.34, 4.46] | 0.023 [0.009, 0.037] | 0.009 [0.001, 0.017] |
+| right unimanual | 31.4 [30.3, 32.5] | 3.56 [3.23, 3.89] | 0.003 [0.000, 0.006] | 0.007 [0.000, 0.015] |
+| right bimanual | 25.5 [24.5, 26.5] | 3.95 [3.48, 4.44] | 0.036 [0.017, 0.056] | 0.010 [0.003, 0.018] |
+
+Small note: 4 chains × 5,000 draws: no divergences; $\hat{R} = 1.00$ and bulk ESS $\ge 2,210$ for all but 4 raw variables, whose only disagreement is a sign that does not enter the model.
+
+- The sessions differ in bias ($\sigma_{\beta_0} = 0.76$–1.01); left bimanual also in slope ($\sigma_{\beta_1} = 1.27$)
+- The between-session lapse sds sit near their prior (not identified)
+
+## 34. Model B on the real data: fitted curves in one session (04-13)
+- Figures side by side (no caption): Model_B/Plots_B/Fit_Plots_B/curves_left_04-13.png, curves_right_04-13.png
+
+## 35. Model B on the real data: PSE in each session
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/PSE_uni_bi_by_session.png (unimanual and bimanual per session, both hands)
+
+## 36. Model B on the real data: effect of the distractor on PSE
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_PSE_by_session.png (bimanual − unimanual per session)
+
+## 37. Model B on the real data: JND in each session
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/JND_uni_bi_by_session.png
+
+## 38. Model B on the real data: effect of the distractor on JND
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_JND_by_session.png
+
+## 39. Model B on the real data: $\gamma_h$ in each session
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/gamh_uni_bi_by_session.png
+
+## 40. Model B on the real data: effect of the distractor on $\gamma_h$
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_gamh_by_session.png
+
+## 41. Model B on the real data: $\gamma_l$ in each session
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/gaml_uni_bi_by_session.png
+
+## 42. Model B on the real data: effect of the distractor on $\gamma_l$
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_gaml_by_session.png
+
+## 43. Model B: PSE shift vs distractor amplitude (exploratory)
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_vs_distractor_amplitude.png
+
+## 44. Model B on the real data: the pooled data are reproduced
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/ppc_pooled_by_stimulus.png
+
+## 45. Model B: conclusions
+- Reliable fit; no systematic misfit, pooled or within sessions (elpd_loo = −3180.0, SE 64.3)
+- Effect of the distractor (bimanual − unimanual), average over the 42 sessions, posterior mean [95% HDI]:
+  - **PSE:** lowered, by −4.29 [−5.05, −3.52] μm (left) and −6.06 [−6.80, −5.34] μm (right); negative in 40/42 and 42/42 sessions
+  - **JND:** raised for the left hand, +1.03 [0.46, 1.59] μm, driven by a few sessions; unclear for the right, +0.49 [−0.07, 1.03] μm
+  - **$\gamma_h$:** raised, by +0.025 [0.009, 0.042] (left) and +0.035 [0.016, 0.054] (right)
+  - **$\gamma_l$:** no effect, 0.000 [−0.014, 0.013] (left) and +0.003 [−0.009, 0.015] (right)
+- The PSE shift grows with distractor amplitude, by about −2 μm per 10 μm (exploratory; amplitude is confounded with session order)
+- ⇒ Put the distractor amplitude into the model: Model C
 
 ---
 
 # Section: Model C: Distractor Amplitude as a Covariate
 
-## 33. Model C
+## 46. Model C
   $\psi(x, d) = \gamma_h + (1 - \gamma_h - \gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x + \beta_2 d)$
 
 - $d$: distractor amplitude (0 on unimanual trials); one group per hand.
@@ -280,31 +380,31 @@ TODO: plate diagram or equations (Convergence_B_Report, "Model Structure")
 
 TODO: why: test the amplitude trend from Model B inside a model
 
-## 34. Model C: prior on the distractor effect
+## 47. Model C: prior on the distractor effect
 - Figure: Model_C/Plots_C/Convergence_Plots_C/Prior_Check_C_distractor.png
 - Caption: TODO: weakly informative; a weak distractor can only shift a little (Convergence_C_Report)
 
-## 35. Model C: convergence on synthetic data
+## 48. Model C: convergence on synthetic data
 - Figure: Model_C/Plots_C/Convergence_Plots_C/hyper_means_recovery_vs_sessions.png
 - Caption: TODO: all hand-level means recovered, $\mu_{\beta_2}$ well (Convergence_C_Report, "Conclusions")
 
-## 36. Model C: per-session $\beta_2$ is weak for small distractors
+## 49. Model C: per-session $\beta_2$ is weak for small distractors
 - Figure: Model_C/Plots_C/Convergence_Plots_C/session_b2_true_vs_recovered.png
 - Caption: TODO: shrinkage toward the hand mean at 6 μm
 
-## 37. Model C: the shift grows with distractor amplitude
+## 50. Model C: the shift grows with distractor amplitude
 - Figure: Model_C/Plots_C/Fit_Plots_C/pse_shift_vs_amplitude.png
 - Caption: TODO: $\mu_{\beta_2}$ and the typical shift at 6 and 32 μm (Fit_C_Report, "Effect of the Distractor")
 
-## 38. Model C misfits at the weakest stimuli
+## 51. Model C misfits at the weakest stimuli
 - Figure: Model_C/Plots_C/Fit_Plots_C/ppc_pooled_by_stimulus.png
 - Caption: TODO: shared lapse rates: 6 of 32 proportions outside (Fit_C_Report, "Posterior predictive check")
 
-## 39. Model C against Model B
+## 52. Model C against Model B
 - Figure: Model_C/Plots_C/Fit_Plots_C/pse_shift_C_vs_B.png
 - Caption: TODO: LOO favors B by 37 (SE 12); 6 μm shifts too small (Fit_C_Report, Comparison)
 
-## 40. Model C: shift by distractor amplitude, observed vs predicted
+## 53. Model C: shift by distractor amplitude, observed vs predicted
 - Figure: Model_C/Plots_C/Fit_Plots_C/ppc_by_distractor_amplitude.png
 - Caption: TODO: right hand at 6 μm outside: a presence effect (Fit_C_Report, amplitude check)
 
@@ -312,7 +412,7 @@ TODO: why: test the amplitude trend from Model B inside a model
 
 # Section: Summary
 
-## 41. Comparison of the models
+## 54. Comparison of the models
 Table:
 
 | | A | B | C |
@@ -324,13 +424,13 @@ Table:
 
 TODO: fill from Fit_A/B/C_Report; elpd differences from Fit_B and Fit_C
 
-## 42. Conclusions
+## 55. Conclusions
 - The distractor lowers the PSE: TODO: size, both hands.
 - It raises the rate of "high" responses to weak stimuli ($\gamma_h$).
 - The sessions differ; a hierarchical model is needed.
 - The shift grows with distractor amplitude, TODO: but not proportionally?
 
-## 43. Next steps
+## 56. Next steps
 - Revise Model C: lapse rates per condition, a distractor-presence term, possibly a bimanual slope.
 - Model recovery for B against the revised C.
 - TODO: further data or experiments

@@ -52,6 +52,16 @@
     \par\vspace{0.4em}{\small #3}
   \end{frame}}
 
+% a frame with one figure as large as fits and no caption; the figure's own title is
+% cropped off (the analysis scripts' PNGs are 200 dpi with the title in the top 61 px,
+% and 22 bp = 61 px), since the frame title replaces it
+\newcommand{\plotframe}[2]{%
+  \begin{frame}{#1}
+    \centering
+    \includegraphics[width=\textwidth,height=0.86\textheight,keepaspectratio,
+                     trim=0 0 0 22bp,clip]{#2}
+  \end{frame}}
+
 % ---- trial schematic (slide "The task: one trial") -------------------------
 \tikzset{
   handline/.style={line width=1.1pt, line join=round, draw=muted},

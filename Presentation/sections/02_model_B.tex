@@ -1,45 +1,250 @@
 % !TEX root = ../Presentation.tex
 % ---------------------------------------------------------------------------
-% Model B: hierarchical over sessions; comparison with Model A
-% Reports: Model_B/Convergence_B_Report.tex, Model_B/Fit_B_Report.tex,
-%          Model_B/Model_Recov_BA_Report.tex
+% Model B: hierarchical over sessions
+% Reports: Model_B/Convergence_B_Report.tex, Model_B/Fit_B_Report.tex
+% (the comparison with Model A is in sections/04_comparison.tex)
 % ---------------------------------------------------------------------------
 \section{Model B: Sessions Hierarchical}
 
-\begin{frame}{Model B}
-  \begin{itemize}
-    \item A curve for every group \emph{and session}, drawn from group-level
-          distributions (means and between-session sds).
-    \item Design-based priors, checked by prior predictive simulation.
-  \end{itemize}
+\subsection{Model Structure}
+
+% graphical model, likelihood and priors follow Model_B/Build_Model_B.py and
+% Convergence_B_Report, "Model Structure"
+\begin{frame}{Model B: graphical model}
+  \centering
+  \begin{tikzpicture}[gm, scale=0.82, transform shape]
+    \foreach \n/\lab [count=\k from 0] in {mub0/\mu_{\beta_0}, sb0/\sigma_{\beta_0},
+        mub1/\mu_{\beta_1}, sb1/\sigma_{\beta_1}, mugh/\mu_{\gamma_h}, sgh/\sigma_{\gamma_h},
+        mugl/\mu_{\gamma_l}, sgl/\sigma_{\gamma_l}}
+      \node[latent] (\n) at (1.1*\k, 0) {$\lab$};
+
+    \node[latent] (b0) at ($(mub0)!0.5!(sb0) + (0,-1.6)$) {$\beta_{0,s}$};
+    \node[latent] (b1) at ($(mub1)!0.5!(sb1) + (0,-1.6)$) {$\beta_{1,s}$};
+    \node[latent] (gh) at ($(mugh)!0.5!(sgh) + (0,-1.6)$) {$\gamma_{h,s}$};
+    \node[latent] (gl) at ($(mugl)!0.5!(sgl) + (0,-1.6)$) {$\gamma_{l,s}$};
+
+    \node[det] (psi) at ($(b1)!0.5!(gh) + (0,-1.4)$) {$\psi_i$};
+    \node[obs, below=0.5cm of psi] (r) {$r_i$};
+    \node[const, right=0.8cm of psi] (x) {$x_i$};
+
+    \foreach \h/\p in {mub0/b0, sb0/b0, mub1/b1, sb1/b1, mugh/gh, sgh/gh, mugl/gl, sgl/gl}
+      \draw[arr] (\h) -- (\p);
+    \foreach \p in {b0, b1, gh, gl}
+      \draw[arr] (\p) -- (psi);
+    \draw[arr] (x) -- (psi);
+    \draw[arr] (psi) -- (r);
+
+    \node[plate, fit=(x)(psi)(r), inner sep=5pt] (ptrial) {};
+    \node[font=\scriptsize, anchor=north east] at (ptrial.south east) {trials $i$ in session $s$};
+    \node[plate, fit=(b0)(gl)(ptrial), inner sep=12pt] (psess) {};
+    \node[font=\scriptsize, anchor=south west] at (psess.south west) {sessions $s = 1,\dots,42$};
+    \node[plate, fit=(mub0)(sgl)(psess), inner sep=8pt] (pgroup) {};
+    \node[font=\scriptsize, anchor=north east] at (pgroup.south east) {each of the 4 groups};
+  \end{tikzpicture}
+
   \vfill
-  \todo{plate diagram or equations (Convergence\_B\_Report, ``Model Structure'')}
+  {\scriptsize\color{muted} Circles: random variables (shaded: observed); rectangle:
+  deterministic; $x_i$: fixed covariate. The same model is fit independently to each group.}
 \end{frame}
 
-\figframe{Model B: convergence on synthetic data}
+\begin{frame}{Model B: likelihood}
+  For each group (left/right $\times$ unimanual/bimanual), fit independently to its
+  $n \approx 3{,}230$ trials, now with a parameter set for every session $s$:\\[0.3em]
+  Likelihood: probability of obtaining responses $\vec{r}$ given parameters
+  $\vec{\theta} = (\vec{\theta}_s)_{s=1}^{42}$,
+  $\vec{\theta}_s = (\beta_{0,s}, \beta_{1,s}, \gamma_{h,s}, \gamma_{l,s})$\\
+  $r_i \sim \mathbf{Bernoulli}[\psi(x_i;\vec{\theta}_{s[i]})]$ ($s[i]$: the session of trial $i$), so:
+  \[
+    \mathbf{P}[r_i = z] = \psi(x_i;\vec{\theta}_{s[i]})^{z}\,
+                          \big(1-\psi(x_i;\vec{\theta}_{s[i]})\big)^{1-z},
+    \qquad z \in \{0, 1\}
+  \]
+  \begin{align*}
+    L(\vec{\theta};\vec{r}) &= \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}_{s[i]}]\\
+    &= \prod_{s=1}^{42}\ \prod_{i:\, s[i]=s} \psi(x_i;\vec{\theta}_s)^{r_i}\,
+       \big(1-\psi(x_i;\vec{\theta}_s)\big)^{1-r_i}
+  \end{align*}
+\end{frame}
+
+\begin{frame}{Model B: priors}
+  Session parameters drawn from the group's population (non-centered in the code):
+  \begin{align*}
+    \beta_{0,s} &\sim \mathcal{N}(\mu_{\beta_0},\ \sigma_{\beta_0}), &
+    \gamma_{h,s} &= 0.25\, w_{h,s}, \quad w_{h,s} \sim \text{LogitNormal}(\mu_{\gamma_h},\ \sigma_{\gamma_h}) \\
+    \beta_{1,s} &\sim \mathcal{N}(\mu_{\beta_1},\ \sigma_{\beta_1}), &
+    \gamma_{l,s} &= 0.25\, w_{l,s}, \quad w_{l,s} \sim \text{LogitNormal}(\mu_{\gamma_l},\ \sigma_{\gamma_l})
+  \end{align*}
+  Hyperpriors, the same in every group:
+  \begin{align*}
+    \mu_{\beta_0} &\sim \mathcal{N}(0,\ 2), & \sigma_{\beta_0} &\sim \text{HalfNormal}(2), \\
+    \mu_{\beta_1} &\sim \text{LogNormal}(\log 4,\ 0.5), & \sigma_{\beta_1} &\sim \text{Exponential}(1), \\
+    \mu_{\gamma_h},\ \mu_{\gamma_l} &\sim \mathcal{N}(-3,\ 1.5), &
+    \sigma_{\gamma_h},\ \sigma_{\gamma_l} &\sim \text{HalfNormal}(0.5)
+  \end{align*}
+  \vspace{-0.6em}
+  {\small
+  \begin{itemize}
+    \item Chosen from the design, checked by prior predictive simulation, not fit to the data
+    \item $\mu_{\beta_0}$: typical PSE within 13--43~$\mu m$ with 90\% probability
+    \item $\mu_{\beta_1} > 0$: median 4, 95\% in $[1.5,\ 10.6]$; $\sigma_{\beta_1}$ keeps 98\% of
+          session slopes positive
+    \item Typical lapse rate: median 0.012, 95\% in $[0.0007,\ 0.12]$
+  \end{itemize}}
+\end{frame}
+
+\subsection{Synthetic Data}
+
+% numbers from Model_B/Convergence_B_Report.tex (made by Convergence_B.py)
+\begin{frame}{Model B on synthetic data: the study}
+  \begin{itemize}
+    \item Fixed true hyperparameters per group (group slopes $\mu_{\beta_1} = 3$ for the left
+          hand, 6 for the right); session parameters drawn from them
+    \item Two sweeps, each run twice with new data:
+    \begin{itemize}
+      \item sessions: 5, 10, 20, 40, 80 sessions of 308 trials (tests the hyperparameters)
+      \item trials: 42 sessions of 20, 40, 80, 160, 320 trials (tests the session parameters)
+    \end{itemize}
+    \item The real data (42 sessions of about 308 trials) are closest to the 40-session and
+          320-trial fits
+    \item All 20 fits sampled well: no divergences, $\hat{R} \le 1.010$, bulk ESS $\ge 579$
+  \end{itemize}
+\end{frame}
+
+\plotframe{Model B on synthetic data: group means}
   {\plotsB/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png}
-  {\todo{what is recovered at the real data size (Convergence\_B\_Report, ``Conclusions'')}}
 
-\figframe{Model B: per-session recovery}
-  {\plotsB/Convergence_Plots_B/session_params_error_width_coverage_vs_trials.png}
-  {\todo{per-session PSE and JND reliable at $\sim$300 trials}}
+\plotframe{Model B on synthetic data: between-session sds}
+  {\plotsB/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png}
 
-\figframe{Model B: fit to the real data}
-  {\plotsB/Fit_Plots_B/ppc_pooled_by_stimulus.png}
-  {\todo{all 32 proportions inside; 99.8\% of session cells (Fit\_B\_Report, ``Posterior predictive checks'')}}
+\begin{frame}{Model B on synthetic data: session-level recovery}
+  At 320 trials per session (42 sessions, both replicates):
+  RMSE of the posterior mean / mean 95\% HDI width / coverage
+  \vspace{0.5em}
 
-\figframe{Model B: PSE shift in every session}
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lcccc}
+    \toprule
+     & left unimanual & left bimanual & right unimanual & right bimanual \\
+    \midrule
+    PSE        & 0.14 / 0.49 / 0.90 & 0.12 / 0.42 / 0.90 & 0.05 / 0.16 / 0.93 & 0.09 / 0.32 / 0.94 \\
+    JND        & 0.014 / 0.15 / 1.00 & 0.034 / 0.17 / 1.00 & 0.013 / 0.08 / 1.00 & 0.010 / 0.10 / 1.00 \\
+    $\beta_0$  & 0.41 / 1.67 / 0.93 & 0.34 / 1.20 / 0.92 & 0.26 / 1.01 / 0.95 & 0.55 / 1.99 / 0.94 \\
+    $\beta_1$  & 0.19 / 1.39 / 1.00 & 0.23 / 1.18 / 1.00 & 0.29 / 2.11 / 1.00 & 0.35 / 2.97 / 1.00 \\
+    $\gamma_h$ & 0.003 / 0.047 / 1.00 & 0.012 / 0.052 / 1.00 & 0.009 / 0.071 / 1.00 & 0.013 / 0.062 / 1.00 \\
+    $\gamma_l$ & 0.016 / 0.048 / 1.00 & 0.003 / 0.019 / 1.00 & 0.004 / 0.021 / 1.00 & 0.003 / 0.023 / 1.00 \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.5em}
+  \raggedright
+  {\footnotesize PSE and JND in standardized units (1 unit = 14.6~$\mu m$).}
+\end{frame}
+
+\begin{frame}{Model B on synthetic data: what is recoverable}
+  At the size of the real data (42 sessions of about 308 trials):
+  \begin{itemize}
+    \item \textbf{Recoverable:} per-session PSE and JND; the group means $\mu_{\beta_0}$;
+          $\mu_{\beta_1}$ for the left hand; the bias spread $\sigma_{\beta_0}$;
+          $\mu_{\gamma_h}$ except for left bimanual
+    \item \textbf{Weakly constrained:} $\mu_{\beta_1}$ for steep curves (slope 6, right hand):
+          the curve rises within one stimulus spacing, so only 2 levels inform it
+    \item \textbf{Biased in some datasets:} a lapse rate whose side of the curve never reaches
+          its asymptote: $\gamma_l$ for left unimanual (too high), $\gamma_h$ for left bimanual
+          (too low)
+    \item \textbf{Not identified:} $\sigma_{\beta_1}$, $\sigma_{\gamma_h}$, $\sigma_{\gamma_l}$ when
+          their true values are near 0; their posteriors reflect the prior
+    \item Session-level HDIs mostly conservative; PSE coverage slightly low (0.90--0.94)
+  \end{itemize}
+\end{frame}
+
+\subsection{Real Data}
+
+% numbers from Model_B/Fit_B_Report.tex (made by Main_Analysis_B.py)
+\begin{frame}{Model B on the real data: a typical session}
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lcccc}
+    \toprule
+     & PSE ($\mu m$) & JND ($\mu m$) & $\gamma_h$ & $\gamma_l$ \\
+    \midrule
+    left unimanual  & 32.4 [31.6, 33.3] & 3.29 [2.95, 3.63] & 0.002 [0.000, 0.005] & 0.009 [0.000, 0.019] \\
+    left bimanual   & 28.2 [27.2, 29.2] & 3.89 [3.34, 4.46] & 0.023 [0.009, 0.037] & 0.009 [0.001, 0.017] \\
+    right unimanual & 31.4 [30.3, 32.5] & 3.56 [3.23, 3.89] & 0.003 [0.000, 0.006] & 0.007 [0.000, 0.015] \\
+    right bimanual  & 25.5 [24.5, 26.5] & 3.95 [3.48, 4.44] & 0.036 [0.017, 0.056] & 0.010 [0.003, 0.018] \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.6em}
+  {\scriptsize Quantities at the group-level means, posterior mean [95\% HDI]. 4 chains
+  $\times$ 5{,}000 draws: no divergences; $\hat{R} = 1.00$ and bulk ESS $\ge 2{,}210$
+  for all but 4 raw variables, whose only disagreement is a sign that does not enter
+  the model.}
+
+  \vfill
+  \raggedright
+  \begin{itemize}
+    \item The sessions differ in bias ($\sigma_{\beta_0} = 0.76$--1.01); left bimanual
+          also in slope ($\sigma_{\beta_1} = 1.27$)
+    \item The between-session lapse sds sit near their prior (not identified)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Model B on the real data: fitted curves in one session (04-13)}
+  \centering
+  \includegraphics[width=0.48\textwidth]{\plotsB/Fit_Plots_B/curves_left_04-13.png}\hfill
+  \includegraphics[width=0.48\textwidth]{\plotsB/Fit_Plots_B/curves_right_04-13.png}
+\end{frame}
+
+\plotframe{Model B on the real data: PSE in each session}
+  {\plotsB/Fit_Plots_B/PSE_uni_bi_by_session.png}
+
+\plotframe{Model B on the real data: effect of the distractor on PSE}
   {\plotsB/Fit_Plots_B/effect_PSE_by_session.png}
-  {\todo{shift negative in 40/42 (left) and 42/42 (right) sessions (Fit\_B\_Report, Summary)}}
 
-\figframe{Model B: the shift grows with distractor amplitude (exploratory)}
+\plotframe{Model B on the real data: JND in each session}
+  {\plotsB/Fit_Plots_B/JND_uni_bi_by_session.png}
+
+\plotframe{Model B on the real data: effect of the distractor on JND}
+  {\plotsB/Fit_Plots_B/effect_JND_by_session.png}
+
+\plotframe{Model B on the real data: $\gamma_h$ in each session}
+  {\plotsB/Fit_Plots_B/gamh_uni_bi_by_session.png}
+
+\plotframe{Model B on the real data: effect of the distractor on $\gamma_h$}
+  {\plotsB/Fit_Plots_B/effect_gamh_by_session.png}
+
+\plotframe{Model B on the real data: $\gamma_l$ in each session}
+  {\plotsB/Fit_Plots_B/gaml_uni_bi_by_session.png}
+
+\plotframe{Model B on the real data: effect of the distractor on $\gamma_l$}
+  {\plotsB/Fit_Plots_B/effect_gaml_by_session.png}
+
+\plotframe{Model B: PSE shift vs distractor amplitude (exploratory)}
   {\plotsB/Fit_Plots_B/effect_vs_distractor_amplitude.png}
-  {\todo{about $-2~\mu m$ per 10~$\mu m$; confounded with session order}}
 
-\figframe{Model B against Model A}
-  {\plotsB/Fit_Plots_B/effect_A_vs_B.png}
-  {\todo{same effects; B better by LOO, 164 (SE 19) (Fit\_B\_Report, ``Comparison with Model A'')}}
+\plotframe{Model B on the real data: the pooled data are reproduced}
+  {\plotsB/Fit_Plots_B/ppc_pooled_by_stimulus.png}
 
-\figframe{Is B's advantage real? Model recovery}
-  {\plotsB/Model_Recov_Plots_BA/elpd_diff_by_replicate.png}
-  {\todo{B wins on all data from B, ties or loses on data from A (Model\_Recov\_BA\_Report)}}
+\begin{frame}{Model B: conclusions}
+  \small
+  \begin{itemize}
+    \item Reliable fit; no systematic misfit, pooled or within sessions
+          ($\text{elpd}_\text{loo} = -3180.0$, SE 64.3)
+    \item Effect of the distractor (bimanual $-$ unimanual), average over the 42 sessions,
+          posterior mean [95\% HDI]:
+    \begin{itemize}
+      \item \textbf{PSE:} lowered, by $-4.29$ [$-5.05$, $-3.52$]~$\mu m$ (left) and
+            $-6.06$ [$-6.80$, $-5.34$]~$\mu m$ (right); negative in 40/42 and 42/42 sessions
+      \item \textbf{JND:} raised for the left hand, $+1.03$ [0.46, 1.59]~$\mu m$, driven by a
+            few sessions; unclear for the right, $+0.49$ [$-0.07$, 1.03]~$\mu m$
+      \item \textbf{\boldmath$\gamma_h$:} raised, by $+0.025$ [0.009, 0.042] (left) and
+            $+0.035$ [0.016, 0.054] (right)
+      \item \textbf{\boldmath$\gamma_l$:} no effect, $0.000$ [$-0.014$, 0.013] (left) and
+            $+0.003$ [$-0.009$, 0.015] (right)
+    \end{itemize}
+    \item The PSE shift grows with distractor amplitude, by about $-2$~$\mu m$ per 10~$\mu m$
+          (exploratory; amplitude is confounded with session order)
+    \item[$\Rightarrow$] Put the distractor amplitude into the model: Model C
+  \end{itemize}
+\end{frame}
