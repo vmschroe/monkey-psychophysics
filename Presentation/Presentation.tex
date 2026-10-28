@@ -13,6 +13,7 @@
 \usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{multicol}
 \usepackage{tikz}
 \usetikzlibrary{decorations.pathmorphing,positioning,fit,arrows.meta,calc}
 
@@ -136,14 +137,18 @@
 \end{frame}
 
 \begin{frame}{Outline}
-  \tableofcontents
+  \small
+  \begin{multicols}{2}
+    \tableofcontents
+  \end{multicols}
 \end{frame}
 
 \input{sections/00_intro}
 \input{sections/01_model_A}
 \input{sections/02_model_B}
 \input{sections/03_model_C}
-\input{sections/04_summary}
+\input{sections/04_comparison}
+\input{sections/05_summary}
 
 \appendix
 %%\input{sections/99_backup}

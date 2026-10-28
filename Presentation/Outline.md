@@ -507,9 +507,129 @@ Small note: PSE, JND and lapse rates of a typical session (JND and lapse rates a
 
 ---
 
+# Section: Model Comparison and Recovery
+
+### Subsection: Predictive Performance
+
+## 63. Leave-one-out cross-validation
+All three models fit to the same 12,937 trials in the same order, so the difference between two models can be computed trial by trial:
+
+| Model | elpd_loo (SE) | p_loo | difference (SE) |
+|---|---|---|---|
+| A: sessions pooled | −3344.0 (64.5) | 13.4 | B − A: +164.1 (19.2) |
+| B: sessions hierarchical | −3180.0 (64.3) | 178.7 | **best** |
+| C: distractor as covariate | −3217.0 (65.7) | 138.6 | C − B: −37.1 (11.9) |
+
+- B beats A by 8.5 standard errors, despite 179 effective parameters against 13
+- B beats C by 3.1 standard errors, although C needs fewer effective parameters
+- Every Pareto $k$ below 0.7, so the PSIS-LOO estimates are reliable
+
+### Subsection: Model B vs Model A
+(numbers from Model_B/Fit_B_Report, "Comparison with Model A")
+
+## 64. Model B vs Model A: the distractor effects agree
+- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_A_vs_B.png
+
+## 65. Model B vs Model A: pooling inflates the JND
+Posterior means: Model A (sessions pooled) against the average of Model B's 42 session estimates
+
+| | PSE A | PSE B | JND A | JND B | $\gamma_h$ A | $\gamma_h$ B | $\gamma_l$ A | $\gamma_l$ B |
+|---|---|---|---|---|---|---|---|---|
+| left unimanual | 32.58 | 32.45 | 3.56 | 3.31 | 0.002 | 0.002 | 0.009 | 0.010 |
+| left bimanual | 28.38 | 28.16 | 4.39 | 4.34 | 0.041 | 0.027 | 0.016 | 0.010 |
+| right unimanual | 31.57 | 31.44 | 4.10 | 3.57 | 0.003 | 0.003 | 0.006 | 0.008 |
+| right bimanual | 25.50 | 25.38 | 4.36 | 4.06 | 0.045 | 0.038 | 0.012 | 0.011 |
+
+- PSEs agree to within 0.22 μm
+- Model A's JNDs are 0.05–0.52 μm larger: averaging curves whose PSEs drift from session to session gives a shallower curve than any single session has
+- Model A's bimanual $\gamma_h$ is also higher: it absorbs low-PSE sessions as lapses
+
+### Subsection: Model Recovery: B vs A
+(numbers from Model_B/Model_Recov_BA_Report)
+
+## 66. Model recovery: is B's advantage real?
+Two questions before reading B's win as session-to-session variation:
+1. Can LOO identify the model that generated a dataset of this size and design?
+2. Could B win just because it is more flexible? B contains A as the case of no between-session variation.
+
+Design:
+- 10 replicates, each with two synthetic datasets on the real trial design (12,937 trials in 42 sessions)
+  - **data A:** responses from Model A, true values = A's real-data posterior means
+  - **data B:** session parameters drawn from B's real-data hyperparameters
+- Both models fit to every dataset; LOO picks the model with the higher elpd_loo; $\Delta = \text{elpd}(\text{B}) - \text{elpd}(\text{A})$
+
+## 67. Model recovery: LOO picks the generating model
+
+| | selects A | selects B |
+|---|---|---|
+| data from A | 9 | 1 |
+| data from B | 0 | 10 |
+
+- **Data from B:** B wins every time by a wide margin, $\Delta$ = 150.2 to 282.4 ($z$ = 8.2 to 11.1); B's p_loo = 167–190
+- **Data from A:** A wins 9 of 10, but narrowly, $\Delta$ = −6.8 to +1.6; the one B win is a near-tie ($z$ = 0.36). B mimics A by shrinking its sds (p_loo = 54–84)
+- **Real data:** $\Delta$ = 164.1 and p_loo = 178.7, inside the data-from-B range and far outside the data-from-A range
+
+## 68. Model recovery: $\Delta$ in every replicate
+- Figure (no caption, title cropped): Model_B/Plots_B/Model_Recov_Plots_BA/elpd_diff_by_replicate.png
+
+## 69. Model recovery: conclusions
+- With this design and data size, LOO identifies session-to-session variation reliably: B wins every time with $z > 8$ when the variation is there
+- B's flexibility alone does not make it win: on data without session variation it loses or ties ($\Delta \le 1.6$)
+- The real data look like the data-from-B replicates in both $\Delta$ and p_loo: the psychometric curves do vary between sessions
+- The reverse, confirming that variation is absent, is only weakly answered: the more flexible model loses by just a few elpd points when the simpler one is true
+- Limits: 10 replicates per model; one set of B hyperparameters (with smaller between-session sds the gap would shrink)
+
+### Subsection: Model C vs Model B
+(numbers from Model_C/Fit_C_Report, "Comparison with Model B")
+
+## 70. Model C vs Model B: where C loses
+elpd_loo(C) − elpd_loo(B) summed over the trials at each amplitude; negative values favor Model B
+
+| stimulus (μm) | left bimanual | left unimanual | right bimanual | right unimanual |
+|---|---|---|---|---|
+| 6 | −6.6 | −3.5 | −5.1 | −2.3 |
+| 12 | −4.2 | −3.0 | −1.8 | −2.8 |
+| 18 | 0.7 | −1.6 | −3.4 | −0.3 |
+| 24 | −1.0 | 0.8 | 1.9 | 0.8 |
+| 32 | −0.1 | −3.4 | 0.3 | 1.7 |
+| 38 | −0.3 | −1.4 | 0.2 | 1.6 |
+| 44 | 0.0 | −3.8 | 0.4 | −1.5 |
+| 50 | −0.1 | 0.3 | 0.1 | 0.0 |
+
+- 29.2 of the 37.1 are lost at 6 and 12 μm: one lapse rate for both conditions
+- Next: left unimanual at 32 and 44 μm: one slope for both conditions
+
+## 71. Model C vs Model B: session PSE shifts
+- Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/pse_shift_C_vs_B.png
+
+## 72. Model C vs Model B: the weakest distractor
+Session PSE shifts (μm): mean, and range of the posterior means, over the sessions at the weakest and strongest distractor
+
+| hand | distractor | Model B | Model C |
+|---|---|---|---|
+| left | 6 μm (8 sessions) | −1.13 (−3.82 to 0.41) | −1.34 (−1.59 to −1.18) |
+| left | 32 μm (13 sessions) | −6.67 (−10.12 to −0.44) | −7.40 (−11.80 to −2.91) |
+| right | 6 μm (8 sessions) | −3.91 (−6.74 to −2.06) | −1.75 (−1.88 to −1.64) |
+| right | 32 μm (13 sessions) | −7.90 (−11.28 to −3.72) | −8.58 (−10.58 to −6.36) |
+
+- The models agree on the average shift and, for the left hand, on the session shifts ($r$ = 0.91)
+- For the right hand at 6 μm, B's shift is more than twice C's: C ties the shift to the amplitude, so a weak distractor must give a small shift
+- Suggests an effect of the distractor being present, on top of its amplitude
+
+## 73. Model comparison: conclusions
+- **Sessions differ:** B predicts far better than A, and model recovery shows this is not B's flexibility alone. A's pooling inflates the JND and bimanual $\gamma_h$.
+- **The models agree on the PSE shift:** about −4.2 to −4.5 μm (left) and −5.7 to −6.1 μm (right) on average.
+- **The shift depends on amplitude, but not only:** C confirms the trend inside a model, yet B still predicts better. C's misfit points to
+  - lapse rates per condition (the strongest evidence)
+  - a distractor-presence term, so the shift is not forced to 0 for a weak distractor
+  - possibly a bimanual slope, which would let the distractor change the JND
+- ⇒ Model B is the model to use for inference for now
+
+---
+
 # Section: Summary
 
-## 63. Comparison of the models
+## 74. Comparison of the models
 Table:
 
 | | A | B | C |
@@ -521,13 +641,13 @@ Table:
 
 TODO: fill from Fit_A/B/C_Report; elpd differences from Fit_B and Fit_C
 
-## 64. Conclusions
+## 75. Conclusions
 - The distractor lowers the PSE: TODO: size, both hands.
 - It raises the rate of "high" responses to weak stimuli ($\gamma_h$).
 - The sessions differ; a hierarchical model is needed.
 - The shift grows with distractor amplitude, TODO: but not proportionally?
 
-## 65. Next steps
+## 76. Next steps
 - Revise Model C: lapse rates per condition, a distractor-presence term, possibly a bimanual slope.
 - Model recovery for B against the revised C.
 - TODO: further data or experiments
