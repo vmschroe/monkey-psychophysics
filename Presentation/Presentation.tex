@@ -14,6 +14,7 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing}
 
 % ---- style: Beamer's default theme, colors from the plots' palette --------
 \usetheme{default}
@@ -51,11 +52,61 @@
     \par\vspace{0.4em}{\small #3}
   \end{frame}}
 
+% ---- trial schematic (slide "The task: one trial") -------------------------
+\tikzset{
+  handline/.style={line width=1.1pt, line join=round, draw=muted},
+  stimprobe/.style={line width=1.3pt, draw=plotblue, decorate,
+    decoration={zigzag, amplitude=2.6mm, segment length=3.2mm,
+                pre length=5.5mm, post length=5.5mm}},
+  distprobe/.style={line width=1.3pt, draw=plotorange, decorate,
+    decoration={zigzag, amplitude=1mm, segment length=1.1mm,
+                pre length=5mm, post length=5mm}},
+  noprobe/.style={line width=1.3pt, draw=plotorange},
+  handstroke/.style={handline, fill=white},
+  handfill/.style={fill=white},
+}
+% an open hand, fingers up, at (#1); #2 = 1 (thumb left) or -1 (thumb right); #3 = palm label
+\newcommand{\trialhand}[3]{%
+  \begin{scope}[shift={(#1)}, scale=1.35]
+    \begin{scope}[xscale=#2]
+      \clip (-1.5,-0.62) rectangle (1.5,2);
+      % outline of the union: stroke every part, then fill every part on top
+      \foreach \opt in {handstroke, handfill} {
+        \foreach \x/\h in {-0.3/1.25, -0.1/1.42, 0.1/1.36, 0.3/1.15}
+          \path[\opt, rounded corners=2.6pt] (\x-0.085,0.4) rectangle (\x+0.085,\h);
+        \path[\opt, rotate around={38:(-0.33,0.1)}, rounded corners=2.6pt]
+          (-0.42,0.05) rectangle (-0.24,0.78);
+        \path[\opt, rounded corners=5pt] (-0.4,-0.05) rectangle (0.4,0.62);
+        \path[\opt] (-0.3,-0.8) rectangle (0.3,0.1);
+      }
+    \end{scope}
+    \node[font=\scriptsize, muted] at (0,0.22) {#3};
+  \end{scope}}
+% one trial panel at x-offset #1; #2 = 1 for bimanual (distractor on), 0 for unimanual
+\newcommand{\trialpanel}[2]{%
+  \begin{scope}[shift={(#1,0)}]
+    \trialhand{0,0}{1}{stim}
+    \trialhand{2.6,0}{-1}{dist}
+    \draw[stimprobe] (0,2.1) -- (0,4.6);
+    \node[plotblue, left] at (-0.35,3.35) {$x_\text{stim}$};
+    \ifnum#2=1
+      \draw[distprobe] (2.6,2.1) -- (2.6,4.6);
+      \node[plotorange, right] at (2.85,3.35) {$x_\text{d}$};
+      \node[align=center, font=\small\bfseries] at (1.3,5.35)
+        {bimanual trial\\[-1pt]{\normalfont\scriptsize\color{muted}(with distractor)}};
+    \else
+      \draw[noprobe] (2.6,2.1) -- (2.6,4.6);
+      \node[plotorange, right] at (2.7,3.35) {$x_\text{d} = 0$};
+      \node[align=center, font=\small\bfseries] at (1.3,5.35)
+        {unimanual trial\\[-1pt]{\normalfont\scriptsize\color{muted}(no distractor)}};
+    \fi
+  \end{scope}}
+
 % ---- title ---------------------------------------------------------------------
 \title{Modeling Bimanual Perceptual Interactions in Macaque Monkeys}
 \subtitle{Bayesian Hierarchical Modeling}
 \author{Vera Schroeder}
-\date{October 22, 2026}
+\date{October 29, 2026}
 
 \begin{document}
 

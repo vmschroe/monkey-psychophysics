@@ -1,3 +1,4 @@
+% !TEX root = ../Presentation.tex
 % ---------------------------------------------------------------------------
 % Introduction: task, data, question, modeling approach
 % ---------------------------------------------------------------------------
@@ -9,12 +10,12 @@
     \begin{itemize}
       \item administered to one finger of one hand (left or right)
     \end{itemize}
-    \item distractor $x_\text{dist} \in \{0, x_\text{d}\} \mu m$ 
+    \item \textcolor{muted!60}{distractor $x_\text{dist} \in \{0, x_\text{d}\} \mu m$}
     \begin{itemize}
-      \item $x_\text{d} \in \{6, 12, 18, 24, 32\} \mu m$ value fixed for each session
-      \item administered to the other (non-stimulus) hand
+      \item \textcolor{muted!60}{$x_\text{d} \in \{6, 12, 18, 24, 32\} \mu m$ value fixed for each session}
+      \item \textcolor{muted!60}{administered to the other (non-stimulus) hand}
     \end{itemize}
-    \item if present, distractor administered simultaneously with the stimulus
+    \item \textcolor{muted!60}{if present, distractor administered simultaneously with the stimulus}
     \item monkey categorizes the stimulus as either
           ``high'' or ``low'' relative to a trained boundary of 28~$\mu m$.
     \begin{itemize}
@@ -23,8 +24,73 @@
     \end{itemize}    
     \item correct responses are rewarded with water or juice
   \end{itemize}
-  \vfill
-  \todo{schematic of a trial (stimulus hand, distractor hand, response)}
+\end{frame}
+
+\begin{frame}{Psychometric function}
+  Let response $r \sim \text{Bernoulli}(p = \psi)$, with
+  \[
+    \psi(x_\text{stim}) = \gamma_h + (1 - \gamma_h - \gamma_l)\,
+                          \invlogit(\beta_0 + \beta_1 x_\text{stim})
+  \]
+  \centering
+  \includegraphics[width=\textwidth,height=0.62\textheight,keepaspectratio]{example_psych_func.png}
+\end{frame}
+
+\begin{frame}{Parameters}
+  \[
+    \psi(x_\text{stim}) = \gamma_h + (1-\gamma_h-\gamma_l)\,
+                          \invlogit(\beta_0 + \beta_1 x_\text{stim}),
+    \qquad \vec{\theta} = (\beta_0, \beta_1, \gamma_h, \gamma_l)
+  \]
+  \begin{itemize}
+    \item ${\color{blue}\gamma_h}$: lapse rate for ``high''
+    \begin{itemize}
+      \item lower bound on $\mathbf{P}(\text{guess} = \text{``high''})$, even to the weakest stimuli
+      \item lower (left) asymptote of $\psi$
+    \end{itemize}
+    \item ${\color{purple}\gamma_l}$: lapse rate for ``low''
+    \begin{itemize}
+      \item lower bound on $\mathbf{P}(\text{guess} = \text{``low''})$, even to the strongest stimuli
+      \item $1-\gamma_l$ = upper (right) asymptote of $\psi$
+    \end{itemize}
+    \item $\invlogit$: the logistic sigmoid, $\invlogit(z) = \dfrac{1}{1+\exp(-z)}$
+    \item Summaries, in $\mu m$:
+    \begin{itemize}
+      \item PSE: where $\psi = 0.5$
+      \item JND: half the distance between $\psi = 0.25$ and $0.75$
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The task: one trial}
+  \centering
+  \begin{tikzpicture}[scale=0.9, every node/.append style={transform shape=false}]
+    \trialpanel{0}{0}
+    \draw[muted!60, line width=0.8pt] (4.75,-0.8) -- (4.75,5.9);
+    \trialpanel{6.6}{1}
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Modeling bimanual interactions}
+  \begin{itemize}
+    \item \textcolor{muted!60}{stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50 \} \mu m$}
+    \begin{itemize}
+      \item \textcolor{muted!60}{administered to one finger of one hand (left or right)}
+    \end{itemize}
+    \item \textcolor{plotblue}{distractor $x_\text{dist} \in \{0, x_\text{d}\} \mu m$}
+    \begin{itemize}
+      \item \textcolor{plotblue}{$x_\text{d} \in \{6, 12, 18, 24, 32\} \mu m$ value fixed for each session}
+      \item \textcolor{plotblue}{administered to the other (non-stimulus) hand}
+    \end{itemize}
+    \item \textcolor{plotblue}{if present, distractor administered simultaneously with the stimulus}
+    \item \textcolor{muted!60}{monkey categorizes the stimulus as either
+          ``high'' or ``low'' relative to a trained boundary of 28~$\mu m$.}
+    \begin{itemize}
+      \item \textcolor{muted!60}{"low" response: correct for $x_\text{stim} < 28 \mu m$}
+      \item \textcolor{muted!60}{"high" response: correct for $x_\text{stim} > 28 \mu m$.}
+    \end{itemize}
+    \item \textcolor{muted!60}{correct responses are rewarded with water or juice}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{The data}
@@ -37,22 +103,6 @@
   \end{itemize}
   \vfill
   \todo{figure: raw proportions of ``high'' by amplitude and group}
-\end{frame}
-
-\begin{frame}{Psychometric function}
-  Every model describes $P(\text{``high''})$ at stimulus $x$ (standardized
-  amplitude) by
-  \[
-    \psi(x) = \gamma_h + (1 - \gamma_h - \gamma_l)\,\invlogit(\beta_0 + \beta_1 x)
-  \]
-  \begin{itemize}
-    \item $\gamma_h$, $\gamma_l$: lapse rates (``high'' to the weakest, ``low'' to the
-          strongest stimuli)
-    \item Summaries: PSE (where $\psi = 0.5$) and JND (half the distance between
-          $\psi = 0.25$ and $0.75$), in $\mu m$
-  \end{itemize}
-  \vfill
-  \todo{one example curve with PSE and JND marked}
 \end{frame}
 
 \begin{frame}{Three models}
