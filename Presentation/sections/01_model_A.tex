@@ -11,14 +11,13 @@
 % Convergence_A_Report, "Model Structure"
 \begin{frame}{Model A: graphical model}
   \begin{columns}[c]
-    \begin{column}{0.64\textwidth}
+    \begin{column}{0.6\textwidth}
       \centering
-      \begin{tikzpicture}[gm, node distance=0.7cm and 0.6cm, scale=0.85, transform shape]
-        \node[latent] (b0) {$\beta_{0,g}$};
-        \node[latent, right=of b0] (b1) {$\beta_{1,g}$};
-        \node[latent, right=of b1] (gh) {$\gamma_{h,g}$};
-        \node[latent, right=of gh] (gl) {$\gamma_{l,g}$};
-        \node[det, above=0.6cm of $(b1)!0.5!(gh)$] (pse) {PSE$_g$, JND$_g$};
+      \begin{tikzpicture}[gm, node distance=0.7cm and 0.6cm]
+        \node[latent] (b0) {$\beta_0$};
+        \node[latent, right=of b0] (b1) {$\beta_1$};
+        \node[latent, right=of b1] (gh) {$\gamma_h$};
+        \node[latent, right=of gh] (gl) {$\gamma_l$};
 
         \node[det, below=1.0cm of $(b1)!0.5!(gh)$] (psi) {$\psi_i$};
         \node[obs, below=0.6cm of psi] (r) {$r_i$};
@@ -26,56 +25,55 @@
 
         \foreach \p in {b0, b1, gh, gl}
           \draw[arr] (\p) -- (psi);
-        \foreach \p in {b0, b1, gh, gl}
-          \draw[arr, densely dashed, gray] (\p) -- (pse);
         \draw[arr] (x) -- (psi);
         \draw[arr] (psi) -- (r);
 
         \node[plate, fit=(x)(psi)(r), inner sep=5pt] (ptrial) {};
-        \node[font=\scriptsize, anchor=north east] at (ptrial.south east) {trials $i$ with $g[i]=g$};
-        \node[plate, fit=(pse)(b0)(gl)(ptrial), inner sep=14pt] (pgroup) {};
-        \node[font=\scriptsize, anchor=south west] at (pgroup.south west) {groups $g = 1,\dots,4$};
+        \node[font=\scriptsize, anchor=north east] at (ptrial.south east) {trials $i = 1,\dots,n$};
+        \node[plate, fit=(b0)(gl)(ptrial), inner sep=14pt] (pgroup) {};
+        \node[font=\scriptsize, anchor=south west] at (pgroup.south west) {each of the 4 groups};
       \end{tikzpicture}
     \end{column}
-    \begin{column}{0.34\textwidth}
+    \begin{column}{0.38\textwidth}
       \footnotesize
       \begin{itemize}
         \item circles: random variables
         \item shaded: observed
         \item rectangles: deterministic
         \item $x_i$: fixed covariate
-        \item dashed: derived quantities, not part of the likelihood
+        \item outer plate: the same model, fit independently to each group
       \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
 
 \begin{frame}{Model A: likelihood}
-  For trial $i$ in group $g[i] \in \{\text{left\_uni},\ \text{left\_bi},\
-  \text{right\_uni},\ \text{right\_bi}\}$:
+  For each group (left/right $\times$ unimanual/bimanual), fit independently to its
+  $n \approx 3{,}230$ trials from all 42 sessions pooled:\\[0.3em]
+  Likelihood: probability of obtaining responses $\vec{r}$ given parameters
+  $\vec{\theta} = (\beta_0, \beta_1, \gamma_h, \gamma_l)$\\
+  $r_i \sim \mathbf{Bernoulli}[\psi(x_i;\vec{\theta})]$ ($r_i = 1$ for ``high'', $x_i$ standardized), so:
   \[
-    r_i \sim \text{Bernoulli}(\psi_i), \qquad
-    \psi_i = \gamma_{h,g[i]} + (1 - \gamma_{h,g[i]} - \gamma_{l,g[i]})\,
-             \invlogit(\beta_{0,g[i]} + \beta_{1,g[i]}\, x_i)
+    \mathbf{P}[r_i = z] = \psi(x_i;\vec{\theta})^{z}\,\big(1-\psi(x_i;\vec{\theta})\big)^{1-z},
+    \qquad z \in \{0, 1\}
   \]
-  \begin{itemize}
-    \item $r_i = 1$ for ``high'', $0$ for ``low''
-    \item $x_i$: stimulus amplitude, standardized by the mean and sd of the 8 levels
-    \item One psychometric curve per group, shared by all 42 sessions:
-          $4 \times 4 = 16$ parameters
-    \item $\psi_i$ clipped to $[10^{-8},\, 1-10^{-8}]$ for numerical stability
-  \end{itemize}
+  \begin{align*}
+    L(\vec{\theta};\vec{r}) &= \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}]\\
+    &= \prod_{i=1}^{n} \psi(x_i;\vec{\theta})^{r_i}\,\big(1-\psi(x_i;\vec{\theta})\big)^{1-r_i}
+  \end{align*}
   \vfill
-  \todo{one-line motivation: simplest model, a baseline}
+  \textbf{Why start here:} the simplest model of the experiment. Treating every session as
+  the same curve gives a fast baseline estimate of the distractor's effect on PSE, JND and
+  lapse rates, and its checks tell us whether pooling the sessions is good enough.
 \end{frame}
 
 \begin{frame}{Model A: priors}
-  The same independent priors in every group $g$:
+  The same priors in every group:
   \begin{align*}
-    \beta_{0,g} &\sim \mathcal{N}(0,\ 6) \\
-    \beta_{1,g} &\sim \mathcal{N}(4,\ 2) \\
-    \gamma_{h,g} &= 0.25\, w_{h,g}, \qquad w_{h,g} \sim \text{Beta}(1.22,\ 4.89) \\
-    \gamma_{l,g} &= 0.25\, w_{l,g}, \qquad w_{l,g} \sim \text{Beta}(1.22,\ 4.89)
+    \beta_0 &\sim \mathcal{N}(0,\ 6) \\
+    \beta_1 &\sim \mathcal{N}(4,\ 2) \\
+    \gamma_h &= 0.25\, w_h, \qquad w_h \sim \text{Beta}(1.22,\ 4.89) \\
+    \gamma_l &= 0.25\, w_l, \qquad w_l \sim \text{Beta}(1.22,\ 4.89)
   \end{align*}
   \begin{itemize}
     \item Beta with mean 0.2, sd 0.15; scaling by 0.25 keeps each lapse rate in
@@ -85,18 +83,114 @@
   \end{itemize}
 \end{frame}
 
-\figframe{Model A: convergence on synthetic data}
+\subsection{Synthetic Data}
+
+% numbers from Model_A/Convergence_A_Report.tex (made by Convergence_A.py)
+\begin{frame}{Model A on synthetic data: the study}
+  \begin{itemize}
+    \item One fixed set of true parameters per group, with PSE and JND spread over the
+          groups (slopes 3 and 6, $\gamma_h$ 0.03--0.06, $\gamma_l$ 0.005--0.01)
+    \item Trials drawn from the real design (the real mix of stimulus levels and groups),
+          responses simulated from the true curves
+    \item 7 sizes: 250 to 16{,}000 trials; the real data (12{,}937) lie between the two largest
+    \item 20 replicates of the whole sweep: 140 fits, 80 per size and parameter
+    \item All fits sampled well: $\hat{R} \le 1.006$, bulk ESS $\ge 1{,}554$, one divergence in total
+  \end{itemize}
+\end{frame}
+
+\figframe{Model A on synthetic data: the 95\% HDIs are calibrated}
   {\plotsA/Convergence_Plots_A/coverage_vs_size_all_params.png}
-  {\todo{takeaway; numbers from Convergence\_A\_Report, ``Conclusions''}}
+  {Coverage stays within the calibrated range 0.90--0.99 at every size, except 1.00
+   where the prior still widens the HDIs.}
 
-\figframe{Model A: fit to the real data}
-  {\plotsA/Fit_Plots_A/ppc_pooled_by_stimulus.png}
-  {\todo{pooled check passes: all 32 proportions inside (Fit\_A\_Report, ``Model Checks'')}}
+\figframe{Model A on synthetic data: $\gamma_l$ is pulled upward}
+  {\plotsA/Convergence_Plots_A/recovery_gam_l_mean_hdi_vs_size.png}
+  {True $\gamma_l$ (0.005, 0.01) sits in the prior's lower tail, and the data hold only
+   3--7 such lapses: the estimates are 1 sd too high at small sizes, 0.36 sd at 16{,}000.}
 
-\figframe{Model A: effect of the distractor}
+\begin{frame}{Model A on synthetic data: what is recoverable}
+  At the size of the real data (about 3{,}230 trials per group):
+  \begin{itemize}
+    \item \textbf{Recoverable:} PSE, JND, $\beta_0$, $\gamma_h$: unbiased, calibrated HDIs
+    \begin{itemize}
+      \item posterior sd about 0.3~$\mu m$ for the PSE, 0.2~$\mu m$ for the JND
+    \end{itemize}
+    \item \textbf{Recoverable, HDIs a little wide:} $\beta_1$ (coverage 0.98--0.99)
+    \item \textbf{Not reliably recoverable:} small $\gamma_l$
+    \begin{itemize}
+      \item biased upward by 0.4--0.5 sd; by about 1 sd when the curve never reaches its
+            ceiling (left\_uni), where $\gamma_l$ trades off with the slope
+      \item HDIs still cover the truth, but the posterior mean should not be read literally
+    \end{itemize}
+    \item \textbf{Caveats:} one set of true values; data simulated with one curve per group,
+          so this says nothing about variation between sessions
+  \end{itemize}
+\end{frame}
+
+\subsection{Real Data}
+
+% numbers from Model_A/Fit_A_Report.tex (made by Main_Analysis_A.py)
+\begin{frame}{Model A on the real data: group estimates}
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lcccc}
+    \toprule
+     & PSE ($\mu m$) & JND ($\mu m$) & $\gamma_h$ & $\gamma_l$ \\
+    \midrule
+    left unimanual  & 32.58 [32.10, 33.04] & 3.56 [3.25, 3.89] & 0.002 [0.000, 0.006] & 0.009 [0.000, 0.018] \\
+    left bimanual   & 28.38 [27.79, 28.98] & 4.39 [3.93, 4.83] & 0.041 [0.025, 0.056] & 0.016 [0.005, 0.027] \\
+    right unimanual & 31.57 [31.05, 32.06] & 4.09 [3.77, 4.41] & 0.003 [0.000, 0.008] & 0.006 [0.000, 0.013] \\
+    right bimanual  & 25.50 [24.89, 26.08] & 4.36 [3.93, 4.81] & 0.045 [0.025, 0.064] & 0.012 [0.004, 0.020] \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.6em}
+  {\scriptsize Posterior mean [95\% HDI]. 12{,}937 trials, 4 chains $\times$ 5{,}000 draws:
+  no divergences, $\hat{R} = 1.000$, bulk ESS $\ge 15{,}213$.}
+
+  \vfill
+  \raggedright
+  \begin{itemize}
+    \item Without the distractor the PSE lies 3.6--4.6~$\mu m$ above the trained 28~$\mu m$
+    \item With it the PSE moves to the threshold (left) or below it (right)
+    \item $\gamma_l$ estimates lean high (see the synthetic study)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Model A on the real data: fitted curves}
+  \centering
+  \includegraphics[width=0.48\textwidth]{\plotsA/Fit_Plots_A/curves_left.png}\hfill
+  \includegraphics[width=0.48\textwidth]{\plotsA/Fit_Plots_A/curves_right.png}
+  \par\vspace{0.4em}{\small Unimanual in blue, bimanual in red, with the observed proportions
+  pooled over sessions; dashed: the trained threshold of 28~$\mu m$.}
+\end{frame}
+
+\figframe{Model A on the real data: effect of the distractor}
   {\plotsA/Fit_Plots_A/effect_densities.png}
-  {\todo{PSE shift, $\gamma_h$ and JND effects (Fit\_A\_Report, Summary)}}
+  {PSE $-4.19$ [$-4.96$, $-3.44$] (left), $-6.07$ [$-6.85$, $-5.30$] (right) $\mu m$;
+   $\gamma_h$ $+0.04$ for both hands; JND $+0.83$~$\mu m$ (left only).}
+
+\figframe{Model A on the real data: the pooled data are reproduced}
+  {\plotsA/Fit_Plots_A/ppc_pooled_by_stimulus.png}
+  {Pooled over sessions, all 32 group $\times$ amplitude proportions lie inside their 95\%
+   posterior predictive intervals.}
 
 \figframe{Model A misses the variation between sessions}
   {\plotsA/Fit_Plots_A/ppc_session_cells.png}
-  {\todo{within single sessions responses vary more than A predicts (Fit\_A\_Report, ``Model Checks'')}}
+  {Within sessions, counts vary more than Model A predicts (PIT tails 4.5\% and 4.0\%
+   vs 2.5\%); at 32~$\mu m$ only 79--86\% of sessions are covered.}
+
+\begin{frame}{Model A: conclusions}
+  \begin{itemize}
+    \item Reliable fit; the pooled data are reproduced at every amplitude
+          ($\text{elpd}_\text{loo} = -3344.0$, SE 64.5)
+    \item The distractor lowers the PSE by 4.2 (left) and 6.1 (right)~$\mu m$ and raises
+          $\gamma_h$ by about 0.04
+    \item But the sessions' PSEs differ, and Model A treats that as trial noise:
+    \begin{itemize}
+      \item its HDIs are too narrow for the sessions as a whole
+      \item the pooled JND mixes within-session precision with between-session drift
+    \end{itemize}
+    \item[$\Rightarrow$] A curve for every session: Model B
+  \end{itemize}
+\end{frame}

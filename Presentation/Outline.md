@@ -113,90 +113,145 @@ Below the table: For each model: convergence study on synthetic data, then the f
 ### Subsection: Model Structure
 
 ## 10. Model A: graphical model
-- Left: TikZ plate diagram (as in Convergence_A_Report): $\beta_{0,g}, \beta_{1,g}, \gamma_{h,g}, \gamma_{l,g}$ → $\psi_i$ ← $x_i$; $\psi_i$ → $r_i$ (observed);
-  dashed arrows from the four parameters up to PSE$_g$, JND$_g$; trial plate inside the group plate ($g = 1,\dots,4$)
+- Left: TikZ plate diagram: $\beta_0, \beta_1, \gamma_h, \gamma_l$ → $\psi_i$ ← $x_i$; $\psi_i$ → $r_i$ (observed);
+  trial plate ($i = 1,\dots,n$) inside an outer plate labelled "each of the 4 groups"
 - Right (legend):
   - circles: random variables
   - shaded: observed
   - rectangles: deterministic
   - $x_i$: fixed covariate
-  - dashed: derived quantities, not part of the likelihood
+  - outer plate: the same model, fit independently to each group
 
 ## 11. Model A: likelihood
-For trial $i$ in group $g[i] \in \{\text{left\_uni}, \text{left\_bi}, \text{right\_uni}, \text{right\_bi}\}$:
+For each group (left/right × unimanual/bimanual), fit independently to its $n \approx 3,230$ trials from all 42 sessions pooled:
+Likelihood: probability of obtaining responses $\vec{r}$ given parameters $\vec{\theta} = (\beta_0, \beta_1, \gamma_h, \gamma_l)$
+$r_i \sim \mathbf{Bernoulli}[\psi(x_i;\vec{\theta})]$ ($r_i = 1$ for "high", $x_i$ standardized), so:
 
-  $r_i \sim \text{Bernoulli}(\psi_i), \qquad \psi_i = \gamma_{h,g[i]} + (1 - \gamma_{h,g[i]} - \gamma_{l,g[i]})\,\text{logit}^{-1}(\beta_{0,g[i]} + \beta_{1,g[i]}\, x_i)$
+  $\mathbf{P}[r_i = z] = \psi(x_i;\vec{\theta})^{z}\,(1-\psi(x_i;\vec{\theta}))^{1-z}, \qquad z \in \{0, 1\}$
 
-- $r_i = 1$ for "high", 0 for "low"
-- $x_i$: stimulus amplitude, standardized by the mean and sd of the 8 levels
-- One psychometric curve per group, shared by all 42 sessions: $4 \times 4 = 16$ parameters
-- $\psi_i$ clipped to $[10^{-8}, 1-10^{-8}]$ for numerical stability
+  $L(\vec{\theta};\vec{r}) = \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}]$
+  $\qquad = \prod_{i=1}^{n} \psi(x_i;\vec{\theta})^{r_i}\,(1-\psi(x_i;\vec{\theta}))^{1-r_i}$
 
-TODO: one-line motivation: simplest model, a baseline
+**Why start here:** the simplest model of the experiment. Treating every session as the same curve gives a fast baseline estimate of the distractor's effect on PSE, JND and lapse rates, and its checks tell us whether pooling the sessions is good enough.
 
 ## 12. Model A: priors
-The same independent priors in every group $g$:
+The same priors in every group:
 
-  $\beta_{0,g} \sim \mathcal{N}(0, 6)$
-  $\beta_{1,g} \sim \mathcal{N}(4, 2)$
-  $\gamma_{h,g} = 0.25\, w_{h,g}, \quad w_{h,g} \sim \text{Beta}(1.22, 4.89)$
-  $\gamma_{l,g} = 0.25\, w_{l,g}, \quad w_{l,g} \sim \text{Beta}(1.22, 4.89)$
+  $\beta_0 \sim \mathcal{N}(0, 6)$
+  $\beta_1 \sim \mathcal{N}(4, 2)$
+  $\gamma_h = 0.25\, w_h, \quad w_h \sim \text{Beta}(1.22, 4.89)$
+  $\gamma_l = 0.25\, w_l, \quad w_l \sim \text{Beta}(1.22, 4.89)$
 
 - Beta with mean 0.2, sd 0.15; scaling by 0.25 keeps each lapse rate in $(0, 0.25)$, so $\psi$ is increasing and the PSE and JND exist
 - Implied lapse rate: mean 0.05, 95% range $[0.003, 0.141]$
 - Not checked by prior predictive simulation
 
-## 13. Model A: convergence on synthetic data
+### Subsection: Synthetic Data
+(numbers from Model_A/Convergence_A_Report)
+
+## 13. Model A on synthetic data: the study
+- One fixed set of true parameters per group, with PSE and JND spread over the groups (slopes 3 and 6, $\gamma_h$ 0.03–0.06, $\gamma_l$ 0.005–0.01)
+- Trials drawn from the real design (the real mix of stimulus levels and groups), responses simulated from the true curves
+- 7 sizes: 250 to 16,000 trials; the real data (12,937) lie between the two largest
+- 20 replicates of the whole sweep: 140 fits, 80 per size and parameter
+- All fits sampled well: $\hat{R} \le 1.006$, bulk ESS $\ge 1,554$, one divergence in total
+
+## 14. Model A on synthetic data: the 95% HDIs are calibrated
 - Figure: Model_A/Plots_A/Convergence_Plots_A/coverage_vs_size_all_params.png
-- Caption: TODO: takeaway; numbers from Convergence_A_Report, "Conclusions"
+- Caption: Coverage stays within the calibrated range 0.90–0.99 at every size, except 1.00 where the prior still widens the HDIs.
 
-## 14. Model A: fit to the real data
-- Figure: Model_A/Plots_A/Fit_Plots_A/ppc_pooled_by_stimulus.png
-- Caption: TODO: pooled check passes: all 32 proportions inside (Fit_A_Report, "Model Checks")
+## 15. Model A on synthetic data: $\gamma_l$ is pulled upward
+- Figure: Model_A/Plots_A/Convergence_Plots_A/recovery_gam_l_mean_hdi_vs_size.png
+- Caption: True $\gamma_l$ (0.005, 0.01) sits in the prior's lower tail, and the data hold only 3–7 such lapses: the estimates are 1 sd too high at small sizes, 0.36 sd at 16,000.
 
-## 15. Model A: effect of the distractor
+## 16. Model A on synthetic data: what is recoverable
+At the size of the real data (about 3,230 trials per group):
+- **Recoverable:** PSE, JND, $\beta_0$, $\gamma_h$: unbiased, calibrated HDIs
+  - posterior sd about 0.3 μm for the PSE, 0.2 μm for the JND
+- **Recoverable, HDIs a little wide:** $\beta_1$ (coverage 0.98–0.99)
+- **Not reliably recoverable:** small $\gamma_l$
+  - biased upward by 0.4–0.5 sd; by about 1 sd when the curve never reaches its ceiling (left_uni), where $\gamma_l$ trades off with the slope
+  - HDIs still cover the truth, but the posterior mean should not be read literally
+- **Caveats:** one set of true values; data simulated with one curve per group, so this says nothing about variation between sessions
+
+### Subsection: Real Data
+(numbers from Model_A/Fit_A_Report)
+
+## 17. Model A on the real data: group estimates
+Table, posterior mean [95% HDI]:
+
+| | PSE (μm) | JND (μm) | $\gamma_h$ | $\gamma_l$ |
+|---|---|---|---|---|
+| left unimanual | 32.58 [32.10, 33.04] | 3.56 [3.25, 3.89] | 0.002 [0.000, 0.006] | 0.009 [0.000, 0.018] |
+| left bimanual | 28.38 [27.79, 28.98] | 4.39 [3.93, 4.83] | 0.041 [0.025, 0.056] | 0.016 [0.005, 0.027] |
+| right unimanual | 31.57 [31.05, 32.06] | 4.09 [3.77, 4.41] | 0.003 [0.000, 0.008] | 0.006 [0.000, 0.013] |
+| right bimanual | 25.50 [24.89, 26.08] | 4.36 [3.93, 4.81] | 0.045 [0.025, 0.064] | 0.012 [0.004, 0.020] |
+
+Small note under the table: Posterior mean [95% HDI]. 12,937 trials, 4 chains × 5,000 draws: no divergences, $\hat{R} = 1.000$, bulk ESS $\ge 15,213$.
+
+- Without the distractor the PSE lies 3.6–4.6 μm above the trained 28 μm
+- With it the PSE moves to the threshold (left) or below it (right)
+- $\gamma_l$ estimates lean high (see the synthetic study)
+
+## 18. Model A on the real data: fitted curves
+- Figures side by side: Model_A/Plots_A/Fit_Plots_A/curves_left.png, curves_right.png
+- Caption: Unimanual in blue, bimanual in red, with the observed proportions pooled over sessions; dashed: the trained threshold of 28 μm.
+
+## 19. Model A on the real data: effect of the distractor
 - Figure: Model_A/Plots_A/Fit_Plots_A/effect_densities.png
-- Caption: TODO: PSE shift, $\gamma_h$ and JND effects (Fit_A_Report, Summary)
+- Caption: PSE −4.19 [−4.96, −3.44] (left), −6.07 [−6.85, −5.30] (right) μm; $\gamma_h$ +0.04 for both hands; JND +0.83 μm (left only).
 
-## 16. Model A misses the variation between sessions
+## 20. Model A on the real data: the pooled data are reproduced
+- Figure: Model_A/Plots_A/Fit_Plots_A/ppc_pooled_by_stimulus.png
+- Caption: Pooled over sessions, all 32 group × amplitude proportions lie inside their 95% posterior predictive intervals.
+
+## 21. Model A misses the variation between sessions
 - Figure: Model_A/Plots_A/Fit_Plots_A/ppc_session_cells.png
-- Caption: TODO: within single sessions responses vary more than A predicts (Fit_A_Report, "Model Checks")
+- Caption: Within sessions, counts vary more than Model A predicts (PIT tails 4.5% and 4.0% vs 2.5%); at 32 μm only 79–86% of sessions are covered.
+
+## 22. Model A: conclusions
+- Reliable fit; the pooled data are reproduced at every amplitude (elpd_loo = −3344.0, SE 64.5)
+- The distractor lowers the PSE by 4.2 (left) and 6.1 (right) μm and raises $\gamma_h$ by about 0.04
+- But the sessions' PSEs differ, and Model A treats that as trial noise:
+  - its HDIs are too narrow for the sessions as a whole
+  - the pooled JND mixes within-session precision with between-session drift
+- ⇒ A curve for every session: Model B
 
 ---
 
 # Section: Model B: Sessions Hierarchical
 
-## 17. Model B
+## 23. Model B
 - A curve for every group *and session*, drawn from group-level distributions (means and between-session sds).
 - Design-based priors, checked by prior predictive simulation.
 
 TODO: plate diagram or equations (Convergence_B_Report, "Model Structure")
 
-## 18. Model B: convergence on synthetic data
+## 24. Model B: convergence on synthetic data
 - Figure: Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png
 - Caption: TODO: what is recovered at the real data size (Convergence_B_Report, "Conclusions")
 
-## 19. Model B: per-session recovery
+## 25. Model B: per-session recovery
 - Figure: Model_B/Plots_B/Convergence_Plots_B/session_params_error_width_coverage_vs_trials.png
 - Caption: TODO: per-session PSE and JND reliable at ~300 trials
 
-## 20. Model B: fit to the real data
+## 26. Model B: fit to the real data
 - Figure: Model_B/Plots_B/Fit_Plots_B/ppc_pooled_by_stimulus.png
 - Caption: TODO: all 32 proportions inside; 99.8% of session cells (Fit_B_Report, "Posterior predictive checks")
 
-## 21. Model B: PSE shift in every session
+## 27. Model B: PSE shift in every session
 - Figure: Model_B/Plots_B/Fit_Plots_B/effect_PSE_by_session.png
 - Caption: TODO: shift negative in 40/42 (left) and 42/42 (right) sessions (Fit_B_Report, Summary)
 
-## 22. Model B: the shift grows with distractor amplitude (exploratory)
+## 28. Model B: the shift grows with distractor amplitude (exploratory)
 - Figure: Model_B/Plots_B/Fit_Plots_B/effect_vs_distractor_amplitude.png
 - Caption: TODO: about −2 μm per 10 μm; confounded with session order
 
-## 23. Model B against Model A
+## 29. Model B against Model A
 - Figure: Model_B/Plots_B/Fit_Plots_B/effect_A_vs_B.png
 - Caption: TODO: same effects; B better by LOO, 164 (SE 19) (Fit_B_Report, "Comparison with Model A")
 
-## 24. Is B's advantage real? Model recovery
+## 30. Is B's advantage real? Model recovery
 - Figure: Model_B/Plots_B/Model_Recov_Plots_BA/elpd_diff_by_replicate.png
 - Caption: TODO: B wins on all data from B, ties or loses on data from A (Model_Recov_BA_Report)
 
@@ -204,7 +259,7 @@ TODO: plate diagram or equations (Convergence_B_Report, "Model Structure")
 
 # Section: Model C: Distractor Amplitude as a Covariate
 
-## 25. Model C
+## 31. Model C
   $\psi(x, d) = \gamma_h + (1 - \gamma_h - \gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x + \beta_2 d)$
 
 - $d$: distractor amplitude (0 on unimanual trials); one group per hand.
@@ -212,31 +267,31 @@ TODO: plate diagram or equations (Convergence_B_Report, "Model Structure")
 
 TODO: why: test the amplitude trend from Model B inside a model
 
-## 26. Model C: prior on the distractor effect
+## 32. Model C: prior on the distractor effect
 - Figure: Model_C/Plots_C/Convergence_Plots_C/Prior_Check_C_distractor.png
 - Caption: TODO: weakly informative; a weak distractor can only shift a little (Convergence_C_Report)
 
-## 27. Model C: convergence on synthetic data
+## 33. Model C: convergence on synthetic data
 - Figure: Model_C/Plots_C/Convergence_Plots_C/hyper_means_recovery_vs_sessions.png
 - Caption: TODO: all hand-level means recovered, $\mu_{\beta_2}$ well (Convergence_C_Report, "Conclusions")
 
-## 28. Model C: per-session $\beta_2$ is weak for small distractors
+## 34. Model C: per-session $\beta_2$ is weak for small distractors
 - Figure: Model_C/Plots_C/Convergence_Plots_C/session_b2_true_vs_recovered.png
 - Caption: TODO: shrinkage toward the hand mean at 6 μm
 
-## 29. Model C: the shift grows with distractor amplitude
+## 35. Model C: the shift grows with distractor amplitude
 - Figure: Model_C/Plots_C/Fit_Plots_C/pse_shift_vs_amplitude.png
 - Caption: TODO: $\mu_{\beta_2}$ and the typical shift at 6 and 32 μm (Fit_C_Report, "Effect of the Distractor")
 
-## 30. Model C misfits at the weakest stimuli
+## 36. Model C misfits at the weakest stimuli
 - Figure: Model_C/Plots_C/Fit_Plots_C/ppc_pooled_by_stimulus.png
 - Caption: TODO: shared lapse rates: 6 of 32 proportions outside (Fit_C_Report, "Posterior predictive check")
 
-## 31. Model C against Model B
+## 37. Model C against Model B
 - Figure: Model_C/Plots_C/Fit_Plots_C/pse_shift_C_vs_B.png
 - Caption: TODO: LOO favors B by 37 (SE 12); 6 μm shifts too small (Fit_C_Report, Comparison)
 
-## 32. Model C: shift by distractor amplitude, observed vs predicted
+## 38. Model C: shift by distractor amplitude, observed vs predicted
 - Figure: Model_C/Plots_C/Fit_Plots_C/ppc_by_distractor_amplitude.png
 - Caption: TODO: right hand at 6 μm outside: a presence effect (Fit_C_Report, amplitude check)
 
@@ -244,7 +299,7 @@ TODO: why: test the amplitude trend from Model B inside a model
 
 # Section: Summary
 
-## 33. Comparison of the models
+## 39. Comparison of the models
 Table:
 
 | | A | B | C |
@@ -256,13 +311,13 @@ Table:
 
 TODO: fill from Fit_A/B/C_Report; elpd differences from Fit_B and Fit_C
 
-## 34. Conclusions
+## 40. Conclusions
 - The distractor lowers the PSE: TODO: size, both hands.
 - It raises the rate of "high" responses to weak stimuli ($\gamma_h$).
 - The sessions differ; a hierarchical model is needed.
 - The shift grows with distractor amplitude, TODO: but not proportionally?
 
-## 35. Next steps
+## 41. Next steps
 - Revise Model C: lapse rates per condition, a distractor-presence term, possibly a bimanual slope.
 - Model recovery for B against the revised C.
 - TODO: further data or experiments
