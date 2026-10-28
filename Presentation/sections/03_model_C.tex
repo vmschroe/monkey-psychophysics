@@ -54,8 +54,8 @@
 
     \node[det] (psi) at ($(b2) + (0,-1.4)$) {$\psi_i$};
     \node[obs, below=0.5cm of psi] (r) {$r_i$};
-    \node[const, right=0.8cm of psi, yshift=0.25cm] (x) {$x_i$};
-    \node[const, right=0.8cm of psi, yshift=-0.25cm] (d) {$d_i$};
+    \node[const, right=0.8cm of psi, yshift=0.25cm] (x) {$x_{\text{stim},i}$};
+    \node[const, right=0.8cm of psi, yshift=-0.25cm] (d) {$x_{\text{dist},i}$};
 
     \foreach \h/\p in {mub0/b0, sb0/b0, mub1/b1, sb1/b1, mub2/b2, sb2/b2, mugh/gh, sgh/gh, mugl/gl, sgl/gl}
       \draw[arr] (\h) -- (\p);
@@ -75,27 +75,27 @@
 
   \vfill
   {\scriptsize\color{muted} Circles: random variables (shaded: observed); rectangle:
-  deterministic; $x_i$, $d_i$: fixed covariates. The same model is fit independently to each
+  deterministic; $x_{\text{stim},i}$, $x_{\text{dist},i}$: fixed covariates. The same model is fit independently to each
   hand, with unimanual and bimanual trials together.}
 \end{frame}
 
 \begin{frame}{Model C: likelihood}
   For each hand, fit independently to its $n \approx 6{,}470$ unimanual and bimanual trials,
-  with the distractor as a covariate $d_i$ (amplitude $/\,14.63$; $d_i = 0$ on unimanual trials):\\[0.3em]
+  with the distractor as a covariate $x_{\text{dist},i}$ (amplitude $/\,14.63$; $x_{\text{dist},i} = 0$ on unimanual trials):\\[0.3em]
   Likelihood: probability of obtaining responses $\vec{r}$ given parameters
   $\vec{\theta} = (\vec{\theta}_s)_{s=1}^{42}$,
   $\vec{\theta}_s = (\beta_{0,s}, \beta_{1,s}, \beta_{2,s}, \gamma_{h,s}, \gamma_{l,s})$\\
-  $r_i \sim \mathbf{Bernoulli}[\psi(x_i, d_i;\vec{\theta}_{s[i]})]$, with
-  $\psi(x, d;\vec{\theta}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\invlogit(\beta_0 + \beta_1 x + \beta_2 d)$, so:
+  $r_i \sim \mathbf{Bernoulli}[\psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_{s[i]})]$, with
+  $\psi(x_\text{stim}, x_\text{dist};\vec{\theta}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\invlogit(\beta_0 + \beta_1 x_\text{stim} + \beta_2 x_\text{dist})$, so:
   \[
-    \mathbf{P}[r_i = z] = \psi(x_i, d_i;\vec{\theta}_{s[i]})^{z}\,
-                          \big(1-\psi(x_i, d_i;\vec{\theta}_{s[i]})\big)^{1-z},
+    \mathbf{P}[r_i = z] = \psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_{s[i]})^{z}\,
+                          \big(1-\psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_{s[i]})\big)^{1-z},
     \qquad z \in \{0, 1\}
   \]
   \begin{align*}
     L(\vec{\theta};\vec{r}) &= \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}_{s[i]}]\\
-    &= \prod_{s=1}^{42}\ \prod_{i:\, s[i]=s} \psi(x_i, d_i;\vec{\theta}_s)^{r_i}\,
-       \big(1-\psi(x_i, d_i;\vec{\theta}_s)\big)^{1-r_i}
+    &= \prod_{s=1}^{42}\ \prod_{i:\, s[i]=s} \psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_s)^{r_i}\,
+       \big(1-\psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_s)\big)^{1-r_i}
   \end{align*}
 \end{frame}
 
@@ -118,12 +118,18 @@
   {\small
   \begin{itemize}
     \item $\mu_{\beta_2}$ centered at 0: the distractor could push responses either way
-    \item Uni- and bimanual trials share slope and lapse rates: $\beta_2 d$ only shifts the curve
+    \item Uni- and bimanual trials share slope and lapse rates: $\beta_2 x_\text{dist}$ only shifts the curve
   \end{itemize}}
 \end{frame}
 
-\plotframe{Model C: prior on the distractor effect}
-  {\plotsC/Convergence_Plots_C/Prior_Check_C_distractor.png}
+\begin{frame}{Model C: prior predictive check of the distractor effect}
+  \centering
+  \includegraphics[width=\textwidth,height=0.7\textheight,keepaspectratio,
+                   trim=0 0 0 22bp,clip]{\plotsC/Convergence_Plots_C/Prior_Check_C_distractor.png}
+  \par\vspace{0.8em}
+  \textbf{Model C drawback:} the PSE shift $-\beta_2 x_\text{dist}/\beta_1$ is tied to the
+  distractor amplitude, so weak distractors can only shift the PSE slightly
+\end{frame}
 
 \subsection{Synthetic Data}
 

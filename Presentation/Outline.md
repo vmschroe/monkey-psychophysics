@@ -102,7 +102,7 @@ Table:
 |---|---|---|
 | A | pooled: one curve per group | uni and bi fit separately |
 | B | hierarchical: one curve per group and session | uni and bi fit separately |
-| C | hierarchical, one group per hand | covariate: shift $\beta_2 d$ |
+| C | hierarchical, one group per hand | covariate: shift $\beta_2 x_\text{dist}$ |
 
 Below the table: For each model: convergence study on synthetic data, then the fit to the real data.
 
@@ -435,19 +435,19 @@ Then (all [red], except [amber] terms):
 Considering $x_\text{dist}$ as a covariate: $\psi(x_\text{stim}, x_\text{dist}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}($[red] $\beta_0 + \beta_1 x_\text{stim} +$ [amber] $\beta_2$ [end amber] $x_\text{dist}$ [end red]$)$
 
 ## 54. Model C: graphical model
-- TikZ plate diagram: hyperparameters $\mu, \sigma$ of $\beta_0, \beta_1, \beta_2, \gamma_h, \gamma_l$ → session parameters $\beta_{0,s}, \beta_{1,s}, \beta_{2,s}, \gamma_{h,s}, \gamma_{l,s}$ → $\psi_i$ ← $x_i$, $d_i$; $\psi_i$ → $r_i$ (observed)
+- TikZ plate diagram: hyperparameters $\mu, \sigma$ of $\beta_0, \beta_1, \beta_2, \gamma_h, \gamma_l$ → session parameters $\beta_{0,s}, \beta_{1,s}, \beta_{2,s}, \gamma_{h,s}, \gamma_{l,s}$ → $\psi_i$ ← $x_{\text{stim},i}$, $x_{\text{dist},i}$; $\psi_i$ → $r_i$ (observed)
   - plates: trials $i$ in session $s$, inside sessions $s = 1,\dots,42$, inside "each hand"
-- Small note below: Circles: random variables (shaded: observed); rectangle: deterministic; $x_i$, $d_i$: fixed covariates. The same model is fit independently to each hand, with unimanual and bimanual trials together.
+- Small note below: Circles: random variables (shaded: observed); rectangle: deterministic; $x_{\text{stim},i}$, $x_{\text{dist},i}$: fixed covariates. The same model is fit independently to each hand, with unimanual and bimanual trials together.
 
 ## 55. Model C: likelihood
-For each hand, fit independently to its $n \approx 6,470$ unimanual and bimanual trials, with the distractor as a covariate $d_i$ (amplitude / 14.63; $d_i = 0$ on unimanual trials):
+For each hand, fit independently to its $n \approx 6,470$ unimanual and bimanual trials, with the distractor as a covariate $x_{\text{dist},i}$ (amplitude / 14.63; $x_{\text{dist},i} = 0$ on unimanual trials):
 Likelihood: probability of obtaining responses $\vec{r}$ given parameters $\vec{\theta} = (\vec{\theta}_s)_{s=1}^{42}$, $\vec{\theta}_s = (\beta_{0,s}, \beta_{1,s}, \beta_{2,s}, \gamma_{h,s}, \gamma_{l,s})$
-$r_i \sim \mathbf{Bernoulli}[\psi(x_i, d_i;\vec{\theta}_{s[i]})]$, with $\psi(x, d;\vec{\theta}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x + \beta_2 d)$, so:
+$r_i \sim \mathbf{Bernoulli}[\psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_{s[i]})]$, with $\psi(x_\text{stim}, x_\text{dist};\vec{\theta}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x_\text{stim} + \beta_2 x_\text{dist})$, so:
 
-  $\mathbf{P}[r_i = z] = \psi(x_i, d_i;\vec{\theta}_{s[i]})^{z}\,(1-\psi(x_i, d_i;\vec{\theta}_{s[i]}))^{1-z}, \qquad z \in \{0, 1\}$
+  $\mathbf{P}[r_i = z] = \psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_{s[i]})^{z}\,(1-\psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_{s[i]}))^{1-z}, \qquad z \in \{0, 1\}$
 
   $L(\vec{\theta};\vec{r}) = \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}_{s[i]}]$
-  $\qquad = \prod_{s=1}^{42} \prod_{i:\, s[i]=s} \psi(x_i, d_i;\vec{\theta}_s)^{r_i}\,(1-\psi(x_i, d_i;\vec{\theta}_s))^{1-r_i}$
+  $\qquad = \prod_{s=1}^{42} \prod_{i:\, s[i]=s} \psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_s)^{r_i}\,(1-\psi(x_{\text{stim},i}, x_{\text{dist},i};\vec{\theta}_s))^{1-r_i}$
 
 ## 56. Model C: priors
 Session parameters drawn from the hand's population (non-centered in the code):
@@ -463,10 +463,11 @@ Hyperpriors, the same for both hands; all but those of $\beta_2$ as in Model B:
   $\mu_{\gamma_h}, \mu_{\gamma_l} \sim \mathcal{N}(-3, 1.5)$, $\quad \sigma_{\gamma_h}, \sigma_{\gamma_l} \sim \text{HalfNormal}(0.5)$
 
 - $\mu_{\beta_2}$ centered at 0: the distractor could push responses either way
-- Uni- and bimanual trials share slope and lapse rates: $\beta_2 d$ only shifts the curve
+- Uni- and bimanual trials share slope and lapse rates: $\beta_2 x_\text{dist}$ only shifts the curve
 
-## 57. Model C: prior on the distractor effect
-- Figure (no caption, title cropped): Model_C/Plots_C/Convergence_Plots_C/Prior_Check_C_distractor.png
+## 57. Model C: prior predictive check of the distractor effect
+- Figure (title cropped): Model_C/Plots_C/Convergence_Plots_C/Prior_Check_C_distractor.png
+- Caption: **Model C drawback:** the PSE shift $-\beta_2 x_\text{dist}/\beta_1$ is tied to the distractor amplitude, so weak distractors can only shift the PSE slightly
 
 ### Subsection: Synthetic Data
 (numbers from Model_C/Convergence_C_Report)
@@ -695,22 +696,27 @@ Table:
 | | A | B | C |
 |---|---|---|---|
 | Sessions | pooled | hierarchical | hierarchical |
-| Distractor | separate groups | separate groups | covariate $\beta_2 d$ |
-| elpd_loo | TODO | TODO | TODO |
-| PSE shift, left / right (μm) | TODO | TODO | TODO |
+| Distractor | separate groups | separate groups | covariate $\beta_2 x_\text{dist}$ |
+| elpd_loo (SE) | −3344.0 (64.5) | −3180.0 (64.3) | −3217.0 (65.7) |
+| difference from B (SE) | −164.1 (19.2) | best | −37.1 (11.9) |
+| effective parameters p_loo | 13.4 | 178.7 | 138.6 |
+| PSE shift, left / right (μm) | −4.19 / −6.07 | −4.29 / −6.06 | −4.51 / −5.74 |
 
-TODO: fill from Fit_A/B/C_Report; elpd differences from Fit_B and Fit_C
+Small note: PSE shift: bimanual − unimanual, posterior mean; for B and C averaged over the 42 sessions. Numbers from Fit_A, Fit_B and Fit_C_Report.
+
+- All three models agree on the PSE shift, to within about 0.3 μm for each hand
+- B predicts best: sessions differ (B ≫ A), and the shift is not simply proportional to distractor amplitude (B > C)
 
 ## 83. Conclusions
-- The distractor lowers the PSE: TODO: size, both hands.
+- The distractor lowers the PSE: by about 4.2–4.5 μm (left) and 5.7–6.1 μm (right), in all three models.
 - It raises the rate of "high" responses to weak stimuli ($\gamma_h$).
 - The sessions differ; a hierarchical model is needed.
-- The shift grows with distractor amplitude, TODO: but not proportionally?
+- The shift grows with distractor amplitude, but a weak distractor still shifts the PSE more than a proportional model allows (right hand).
 
 ## 84. Next steps
 - Revise Model C: lapse rates per condition, a distractor-presence term, possibly a bimanual slope.
 - Model recovery for B against the revised C.
-- TODO: further data or experiments
+- Further experiments: stimulus levels spaced more closely around the PSE, to pin down steep slopes, and levels further out, so the curves reach their asymptotes and the lapse rates are identified.
 
 ---
 

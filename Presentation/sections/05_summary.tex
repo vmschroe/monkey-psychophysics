@@ -11,22 +11,35 @@
      & A & B & C \\
     \midrule
     Sessions & pooled & hierarchical & hierarchical \\
-    Distractor & separate groups & separate groups & covariate $\beta_2 d$ \\
-    $\text{elpd}_\text{loo}$ & \todo{} & \todo{} & \todo{} \\
-    PSE shift, left / right ($\mu m$) & \todo{} & \todo{} & \todo{} \\
+    Distractor & separate groups & separate groups & covariate $\beta_2 x_\text{dist}$ \\
+    $\text{elpd}_\text{loo}$ (SE) & $-3344.0$ (64.5) & $-3180.0$ (64.3) & $-3217.0$ (65.7) \\
+    difference from B (SE) & $-164.1$ (19.2) & best & $-37.1$ (11.9) \\
+    effective parameters $p_\text{loo}$ & 13.4 & 178.7 & 138.6 \\
+    PSE shift, left / right ($\mu m$) & $-4.19$ / $-6.07$ & $-4.29$ / $-6.06$ & $-4.51$ / $-5.74$ \\
     \bottomrule
   \end{tabular}
+
+  \vspace{0.4em}
+  {\scriptsize\color{muted} PSE shift: bimanual $-$ unimanual, posterior mean; for B and C averaged
+  over the 42 sessions. Numbers from Fit\_A, Fit\_B and Fit\_C\_Report.}
+
   \vfill
   \raggedright
-  \todo{fill from Fit\_A/B/C\_Report; elpd differences from Fit\_B and Fit\_C}
+  \begin{itemize}
+    \item All three models agree on the PSE shift, to within about 0.3~$\mu m$ for each hand
+    \item B predicts best: sessions differ (B $\gg$ A), and the shift is not simply proportional to
+          distractor amplitude (B $>$ C)
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{Conclusions}
   \begin{itemize}
-    \item The distractor lowers the PSE: \todo{size, both hands}.
+    \item The distractor lowers the PSE: by about 4.2--4.5~$\mu m$ (left) and 5.7--6.1~$\mu m$
+          (right), in all three models.
     \item It raises the rate of ``high'' responses to weak stimuli ($\gamma_h$).
     \item The sessions differ; a hierarchical model is needed.
-    \item The shift grows with distractor amplitude, \todo{but not proportionally?}
+    \item The shift grows with distractor amplitude, but a weak distractor still shifts the PSE
+          more than a proportional model allows (right hand).
   \end{itemize}
 \end{frame}
 
@@ -35,6 +48,8 @@
     \item Revise Model C: lapse rates per condition, a distractor-presence term,
           possibly a bimanual slope.
     \item Model recovery for B against the revised C.
-    \item \todo{further data or experiments}
+    \item Further experiments: stimulus levels spaced more closely around the PSE, to pin down
+          steep slopes, and levels further out, so the curves reach their asymptotes and the
+          lapse rates are identified.
   \end{itemize}
 \end{frame}
