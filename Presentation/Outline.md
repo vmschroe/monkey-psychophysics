@@ -132,8 +132,6 @@ $r_i \sim \mathbf{Bernoulli}[\psi(x_i;\vec{\theta})]$ ($r_i = 1$ for "high", $x_
   $L(\vec{\theta};\vec{r}) = \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}]$
   $\qquad = \prod_{i=1}^{n} \psi(x_i;\vec{\theta})^{r_i}\,(1-\psi(x_i;\vec{\theta}))^{1-r_i}$
 
-**Why start here:** the simplest model of the experiment. Treating every session as the same curve gives a fast baseline estimate of the distractor's effect on PSE, JND and lapse rates, and its checks tell us whether pooling the sessions is good enough.
-
 ## 12. Model A: priors
 The same priors in every group:
 
@@ -142,19 +140,18 @@ The same priors in every group:
   $\gamma_h = 0.25\, w_h, \quad w_h \sim \text{Beta}(1.22, 4.89)$
   $\gamma_l = 0.25\, w_l, \quad w_l \sim \text{Beta}(1.22, 4.89)$
 
-- Beta with mean 0.2, sd 0.15; scaling by 0.25 keeps each lapse rate in $(0, 0.25)$, so $\psi$ is increasing and the PSE and JND exist
-- Implied lapse rate: mean 0.05, 95% range $[0.003, 0.141]$
-- Not checked by prior predictive simulation
+- $\beta_1$ must be positive for the psychometric function to have a positive slope
+- $\gamma$'s have support between 0 and 0.25, with prior mean of 0.05 and 95% range [0.003, 0.141]
 
 ### Subsection: Synthetic Data
 (numbers from Model_A/Convergence_A_Report)
 
 ## 13. Model A on synthetic data: the study
-- One fixed set of true parameters per group, with PSE and JND spread over the groups (slopes 3 and 6, $\gamma_h$ 0.03–0.06, $\gamma_l$ 0.005–0.01)
+- One fixed set of true parameters $(\beta_0, \beta_1, \gamma_h, \gamma_l)$ per group
 - Trials drawn from the real design (the real mix of stimulus levels and groups), responses simulated from the true curves
 - 7 sizes: 250 to 16,000 trials; the real data (12,937) lie between the two largest
 - 20 replicates of the whole sweep: 140 fits, 80 per size and parameter
-- All fits sampled well: $\hat{R} \le 1.006$, bulk ESS $\ge 1,554$, one divergence in total
+- All fits sampled well: $\hat{R} \le 1.006$, bulk ESS $\ge 1,554$
 
 ## 14. Model A on synthetic data: the 95% HDIs are calibrated
 - Figure: Model_A/Plots_A/Convergence_Plots_A/coverage_vs_size_all_params.png

@@ -61,10 +61,6 @@
     L(\vec{\theta};\vec{r}) &= \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}]\\
     &= \prod_{i=1}^{n} \psi(x_i;\vec{\theta})^{r_i}\,\big(1-\psi(x_i;\vec{\theta})\big)^{1-r_i}
   \end{align*}
-  \vfill
-  \textbf{Why start here:} the simplest model of the experiment. Treating every session as
-  the same curve gives a fast baseline estimate of the distractor's effect on PSE, JND and
-  lapse rates, and its checks tell us whether pooling the sessions is good enough.
 \end{frame}
 
 \begin{frame}{Model A: priors}
@@ -76,10 +72,9 @@
     \gamma_l &= 0.25\, w_l, \qquad w_l \sim \text{Beta}(1.22,\ 4.89)
   \end{align*}
   \begin{itemize}
-    \item Beta with mean 0.2, sd 0.15; scaling by 0.25 keeps each lapse rate in
-          $(0, 0.25)$, so $\psi$ is increasing and the PSE and JND exist
-    \item Implied lapse rate: mean 0.05, 95\% range $[0.003,\ 0.141]$
-    \item Not checked by prior predictive simulation
+    \item $\beta_1$ must be positive for the psychometric function to have a positive slope
+    \item $\gamma$'s have support between 0 and 0.25, with prior mean of 0.05 and 95\% range
+          $[0.003,\ 0.141]$
   \end{itemize}
 \end{frame}
 
@@ -88,13 +83,12 @@
 % numbers from Model_A/Convergence_A_Report.tex (made by Convergence_A.py)
 \begin{frame}{Model A on synthetic data: the study}
   \begin{itemize}
-    \item One fixed set of true parameters per group, with PSE and JND spread over the
-          groups (slopes 3 and 6, $\gamma_h$ 0.03--0.06, $\gamma_l$ 0.005--0.01)
+    \item One fixed set of true parameters $(\beta_0, \beta_1, \gamma_h, \gamma_l)$ per group
     \item Trials drawn from the real design (the real mix of stimulus levels and groups),
           responses simulated from the true curves
     \item 7 sizes: 250 to 16{,}000 trials; the real data (12{,}937) lie between the two largest
     \item 20 replicates of the whole sweep: 140 fits, 80 per size and parameter
-    \item All fits sampled well: $\hat{R} \le 1.006$, bulk ESS $\ge 1{,}554$, one divergence in total
+    \item All fits sampled well: $\hat{R} \le 1.006$, bulk ESS $\ge 1{,}554$
   \end{itemize}
 \end{frame}
 
