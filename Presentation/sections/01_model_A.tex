@@ -92,10 +92,15 @@
   \end{itemize}
 \end{frame}
 
-\figframe{Model A on synthetic data: the 95\% HDIs are calibrated}
-  {\plotsA/Convergence_Plots_A/coverage_vs_size_all_params.png}
-  {Coverage stays within the calibrated range 0.90--0.99 at every size, except 1.00
-   where the prior still widens the HDIs.}
+\begin{frame}{Model A on synthetic data: the 95\% HDIs are calibrated}
+  \centering
+  \includegraphics[width=\textwidth,height=0.64\textheight,keepaspectratio]{\plotsA/Convergence_Plots_A/coverage_vs_size_all_params.png}
+  \par\vspace{0.3em}
+  {\small Coverage: the fraction of the 80 fits whose 95\% HDI contains the true value; a
+   calibrated model gives 0.90--0.99 (gray band). Every value is in the band, except a few of
+   1.00 (all HDIs cover the truth) for $\gamma_h$, $\gamma_l$ and $\beta_1$ at small sizes,
+   where the prior makes the HDIs wider than needed.\par}
+\end{frame}
 
 \figframe{Model A on synthetic data: $\gamma_l$ is pulled upward}
   {\plotsA/Convergence_Plots_A/recovery_gam_l_mean_hdi_vs_size.png}

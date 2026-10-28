@@ -155,7 +155,7 @@ The same priors in every group:
 
 ## 14. Model A on synthetic data: the 95% HDIs are calibrated
 - Figure: Model_A/Plots_A/Convergence_Plots_A/coverage_vs_size_all_params.png
-- Caption: Coverage stays within the calibrated range 0.90–0.99 at every size, except 1.00 where the prior still widens the HDIs.
+- Caption: Coverage: the fraction of the 80 fits whose 95% HDI contains the true value; a calibrated model gives 0.90–0.99 (gray band). Every value is in the band, except a few of 1.00 (all HDIs cover the truth) for $\gamma_h$, $\gamma_l$ and $\beta_1$ at small sizes, where the prior makes the HDIs wider than needed.
 
 ## 15. Model A on synthetic data: $\gamma_l$ is pulled upward
 - Figure: Model_A/Plots_A/Convergence_Plots_A/recovery_gam_l_mean_hdi_vs_size.png
