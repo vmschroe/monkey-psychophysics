@@ -5,8 +5,9 @@ Created on Tue Sep 29 2026
 
 Posterior convergence study for Model B (hierarchical over sessions).
 
-Generates synthetic datasets from the fixed hyperparameters in
-ReadyData_Synth_B.pkl, fits Model B to each, and tracks how the recovered
+Generates synthetic datasets from true hyperparameters set to the posterior
+means of Model B's fit to the real data (Results_B.pkl, from Main_Analysis_B.py),
+so the synthetic data resemble the real data, fits Model B to each, and tracks how the recovered
 posteriors approach the true values. Dataset size is varied in two
 separate sweeps:
     - 'sessions': the number of sessions grows, each session keeping the
@@ -39,13 +40,15 @@ Notes on reading the results:
     - In the 'trials' sweep the hyperparameter posteriors can at best
       converge to the mean/sd of the 42 sessions actually drawn, not to
       the population values.
-    - The true sig_b1 values are tiny (0.002-0.008) next to the prior on
-      sig_b1 (Exponential with mean 1), so they may not be recoverable at
-      these session counts.
+    - An earlier run used hand-picked true values (group slopes 3 and 6, with
+      sig_b1, sig_gam_h and sig_gam_l near 0) from ReadyData_Synth_B.pkl; its
+      results are kept in Results_Convergence_B_handpicked.pkl. The true values
+      only generate data; the priors are unchanged and don't use them.
 
-Runtime: very roughly 1.5 min per 1000 trials per fit with the default
-sampler settings, so the defaults (~74k trials per replicate over both
-sweeps, 2 replicates) take about 4 hours. Results are saved after every
+Runtime: very roughly 1.5 min per 1000 trials per fit with the chains sampled
+one after another, so the defaults (~74k trials per replicate over both
+sweeps, 2 replicates) take about 4 hours that way; with the 4 chains sampled
+in parallel (CORES = 4) about a third of that. Results are saved after every
 fit, so an interrupted run keeps the fits already done.
 
 @author: vmschroe
@@ -83,6 +86,10 @@ N_REPS = 2                              # independent synthetic runs of each swe
 DRAWS = 1000
 TUNE = 1000
 CHAINS = 4
+CORES = 4                               # chains sampled in parallel; 1 = one after another
+# Python 3.14's default 'forkserver' re-runs this script in every worker, so fork them instead
+# ('fork' doesn't exist on Windows, which keeps its default)
+MP_CTX = None if os.name == 'nt' else 'fork'
 HDI_PROB = 0.95
 SEED = 20260930
 
@@ -102,33 +109,27 @@ with open(DATA_DIR / "ReadyData_Synth_B.pkl", "rb") as f:
 
 design_cov_mat = data_dict['cov_mat']
 design_grp_idx = data_dict['grp_idx']
-hparams_fixed_B = data_dict['hparams_fixed_B']
 names_grp_idx = data_dict['names_grp_idx']
 groups = sorted(names_grp_idx, key=names_grp_idx.get)   # ['left_uni','left_bi','right_uni','right_bi']
-
-# grp_idx = 2*hand + manual, as in Data_B/DataProcessing_B.py
-GROUP_HAND_MANUAL = {grp: (['left', 'right'][g_i // 2], ['uni', 'bi'][g_i % 2]) for g_i, grp in enumerate(groups)}
 
 # stimulus values each group received in the real design
 stim_pool = {g_i: design_cov_mat[design_grp_idx == g_i, 1] for g_i in range(len(groups))}
 
-# hyperparameter name -> (par_type, par_idx, hp_type) in hparams_fixed_B
-HYPER_KEYS = {
-    'mu_b0': ('beta', 'h0', 'mu'),
-    'mu_b1': ('beta', 'l1', 'mu'),
-    'mu_gam_h': ('gamma', 'h0', 'mu'),
-    'mu_gam_l': ('gamma', 'l1', 'mu'),
-    'sig_b0': ('beta', 'h0', 'sig'),
-    'sig_b1': ('beta', 'l1', 'sig'),
-    'sig_gam_h': ('gamma', 'h0', 'sig'),
-    'sig_gam_l': ('gamma', 'l1', 'sig'),
-}
-HYPER_NAMES = list(HYPER_KEYS)
+# True hyperparameters: posterior means of Model B's real-data fit, as in Model_Recov_BA.py.
+# Build_Model_B.py indexes the gamma hyperparameters with the 'betas' dim: b0 -> gam_h, b1 -> gam_l
+with open(MODEL_DIR / "Results_B.pkl", "rb") as f:
+    real_fit_B = pickle.load(f)['az_summary_trace']['mean']
+REAL_FIT_KEYS = {'mu_b0': ('mu_betas', 'b0'), 'mu_b1': ('mu_betas', 'b1'),
+                 'mu_gam_h': ('mu_gams', 'b0'), 'mu_gam_l': ('mu_gams', 'b1'),
+                 'sig_b0': ('sig_betas', 'b0'), 'sig_b1': ('sig_betas', 'b1'),
+                 'sig_gam_h': ('sig_gams', 'b0'), 'sig_gam_l': ('sig_gams', 'b1')}
+true_hyper = {name: np.array([real_fit_B[f"{var}[{beta}, {grp}]"] for grp in groups])
+              for name, (var, beta) in REAL_FIT_KEYS.items()}
+HYPER_NAMES = list(REAL_FIT_KEYS)
 HYPER_FAMILIES = {'means': HYPER_NAMES[:4], 'sds': HYPER_NAMES[4:]}
 SESSION_PARAMS = ['gam_h', 'gam_l', 'b0', 'b1', 'PSE', 'JND']
 
-true_hyper = {name: np.array([float(hparams_fixed_B.loc[GROUP_HAND_MANUAL[grp] + key]) for grp in groups])
-              for name, key in HYPER_KEYS.items()}
+print(pd.DataFrame(true_hyper, index=groups).T.round(3))
 
 #%% HELPERS
 
@@ -205,7 +206,8 @@ def fit_model_B(cov_mat, grp_idx, sess_idx, obs_data, n_sessions):
           'sessions': [f's{i:02d}' for i in range(n_sessions)]}
     exec(BUILD_MODEL_B, ns)
     with ns['model_B']:
-        return pm.sample(draws=DRAWS, tune=TUNE, chains=CHAINS, cores=1, random_seed=rng, progressbar=True)
+        return pm.sample(draws=DRAWS, tune=TUNE, chains=CHAINS, cores=CORES, mp_ctx=MP_CTX,
+                         random_seed=rng, progressbar=False)
 
 hyper_rows = []
 session_frames = []

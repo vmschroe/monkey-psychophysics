@@ -3,7 +3,7 @@
 Editable outline of `Presentation.tex` and `sections/*.tex`. One `##` heading per slide.
 `TODO:` marks the red placeholder boxes. `Figure:` names the image on a figure slide,
 `Caption:` is the line under it. Math is written as in LaTeX.
-`### Subsection:` marks a subsection (it appears in the table of contents). `[gray] ... [end gray]` marks text shown in light gray, `[blue] ... [end blue]` text in blue.
+`### Subsection:` marks a subsection (it appears in the table of contents). `[gray] ... [end gray]` marks text shown in light gray, `[blue] ... [end blue]` text in blue, `[red]`/`[amber]` likewise.
 
 ---
 
@@ -280,46 +280,46 @@ Hyperpriors, the same in every group:
 - All 20 fits sampled well: no divergences, $\hat{R} \le 1.010$, bulk ESS $\ge 579$
 
 ## 29. Model B on synthetic data: the true values
-The 4 synthetic groups cross a shallow or steep slope with a high or low PSE; they do not correspond to hands or conditions.
+One set of fixed values per group, chosen to cover high and low values of each parameter (not taken from the real data):
 
 | group | slope $\mu_{\beta_1}$ | $\mu_{\beta_0}$ | PSE (μm) | typical $\gamma_h$ | typical $\gamma_l$ | $\sigma_{\beta_0}$ |
 |---|---|---|---|---|---|---|
-| shallow, PSE high | 3 | −1 | 32.6 | 0.033 | 0.0055 | 1.00 |
-| shallow, PSE low | 3 | +1 | 22.8 | 0.033 | 0.0050 | 0.50 |
-| steep, PSE high | 6 | −1 | 30.2 | 0.058 | 0.0143 | 0.25 |
-| steep, PSE low | 6 | +1 | 25.3 | 0.058 | 0.0108 | 0.75 |
+| left unimanual | 3 | −1 | 32.6 | 0.033 | 0.0055 | 1.00 |
+| left bimanual | 3 | +1 | 22.8 | 0.033 | 0.0050 | 0.50 |
+| right unimanual | 6 | −1 | 30.2 | 0.058 | 0.0143 | 0.25 |
+| right bimanual | 6 | +1 | 25.3 | 0.058 | 0.0108 | 0.75 |
 
 - The other between-session sds are near 0: $\sigma_{\beta_1}$ 0.002–0.008, $\sigma_{\gamma_h}$ 0.024–0.147, $\sigma_{\gamma_l}$ 0.014–0.103 (logit scale)
-- A shallow curve shifted high never reaches its ceiling at 50 μm; shifted low, it never reaches its floor at 6 μm
+- The left-hand curves are shallow: left unimanual never reaches its ceiling at 50 μm, left bimanual never reaches its floor at 6 μm
 
 ## 30. Model B on synthetic data: $\mu_{\beta_0}$ vs number of sessions
-- Figure (no caption): $\mu_{\beta_0}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: shallow slope (3) on top, steep (6) below; PSE high left, PSE low right; x tick labels under the lower half
+- Figure (no caption): $\mu_{\beta_0}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
 
 ## 31. Model B on synthetic data: $\mu_{\beta_1}$ vs number of sessions
-- Figure (no caption): $\mu_{\beta_1}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: shallow slope (3) on top, steep (6) below; PSE high left, PSE low right; x tick labels under the lower half
+- Figure (no caption): $\mu_{\beta_1}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
 
 ## 32. Model B on synthetic data: $\mu_{\gamma_h}$ vs number of sessions
-- Figure (no caption): $\mu_{\gamma_h}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: shallow slope (3) on top, steep (6) below; PSE high left, PSE low right; x tick labels under the lower half
+- Figure (no caption): $\mu_{\gamma_h}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
 
 ## 33. Model B on synthetic data: $\mu_{\gamma_l}$ vs number of sessions
-- Figure (no caption): $\mu_{\gamma_l}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: shallow slope (3) on top, steep (6) below; PSE high left, PSE low right; x tick labels under the lower half
+- Figure (no caption): $\mu_{\gamma_l}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
 
 ## 34. Model B on synthetic data: $\sigma_{\beta_0}$ vs number of sessions
-- Figure (no caption): $\sigma_{\beta_0}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: shallow slope (3) on top, steep (6) below; PSE high left, PSE low right; x tick labels under the lower half
+- Figure (no caption): $\sigma_{\beta_0}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
 
 ## 35. Model B on synthetic data: $\sigma_{\beta_1}$ vs number of sessions
-- Figure (no caption): $\sigma_{\beta_1}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: shallow slope (3) on top, steep (6) below; PSE high left, PSE low right; x tick labels under the lower half
+- Figure (no caption): $\sigma_{\beta_1}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
 
 ## 36. Model B on synthetic data: $\sigma_{\gamma_h}$ vs number of sessions
-- Figure (no caption): $\sigma_{\gamma_h}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: shallow slope (3) on top, steep (6) below; PSE high left, PSE low right; x tick labels under the lower half
+- Figure (no caption): $\sigma_{\gamma_h}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
 
 ## 37. Model B on synthetic data: $\sigma_{\gamma_l}$ vs number of sessions
-- Figure (no caption): $\sigma_{\gamma_l}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: shallow slope (3) on top, steep (6) below; PSE high left, PSE low right; x tick labels under the lower half
+- Figure (no caption): $\sigma_{\gamma_l}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
 
 ## 38. Model B on synthetic data: session-level recovery
 At 320 trials per session (42 sessions, both replicates): RMSE of the posterior mean / mean 95% HDI width / coverage
 
-| | shallow, PSE high | shallow, PSE low | steep, PSE high | steep, PSE low |
+| | left unimanual | left bimanual | right unimanual | right bimanual |
 |---|---|---|---|---|
 | PSE | 0.14 / 0.49 / 0.90 | 0.12 / 0.42 / 0.90 | 0.05 / 0.16 / 0.93 | 0.09 / 0.32 / 0.94 |
 | JND | 0.014 / 0.15 / 1.00 | 0.034 / 0.17 / 1.00 | 0.013 / 0.08 / 1.00 | 0.010 / 0.10 / 1.00 |
@@ -359,29 +359,49 @@ Small note: 4 chains × 5,000 draws: no divergences; $\hat{R} = 1.00$ and bulk E
 ## 41. Model B on the real data: fitted curves in one session (04-13)
 - Figures side by side (no caption): Model_B/Plots_B/Fit_Plots_B/curves_left_04-13.png, curves_right_04-13.png
 
-## 42. Model B on the real data: PSE in each session
-- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/PSE_uni_bi_by_session.png (unimanual and bimanual per session, both hands)
+## 42. Model B on the real data: PSE, left hand
+- Stacked, no caption, aligned so each session's estimate sits above its effect (cropped in LaTeX from Model_B/Plots_B/Fit_Plots_B/):
+  - top: the left-hand row of PSE_uni_bi_by_session.png (unimanual and bimanual in each session)
+  - bottom: the left-hand row of effect_PSE_by_session.png (bimanual − unimanual in each session), with the session labels
 
-## 43. Model B on the real data: effect of the distractor on PSE
-- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_PSE_by_session.png (bimanual − unimanual per session)
+## 43. Model B on the real data: PSE, right hand
+- Stacked, no caption, aligned so each session's estimate sits above its effect (cropped in LaTeX from Model_B/Plots_B/Fit_Plots_B/):
+  - top: the right-hand row of PSE_uni_bi_by_session.png (unimanual and bimanual in each session)
+  - bottom: the right-hand row of effect_PSE_by_session.png (bimanual − unimanual in each session), with the session labels
+- Key line below (the right-hand rows have no legend in the PNGs): unimanual (blue), bimanual (red): session mean and 95% HDI; bands: typical session; green dashed: trained threshold. bi − uni: filled if the session's 95% HDI excludes 0; orange band: average over sessions
 
-## 44. Model B on the real data: JND in each session
-- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/JND_uni_bi_by_session.png
+## 44. Model B on the real data: JND, left hand
+- Stacked, no caption, aligned so each session's estimate sits above its effect (cropped in LaTeX from Model_B/Plots_B/Fit_Plots_B/):
+  - top: the left-hand row of JND_uni_bi_by_session.png (unimanual and bimanual in each session)
+  - bottom: the left-hand row of effect_JND_by_session.png (bimanual − unimanual in each session), with the session labels
 
-## 45. Model B on the real data: effect of the distractor on JND
-- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_JND_by_session.png
+## 45. Model B on the real data: JND, right hand
+- Stacked, no caption, aligned so each session's estimate sits above its effect (cropped in LaTeX from Model_B/Plots_B/Fit_Plots_B/):
+  - top: the right-hand row of JND_uni_bi_by_session.png (unimanual and bimanual in each session)
+  - bottom: the right-hand row of effect_JND_by_session.png (bimanual − unimanual in each session), with the session labels
+- Key line below (the right-hand rows have no legend in the PNGs): unimanual (blue), bimanual (red): session mean and 95% HDI; bands: typical session. bi − uni: filled if the session's 95% HDI excludes 0; orange band: average over sessions
 
-## 46. Model B on the real data: $\gamma_h$ in each session
-- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/gamh_uni_bi_by_session.png
+## 46. Model B on the real data: $\gamma_h$, left hand
+- Stacked, no caption, aligned so each session's estimate sits above its effect (cropped in LaTeX from Model_B/Plots_B/Fit_Plots_B/):
+  - top: the left-hand row of gamh_uni_bi_by_session.png (unimanual and bimanual in each session)
+  - bottom: the left-hand row of effect_gamh_by_session.png (bimanual − unimanual in each session), with the session labels
 
-## 47. Model B on the real data: effect of the distractor on $\gamma_h$
-- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_gamh_by_session.png
+## 47. Model B on the real data: $\gamma_h$, right hand
+- Stacked, no caption, aligned so each session's estimate sits above its effect (cropped in LaTeX from Model_B/Plots_B/Fit_Plots_B/):
+  - top: the right-hand row of gamh_uni_bi_by_session.png (unimanual and bimanual in each session)
+  - bottom: the right-hand row of effect_gamh_by_session.png (bimanual − unimanual in each session), with the session labels
+- Key line below (the right-hand rows have no legend in the PNGs): unimanual (blue), bimanual (red): session mean and 95% HDI; bands: typical session. bi − uni: filled if the session's 95% HDI excludes 0; orange band: average over sessions
 
-## 48. Model B on the real data: $\gamma_l$ in each session
-- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/gaml_uni_bi_by_session.png
+## 48. Model B on the real data: $\gamma_l$, left hand
+- Stacked, no caption, aligned so each session's estimate sits above its effect (cropped in LaTeX from Model_B/Plots_B/Fit_Plots_B/):
+  - top: the left-hand row of gaml_uni_bi_by_session.png (unimanual and bimanual in each session)
+  - bottom: the left-hand row of effect_gaml_by_session.png (bimanual − unimanual in each session), with the session labels
 
-## 49. Model B on the real data: effect of the distractor on $\gamma_l$
-- Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_gaml_by_session.png
+## 49. Model B on the real data: $\gamma_l$, right hand
+- Stacked, no caption, aligned so each session's estimate sits above its effect (cropped in LaTeX from Model_B/Plots_B/Fit_Plots_B/):
+  - top: the right-hand row of gaml_uni_bi_by_session.png (unimanual and bimanual in each session)
+  - bottom: the right-hand row of effect_gaml_by_session.png (bimanual − unimanual in each session), with the session labels
+- Key line below (the right-hand rows have no legend in the PNGs): unimanual (blue), bimanual (red): session mean and 95% HDI; bands: typical session. bi − uni: filled if the session's 95% HDI excludes 0; orange band: average over sessions
 
 ## 50. Model B: PSE shift vs distractor amplitude (exploratory)
 - Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_vs_distractor_amplitude.png
@@ -405,12 +425,21 @@ Small note: 4 chains × 5,000 draws: no divergences; $\hat{R} = 1.00$ and bulk E
 
 ### Subsection: Model Structure
 
-## 53. Model C: graphical model
+## 53. Model C: including the distractor as a covariate
+Psychometric function: $\psi(x_\text{stim}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}($[red] $\beta_0 + \beta_1 x_\text{stim}$ [end red]$)$
+Suppose the distractor has an impact on the perceived stimulus as follows: $x_\text{perc} = x_\text{stim} + c\, x_\text{dist}$
+Then (all [red], except [amber] terms):
+  $\beta_0 + \beta_1 x_\text{perc} = \beta_0 + \beta_1 (x_\text{stim} + c\, x_\text{dist})$
+  $\qquad = \beta_0 + \beta_1 x_\text{stim} +$ [amber] $\beta_1 c$ [end amber] $x_\text{dist}$
+  $\qquad = \beta_0 + \beta_1 x_\text{stim} +$ [amber] $\beta_2$ [end amber] $x_\text{dist}$
+Considering $x_\text{dist}$ as a covariate: $\psi(x_\text{stim}, x_\text{dist}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}($[red] $\beta_0 + \beta_1 x_\text{stim} +$ [amber] $\beta_2$ [end amber] $x_\text{dist}$ [end red]$)$
+
+## 54. Model C: graphical model
 - TikZ plate diagram: hyperparameters $\mu, \sigma$ of $\beta_0, \beta_1, \beta_2, \gamma_h, \gamma_l$ → session parameters $\beta_{0,s}, \beta_{1,s}, \beta_{2,s}, \gamma_{h,s}, \gamma_{l,s}$ → $\psi_i$ ← $x_i$, $d_i$; $\psi_i$ → $r_i$ (observed)
   - plates: trials $i$ in session $s$, inside sessions $s = 1,\dots,42$, inside "each hand"
 - Small note below: Circles: random variables (shaded: observed); rectangle: deterministic; $x_i$, $d_i$: fixed covariates. The same model is fit independently to each hand, with unimanual and bimanual trials together.
 
-## 54. Model C: likelihood
+## 55. Model C: likelihood
 For each hand, fit independently to its $n \approx 6,470$ unimanual and bimanual trials, with the distractor as a covariate $d_i$ (amplitude / 14.63; $d_i = 0$ on unimanual trials):
 Likelihood: probability of obtaining responses $\vec{r}$ given parameters $\vec{\theta} = (\vec{\theta}_s)_{s=1}^{42}$, $\vec{\theta}_s = (\beta_{0,s}, \beta_{1,s}, \beta_{2,s}, \gamma_{h,s}, \gamma_{l,s})$
 $r_i \sim \mathbf{Bernoulli}[\psi(x_i, d_i;\vec{\theta}_{s[i]})]$, with $\psi(x, d;\vec{\theta}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x + \beta_2 d)$, so:
@@ -420,7 +449,7 @@ $r_i \sim \mathbf{Bernoulli}[\psi(x_i, d_i;\vec{\theta}_{s[i]})]$, with $\psi(x,
   $L(\vec{\theta};\vec{r}) = \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}_{s[i]}]$
   $\qquad = \prod_{s=1}^{42} \prod_{i:\, s[i]=s} \psi(x_i, d_i;\vec{\theta}_s)^{r_i}\,(1-\psi(x_i, d_i;\vec{\theta}_s))^{1-r_i}$
 
-## 55. Model C: priors
+## 56. Model C: priors
 Session parameters drawn from the hand's population (non-centered in the code):
 
   $\beta_{k,s} \sim \mathcal{N}(\mu_{\beta_k}, \sigma_{\beta_k}),\ k = 0, 1, 2$
@@ -436,13 +465,13 @@ Hyperpriors, the same for both hands; all but those of $\beta_2$ as in Model B:
 - $\mu_{\beta_2}$ centered at 0: the distractor could push responses either way
 - Uni- and bimanual trials share slope and lapse rates: $\beta_2 d$ only shifts the curve
 
-## 56. Model C: prior on the distractor effect
+## 57. Model C: prior on the distractor effect
 - Figure (no caption, title cropped): Model_C/Plots_C/Convergence_Plots_C/Prior_Check_C_distractor.png
 
 ### Subsection: Synthetic Data
 (numbers from Model_C/Convergence_C_Report)
 
-## 57. Model C on synthetic data: the study
+## 58. Model C on synthetic data: the study
 - True hyperparameters derived from Model B's fit to the real data, so the synthetic data resemble the real data (e.g. $\mu_{\beta_2} = 0.93$ left, 1.13 right)
 - Each simulated session gets one distractor amplitude, drawn from the real sessions'
 - The same two sweeps as for Model B, each run twice with new data:
@@ -450,7 +479,7 @@ Hyperpriors, the same for both hands; all but those of $\beta_2$ as in Model B:
   - trials: 42 sessions of 20, 40, 80, 160, 320 trials
 - 20 fits: 2 divergences in total (in the two smallest datasets), $\hat{R} \le 1.008$, bulk ESS $\ge 532$
 
-## 58. Model C on synthetic data: hand-level means
+## 59. Model C on synthetic data: hand-level means
 At 40 sessions: true value and posterior mean [95% HDI], averaged over the two replicates
 
 | | left true | left posterior | right true | right posterior |
@@ -464,7 +493,7 @@ At 40 sessions: true value and posterior mean [95% HDI], averaged over the two r
 - All five recovered without visible bias; $\mu_{\beta_2}$'s HDI excludes 0
 - Lapse means (logit scale) are the least precise
 
-## 59. Model C on synthetic data: between-session sds
+## 60. Model C on synthetic data: between-session sds
 At 80 sessions: true value and posterior mean [95% HDI], averaged over the two replicates
 
 | | left true | left posterior | right true | right posterior |
@@ -478,10 +507,10 @@ At 80 sessions: true value and posterior mean [95% HDI], averaged over the two r
 - The sds of $\beta_0$, $\beta_1$, $\beta_2$ are identified (a small $\sigma_{\beta_1}$ is hard to tell from 0)
 - The lapse sds are not: their HDIs start at 0 and barely narrow with more data
 
-## 60. Model C on synthetic data: session $\beta_2$ is weak for small distractors
+## 61. Model C on synthetic data: session $\beta_2$ is weak for small distractors
 - Figure (no caption, title cropped): Model_C/Plots_C/Convergence_Plots_C/session_b2_true_vs_recovered.png
 
-## 61. Model C on synthetic data: what is recoverable
+## 62. Model C on synthetic data: what is recoverable
 At the size of the real data (42 sessions of about 308 trials), if the data follow Model C:
 - **Recoverable:** per-session PSEs in both conditions and JNDs; all five hand-level means, including the distractor effect $\mu_{\beta_2}$; the between-session sds of $\beta_0$, $\beta_1$ and $\beta_2$
 - **Weakly determined:** the individual session coefficients, especially $\beta_2$ in sessions with a small distractor (HDI 2.6 wide at 6 μm, 1.2 at 32 μm), which are pulled toward the hand mean
@@ -491,7 +520,7 @@ At the size of the real data (42 sessions of about 308 trials), if the data foll
 ### Subsection: Real Data
 (numbers from Model_C/Fit_C_Report)
 
-## 62. Model C on the real data: hand-level estimates
+## 63. Model C on the real data: hand-level estimates
 Table, posterior mean [95% HDI]:
 
 | | left | right |
@@ -508,25 +537,25 @@ Small note: PSE, JND and lapse rates of a typical session (JND and lapse rates a
 - $\mu_{\beta_2} > 0$ for both hands: the distractor lowers the PSE, more the stronger it is
 - The sessions vary little around the hand's amplitude line ($\sigma_{\beta_2}$ small)
 
-## 63. Model C on the real data: fitted curves in one session (04-13)
+## 64. Model C on the real data: fitted curves in one session (04-13)
 - Figures side by side (no caption): Model_C/Plots_C/Fit_Plots_C/curves_left_04-13.png, curves_right_04-13.png
 
-## 64. Model C on the real data: PSE in each session
+## 65. Model C on the real data: PSE in each session
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/PSE_by_session.png (unimanual and bimanual per session)
 
-## 65. Model C on the real data: effect of the distractor on PSE
+## 66. Model C on the real data: effect of the distractor on PSE
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/effect_PSE_by_session.png
 
-## 66. Model C: the PSE shift grows with distractor amplitude
+## 67. Model C: the PSE shift grows with distractor amplitude
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/pse_shift_vs_amplitude.png
 
-## 67. Model C on the real data: misfit at the weakest stimuli
+## 68. Model C on the real data: misfit at the weakest stimuli
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/ppc_pooled_by_stimulus.png
 
-## 68. Model C: observed vs predicted, by distractor amplitude
+## 69. Model C: observed vs predicted, by distractor amplitude
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/ppc_by_distractor_amplitude.png
 
-## 69. Model C: conclusions
+## 70. Model C: conclusions
 - Reliable fit: 2 divergences in 20,000 draws, $\hat{R} = 1.000$ (elpd_loo = −3217.0, SE 65.7)
 - Effect of the distractor (bimanual − unimanual), posterior mean [95% HDI]:
   - **PSE:** lowered, by −4.51 [−5.15, −3.86] μm (left) and −5.74 [−6.39, −5.11] μm (right) on average over sessions; more the stronger the distractor: a typical session shifts −1.23 and −1.66 μm at 6 μm, −6.57 and −8.85 μm at 32 μm
@@ -542,7 +571,7 @@ Small note: PSE, JND and lapse rates of a typical session (JND and lapse rates a
 
 ### Subsection: Predictive Performance
 
-## 70. Leave-one-out cross-validation
+## 71. Leave-one-out cross-validation
 All three models fit to the same 12,937 trials in the same order, so the difference between two models can be computed trial by trial:
 
 | Model | elpd_loo (SE) | p_loo | difference (SE) |
@@ -558,10 +587,10 @@ All three models fit to the same 12,937 trials in the same order, so the differe
 ### Subsection: Model B vs Model A
 (numbers from Model_B/Fit_B_Report, "Comparison with Model A")
 
-## 71. Model B vs Model A: the distractor effects agree
+## 72. Model B vs Model A: the distractor effects agree
 - Figure (no caption, title cropped): Model_B/Plots_B/Fit_Plots_B/effect_A_vs_B.png
 
-## 72. Model B vs Model A: pooling inflates the JND
+## 73. Model B vs Model A: pooling inflates the JND
 Posterior means: Model A (sessions pooled) against the average of Model B's 42 session estimates
 
 | | PSE A | PSE B | JND A | JND B | $\gamma_h$ A | $\gamma_h$ B | $\gamma_l$ A | $\gamma_l$ B |
@@ -578,7 +607,7 @@ Posterior means: Model A (sessions pooled) against the average of Model B's 42 s
 ### Subsection: Model Recovery: B vs A
 (numbers from Model_B/Model_Recov_BA_Report)
 
-## 73. Model recovery: is B's advantage real?
+## 74. Model recovery: is B's advantage real?
 Two questions before reading B's win as session-to-session variation:
 1. Can LOO identify the model that generated a dataset of this size and design?
 2. Could B win just because it is more flexible? B contains A as the case of no between-session variation.
@@ -589,7 +618,7 @@ Design:
   - **data B:** session parameters drawn from B's real-data hyperparameters
 - Both models fit to every dataset; LOO picks the model with the higher elpd_loo; $\Delta = \text{elpd}(\text{B}) - \text{elpd}(\text{A})$
 
-## 74. Model recovery: LOO picks the generating model
+## 75. Model recovery: LOO picks the generating model
 
 | | selects A | selects B |
 |---|---|---|
@@ -600,10 +629,10 @@ Design:
 - **Data from A:** A wins 9 of 10, but narrowly, $\Delta$ = −6.8 to +1.6; the one B win is a near-tie ($z$ = 0.36). B mimics A by shrinking its sds (p_loo = 54–84)
 - **Real data:** $\Delta$ = 164.1 and p_loo = 178.7, inside the data-from-B range and far outside the data-from-A range
 
-## 75. Model recovery: $\Delta$ in every replicate
+## 76. Model recovery: $\Delta$ in every replicate
 - Figure (no caption, title cropped): Model_B/Plots_B/Model_Recov_Plots_BA/elpd_diff_by_replicate.png
 
-## 76. Model recovery: conclusions
+## 77. Model recovery: conclusions
 - With this design and data size, LOO identifies session-to-session variation reliably: B wins every time with $z > 8$ when the variation is there
 - B's flexibility alone does not make it win: on data without session variation it loses or ties ($\Delta \le 1.6$)
 - The real data look like the data-from-B replicates in both $\Delta$ and p_loo: the psychometric curves do vary between sessions
@@ -613,7 +642,7 @@ Design:
 ### Subsection: Model C vs Model B
 (numbers from Model_C/Fit_C_Report, "Comparison with Model B")
 
-## 77. Model C vs Model B: where C loses
+## 78. Model C vs Model B: where C loses
 elpd_loo(C) − elpd_loo(B) summed over the trials at each amplitude; negative values favor Model B
 
 | stimulus (μm) | left bimanual | left unimanual | right bimanual | right unimanual |
@@ -630,10 +659,10 @@ elpd_loo(C) − elpd_loo(B) summed over the trials at each amplitude; negative v
 - 29.2 of the 37.1 are lost at 6 and 12 μm: one lapse rate for both conditions
 - Next: left unimanual at 32 and 44 μm: one slope for both conditions
 
-## 78. Model C vs Model B: session PSE shifts
+## 79. Model C vs Model B: session PSE shifts
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/pse_shift_C_vs_B.png
 
-## 79. Model C vs Model B: the weakest distractor
+## 80. Model C vs Model B: the weakest distractor
 Session PSE shifts (μm): mean, and range of the posterior means, over the sessions at the weakest and strongest distractor
 
 | hand | distractor | Model B | Model C |
@@ -647,7 +676,7 @@ Session PSE shifts (μm): mean, and range of the posterior means, over the sessi
 - For the right hand at 6 μm, B's shift is more than twice C's: C ties the shift to the amplitude, so a weak distractor must give a small shift
 - Suggests an effect of the distractor being present, on top of its amplitude
 
-## 80. Model comparison: conclusions
+## 81. Model comparison: conclusions
 - **Sessions differ:** B predicts far better than A, and model recovery shows this is not B's flexibility alone. A's pooling inflates the JND and bimanual $\gamma_h$.
 - **The models agree on the PSE shift:** about −4.2 to −4.5 μm (left) and −5.7 to −6.1 μm (right) on average.
 - **The shift depends on amplitude, but not only:** C confirms the trend inside a model, yet B still predicts better. C's misfit points to
@@ -660,7 +689,7 @@ Session PSE shifts (μm): mean, and range of the posterior means, over the sessi
 
 # Section: Summary
 
-## 81. Comparison of the models
+## 82. Comparison of the models
 Table:
 
 | | A | B | C |
@@ -672,13 +701,13 @@ Table:
 
 TODO: fill from Fit_A/B/C_Report; elpd differences from Fit_B and Fit_C
 
-## 82. Conclusions
+## 83. Conclusions
 - The distractor lowers the PSE: TODO: size, both hands.
 - It raises the rate of "high" responses to weak stimuli ($\gamma_h$).
 - The sessions differ; a hierarchical model is needed.
 - The shift grows with distractor amplitude, TODO: but not proportionally?
 
-## 83. Next steps
+## 84. Next steps
 - Revise Model C: lapse rates per condition, a distractor-presence term, possibly a bimanual slope.
 - Model recovery for B against the revised C.
 - TODO: further data or experiments

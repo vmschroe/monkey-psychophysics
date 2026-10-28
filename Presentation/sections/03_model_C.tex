@@ -8,6 +8,34 @@
 
 \subsection{Model Structure}
 
+% red: the argument of the sigmoid; amber (covorange): the distractor's coefficient
+\begin{frame}{Model C: including the distractor as a covariate}
+  Psychometric function:
+  \[
+    \psi(x_\text{stim}) = \gamma_h + (1 - \gamma_h - \gamma_l)\,
+      \invlogit\big(\textcolor{plotred}{\beta_0 + \beta_1 x_\text{stim}}\big)
+  \]
+  Suppose the distractor has an impact on the perceived stimulus as follows:
+  \[
+    x_\text{perc} = x_\text{stim} + c\, x_\text{dist}
+  \]
+  Then:
+  \begin{align*}
+    \textcolor{plotred}{\beta_0 + \beta_1 x_\text{perc}}
+      &\textcolor{plotred}{{}= \beta_0 + \beta_1 (x_\text{stim} + c\, x_\text{dist})} \\
+      &\textcolor{plotred}{{}= \beta_0 + \beta_1 x_\text{stim}} \mathbin{\textcolor{plotred}{+}}
+        \textcolor{covorange}{\beta_1 c}\, \textcolor{plotred}{x_\text{dist}} \\
+      &\textcolor{plotred}{{}= \beta_0 + \beta_1 x_\text{stim}} \mathbin{\textcolor{plotred}{+}}
+        \textcolor{covorange}{\beta_2}\, \textcolor{plotred}{x_\text{dist}}
+  \end{align*}
+  Considering $x_\text{dist}$ as a covariate:
+  \[
+    \psi(x_\text{stim}, x_\text{dist}) = \gamma_h + (1 - \gamma_h - \gamma_l)\,
+      \invlogit\big(\textcolor{plotred}{\beta_0 + \beta_1 x_\text{stim}} \mathbin{\textcolor{plotred}{+}}
+      \textcolor{covorange}{\beta_2}\, \textcolor{plotred}{x_\text{dist}}\big)
+  \]
+\end{frame}
+
 % graphical model, likelihood and priors follow Model_C/Build_Model_C.py and
 % Convergence_C_Report, "Model Structure"
 \begin{frame}{Model C: graphical model}

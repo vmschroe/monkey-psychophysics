@@ -111,19 +111,19 @@
 \end{frame}
 
 \begin{frame}{Model B on synthetic data: the true values}
-  The 4 synthetic groups cross a shallow or steep slope with a high or low PSE; they do not
-  correspond to hands or conditions.
+  One set of fixed values per group, chosen to cover high and low values of each parameter
+  (not taken from the real data):
   \vspace{0.5em}
 
   \centering\small
   \begin{tabular}{lcccccc}
     \toprule
-    group & slope $\mu_{\beta_1}$ & $\mu_{\beta_0}$ & PSE ($\mu m$) & typical $\gamma_h$ & typical $\gamma_l$ & $\sigma_{\beta_0}$ \\
+     & slope $\mu_{\beta_1}$ & $\mu_{\beta_0}$ & PSE ($\mu m$) & typical $\gamma_h$ & typical $\gamma_l$ & $\sigma_{\beta_0}$ \\
     \midrule
-    shallow, PSE high & 3 & $-1$ & 32.6 & 0.033 & 0.0055 & 1.00 \\
-    shallow, PSE low  & 3 & $+1$ & 22.8 & 0.033 & 0.0050 & 0.50 \\
-    steep, PSE high   & 6 & $-1$ & 30.2 & 0.058 & 0.0143 & 0.25 \\
-    steep, PSE low    & 6 & $+1$ & 25.3 & 0.058 & 0.0108 & 0.75 \\
+    left unimanual  & 3 & $-1$ & 32.6 & 0.033 & 0.0055 & 1.00 \\
+    left bimanual   & 3 & $+1$ & 22.8 & 0.033 & 0.0050 & 0.50 \\
+    right unimanual & 6 & $-1$ & 30.2 & 0.058 & 0.0143 & 0.25 \\
+    right bimanual  & 6 & $+1$ & 25.3 & 0.058 & 0.0108 & 0.75 \\
     \bottomrule
   \end{tabular}
 
@@ -132,8 +132,8 @@
   \begin{itemize}
     \item The other between-session sds are near 0: $\sigma_{\beta_1}$ 0.002--0.008, $\sigma_{\gamma_h}$
           0.024--0.147, $\sigma_{\gamma_l}$ 0.014--0.103 (logit scale)
-    \item A shallow curve shifted high never reaches its ceiling at 50~$\mu m$; shifted low, it
-          never reaches its floor at 6~$\mu m$
+    \item The left-hand curves are shallow: left unimanual never reaches its ceiling at
+          50~$\mu m$, left bimanual never reaches its floor at 6~$\mu m$
   \end{itemize}
 \end{frame}
 
@@ -141,7 +141,7 @@
 % Each slide takes that hyperparameter's row of the 4 x 4 figure (2623 x 2097 px at 200 dpi,
 % 1 px = 0.36 bp), cuts it between its 2nd and 3rd panels (at the white gap, x = 1320 px for the means and
 % 1324 px for the sds) and
-% stacks the halves: shallow-slope groups on top, steep below. The x tick labels are taken
+% stacks the halves: left-hand groups on top, right-hand below. The x tick labels are taken
 % from the figure's bottom row (px 1944-2023) and put under the lower half.
 \newcommand{\recovslide}[5]{%
   \begin{frame}{Model B on synthetic data: #1 vs number of sessions}
@@ -153,10 +153,10 @@
         {\includegraphics[scale=0.53, #4, clip]{\plotsB/Convergence_Plots_B/#2}};
       \node[inner sep=0, anchor=north west] (ticks) at (bot.south west)
         {\includegraphics[scale=0.53, #5, clip]{\plotsB/Convergence_Plots_B/#2}};
-      \node[above, font=\scriptsize] at ($(top.north west)!0.29!(top.north east)$) {PSE high};
-      \node[above, font=\scriptsize] at ($(top.north west)!0.75!(top.north east)$) {PSE low};
-      \node[rotate=90, anchor=south, font=\scriptsize, muted] at (top.west) {shallow slope (3)};
-      \node[rotate=90, anchor=south, font=\scriptsize, muted] at (bot.west) {steep slope (6)};
+      \node[above, font=\scriptsize] at ($(top.north west)!0.29!(top.north east)$) {unimanual};
+      \node[above, font=\scriptsize] at ($(top.north west)!0.75!(top.north east)$) {bimanual};
+      \node[rotate=90, anchor=south, font=\scriptsize, muted] at (top.west) {left hand};
+      \node[rotate=90, anchor=south, font=\scriptsize, muted] at (bot.west) {right hand};
     \end{tikzpicture}
   \end{frame}}
 
@@ -209,7 +209,7 @@
   \resizebox{\textwidth}{!}{%
   \begin{tabular}{lcccc}
     \toprule
-     & shallow, PSE high & shallow, PSE low & steep, PSE high & steep, PSE low \\
+     & left unimanual & left bimanual & right unimanual & right bimanual \\
     \midrule
     PSE        & 0.14 / 0.49 / 0.90 & 0.12 / 0.42 / 0.90 & 0.05 / 0.16 / 0.93 & 0.09 / 0.32 / 0.94 \\
     JND        & 0.014 / 0.15 / 1.00 & 0.034 / 0.17 / 1.00 & 0.013 / 0.08 / 1.00 & 0.010 / 0.10 / 1.00 \\
@@ -228,14 +228,14 @@
 \begin{frame}{Model B on synthetic data: what is recoverable}
   At the size of the real data (42 sessions of about 308 trials):
   \begin{itemize}
-    \item \textbf{Recoverable:} per-session PSE and JND; the bias mean $\mu_{\beta_0}$ ($\pm 1$);
-          the slope mean $\mu_{\beta_1}$ when the slope is shallow (3); the bias spread
-          $\sigma_{\beta_0}$ (0.25--1.0); $\mu_{\gamma_h}$ in most groups
-    \item \textbf{Weakly constrained:} $\mu_{\beta_1}$ when the slope is steep (6): the curve rises
-          within one stimulus spacing, so only 2 levels inform it (HDIs 1.8--2.6 wide)
-    \item \textbf{Biased in some datasets:} a lapse rate whose side of a shallow curve never
-          reaches its asymptote: $\gamma_l$ too high when the PSE is high, $\gamma_h$ too low when
-          it is low; the higher $\mu_{\gamma_l}$ ($-2.8$) is also overestimated at 80 sessions
+    \item \textbf{Recoverable:} per-session PSE and JND; the bias mean $\mu_{\beta_0}$ in every group;
+          the slope mean $\mu_{\beta_1}$ for the left-hand groups (slope 3); the bias spread
+          $\sigma_{\beta_0}$; $\mu_{\gamma_h}$ except for left bimanual
+    \item \textbf{Weakly constrained:} $\mu_{\beta_1}$ for the right-hand groups (slope 6): the curve
+          rises within one stimulus spacing, so only 2 levels inform it (HDIs 1.8--2.6 wide)
+    \item \textbf{Biased in some datasets:} a lapse rate whose side of the curve never reaches its
+          asymptote: $\gamma_l$ too high for left unimanual, $\gamma_h$ too low for left bimanual;
+          $\mu_{\gamma_l}$ for right unimanual is also overestimated at 80 sessions
     \item \textbf{Not identified:} the sds with true values near 0 ($\sigma_{\beta_1}$,
           $\sigma_{\gamma_h}$, $\sigma_{\gamma_l}$); their posteriors reflect the prior
     \item Session-level HDIs mostly conservative; PSE coverage slightly low (0.90--0.94)
@@ -280,29 +280,114 @@
   \includegraphics[width=0.48\textwidth]{\plotsB/Fit_Plots_B/curves_right_04-13.png}
 \end{frame}
 
-\plotframe{Model B on the real data: PSE in each session}
-  {\plotsB/Fit_Plots_B/PSE_uni_bi_by_session.png}
+% Per-session estimates and distractor effects, one slide per quantity and hand: the hand's row of
+% <q>_uni_bi_by_session.png (unimanual and bimanual in each session) above the same hand's row of
+% effect_<q>_by_session.png (bimanual - unimanual), with the session tick labels from the bottom of
+% the effect figure. Both PNGs are 2823 x 1423 px at 200 dpi (1 px = 0.36 bp); their axes end at
+% x = 2803 px but start at different x (the effect plots have a two-line y label), so each image is
+% scaled to give its axes the same displayed width and shifted so the axes start at x = 0, which
+% puts every session's estimate directly above its effect. Rows: px 70-684 (left hand, with its
+% subtitle), 684-1296 (right hand), ticks 1296-1423.
 
-\plotframe{Model B on the real data: effect of the distractor on PSE}
-  {\plotsB/Fit_Plots_B/effect_PSE_by_session.png}
+\begin{frame}{Model B on the real data: PSE, left hand}
+  \centering
+  \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (ub) at (-17.87bp,0)
+        {\includegraphics[scale=0.3813, viewport=0 266.04 1016.28 487.08, clip]{\plotsB/Fit_Plots_B/PSE_uni_bi_by_session.png}};
+      \node[inner sep=0, anchor=north west] (ef) at (-28.05bp,-87.60bp)
+        {\includegraphics[scale=0.3896, viewport=0 266.04 1016.28 487.08, clip]{\plotsB/Fit_Plots_B/effect_PSE_by_session.png}};
+      \node[inner sep=0, anchor=north west] (tk) at (-28.05bp,-173.70bp)
+        {\includegraphics[scale=0.3896, viewport=0 0.00 1016.28 45.72, clip]{\plotsB/Fit_Plots_B/effect_PSE_by_session.png}};
+  \end{tikzpicture}
+\end{frame}
 
-\plotframe{Model B on the real data: JND in each session}
-  {\plotsB/Fit_Plots_B/JND_uni_bi_by_session.png}
+\begin{frame}{Model B on the real data: PSE, right hand}
+  \centering
+  \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (ub) at (-17.87bp,0)
+        {\includegraphics[scale=0.3813, viewport=0 45.72 1016.28 266.04, clip]{\plotsB/Fit_Plots_B/PSE_uni_bi_by_session.png}};
+      \node[inner sep=0, anchor=north west] (ef) at (-28.05bp,-87.32bp)
+        {\includegraphics[scale=0.3896, viewport=0 45.72 1016.28 266.04, clip]{\plotsB/Fit_Plots_B/effect_PSE_by_session.png}};
+      \node[inner sep=0, anchor=north west] (tk) at (-28.05bp,-173.14bp)
+        {\includegraphics[scale=0.3896, viewport=0 0.00 1016.28 45.72, clip]{\plotsB/Fit_Plots_B/effect_PSE_by_session.png}};
+  \end{tikzpicture}
+  \par\vspace{0.1em}{\tiny\color{muted} \textcolor{plotblue}{$\bullet$}~unimanual, \textcolor{plotred}{$\bullet$}~bimanual: session mean and 95\% HDI; bands: typical session; green dashed: trained threshold\\ bi $-$ uni: filled if the session's 95\% HDI excludes 0; orange band: average over sessions}
+\end{frame}
 
-\plotframe{Model B on the real data: effect of the distractor on JND}
-  {\plotsB/Fit_Plots_B/effect_JND_by_session.png}
+\begin{frame}{Model B on the real data: JND, left hand}
+  \centering
+  \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (ub) at (-14.37bp,0)
+        {\includegraphics[scale=0.3775, viewport=0 266.04 1016.28 487.08, clip]{\plotsB/Fit_Plots_B/JND_uni_bi_by_session.png}};
+      \node[inner sep=0, anchor=north west] (ef) at (-21.37bp,-86.76bp)
+        {\includegraphics[scale=0.3829, viewport=0 266.04 1016.28 487.08, clip]{\plotsB/Fit_Plots_B/effect_JND_by_session.png}};
+      \node[inner sep=0, anchor=north west] (tk) at (-21.37bp,-171.38bp)
+        {\includegraphics[scale=0.3829, viewport=0 0.00 1016.28 45.72, clip]{\plotsB/Fit_Plots_B/effect_JND_by_session.png}};
+  \end{tikzpicture}
+\end{frame}
 
-\plotframe{Model B on the real data: $\gamma_h$ in each session}
-  {\plotsB/Fit_Plots_B/gamh_uni_bi_by_session.png}
+\begin{frame}{Model B on the real data: JND, right hand}
+  \centering
+  \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (ub) at (-14.37bp,0)
+        {\includegraphics[scale=0.3775, viewport=0 45.72 1016.28 266.04, clip]{\plotsB/Fit_Plots_B/JND_uni_bi_by_session.png}};
+      \node[inner sep=0, anchor=north west] (ef) at (-21.37bp,-86.48bp)
+        {\includegraphics[scale=0.3829, viewport=0 45.72 1016.28 266.04, clip]{\plotsB/Fit_Plots_B/effect_JND_by_session.png}};
+      \node[inner sep=0, anchor=north west] (tk) at (-21.37bp,-170.84bp)
+        {\includegraphics[scale=0.3829, viewport=0 0.00 1016.28 45.72, clip]{\plotsB/Fit_Plots_B/effect_JND_by_session.png}};
+  \end{tikzpicture}
+  \par\vspace{0.1em}{\tiny\color{muted} \textcolor{plotblue}{$\bullet$}~unimanual, \textcolor{plotred}{$\bullet$}~bimanual: session mean and 95\% HDI; bands: typical session\\ bi $-$ uni: filled if the session's 95\% HDI excludes 0; orange band: average over sessions}
+\end{frame}
 
-\plotframe{Model B on the real data: effect of the distractor on $\gamma_h$}
-  {\plotsB/Fit_Plots_B/effect_gamh_by_session.png}
+\begin{frame}{Model B on the real data: $\gamma_h$, left hand}
+  \centering
+  \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (ub) at (-17.35bp,0)
+        {\includegraphics[scale=0.3807, viewport=0 266.04 1016.28 487.08, clip]{\plotsB/Fit_Plots_B/gamh_uni_bi_by_session.png}};
+      \node[inner sep=0, anchor=north west] (ef) at (-24.16bp,-87.48bp)
+        {\includegraphics[scale=0.3857, viewport=0 266.04 1016.28 487.08, clip]{\plotsB/Fit_Plots_B/effect_gamh_by_session.png}};
+      \node[inner sep=0, anchor=north west] (tk) at (-24.16bp,-172.72bp)
+        {\includegraphics[scale=0.3857, viewport=0 0.00 1016.28 45.72, clip]{\plotsB/Fit_Plots_B/effect_gamh_by_session.png}};
+  \end{tikzpicture}
+\end{frame}
 
-\plotframe{Model B on the real data: $\gamma_l$ in each session}
-  {\plotsB/Fit_Plots_B/gaml_uni_bi_by_session.png}
+\begin{frame}{Model B on the real data: $\gamma_h$, right hand}
+  \centering
+  \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (ub) at (-17.35bp,0)
+        {\includegraphics[scale=0.3807, viewport=0 45.72 1016.28 266.04, clip]{\plotsB/Fit_Plots_B/gamh_uni_bi_by_session.png}};
+      \node[inner sep=0, anchor=north west] (ef) at (-24.16bp,-87.20bp)
+        {\includegraphics[scale=0.3857, viewport=0 45.72 1016.28 266.04, clip]{\plotsB/Fit_Plots_B/effect_gamh_by_session.png}};
+      \node[inner sep=0, anchor=north west] (tk) at (-24.16bp,-172.17bp)
+        {\includegraphics[scale=0.3857, viewport=0 0.00 1016.28 45.72, clip]{\plotsB/Fit_Plots_B/effect_gamh_by_session.png}};
+  \end{tikzpicture}
+  \par\vspace{0.1em}{\tiny\color{muted} \textcolor{plotblue}{$\bullet$}~unimanual, \textcolor{plotred}{$\bullet$}~bimanual: session mean and 95\% HDI; bands: typical session\\ bi $-$ uni: filled if the session's 95\% HDI excludes 0; orange band: average over sessions}
+\end{frame}
 
-\plotframe{Model B on the real data: effect of the distractor on $\gamma_l$}
-  {\plotsB/Fit_Plots_B/effect_gaml_by_session.png}
+\begin{frame}{Model B on the real data: $\gamma_l$, left hand}
+  \centering
+  \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (ub) at (-19.58bp,0)
+        {\includegraphics[scale=0.3831, viewport=0 266.04 1016.28 487.08, clip]{\plotsB/Fit_Plots_B/gaml_uni_bi_by_session.png}};
+      \node[inner sep=0, anchor=north west] (ef) at (-27.60bp,-88.02bp)
+        {\includegraphics[scale=0.3891, viewport=0 266.04 1016.28 487.08, clip]{\plotsB/Fit_Plots_B/effect_gaml_by_session.png}};
+      \node[inner sep=0, anchor=north west] (tk) at (-27.60bp,-174.02bp)
+        {\includegraphics[scale=0.3891, viewport=0 0.00 1016.28 45.72, clip]{\plotsB/Fit_Plots_B/effect_gaml_by_session.png}};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Model B on the real data: $\gamma_l$, right hand}
+  \centering
+  \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (ub) at (-19.58bp,0)
+        {\includegraphics[scale=0.3831, viewport=0 45.72 1016.28 266.04, clip]{\plotsB/Fit_Plots_B/gaml_uni_bi_by_session.png}};
+      \node[inner sep=0, anchor=north west] (ef) at (-27.60bp,-87.74bp)
+        {\includegraphics[scale=0.3891, viewport=0 45.72 1016.28 266.04, clip]{\plotsB/Fit_Plots_B/effect_gaml_by_session.png}};
+      \node[inner sep=0, anchor=north west] (tk) at (-27.60bp,-173.45bp)
+        {\includegraphics[scale=0.3891, viewport=0 0.00 1016.28 45.72, clip]{\plotsB/Fit_Plots_B/effect_gaml_by_session.png}};
+  \end{tikzpicture}
+  \par\vspace{0.1em}{\tiny\color{muted} \textcolor{plotblue}{$\bullet$}~unimanual, \textcolor{plotred}{$\bullet$}~bimanual: session mean and 95\% HDI; bands: typical session\\ bi $-$ uni: filled if the session's 95\% HDI excludes 0; orange band: average over sessions}
+\end{frame}
 
 \plotframe{Model B: PSE shift vs distractor amplitude (exploratory)}
   {\plotsB/Fit_Plots_B/effect_vs_distractor_amplitude.png}
