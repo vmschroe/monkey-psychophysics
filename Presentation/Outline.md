@@ -32,12 +32,10 @@ Editable outline of `Presentation.tex` and `sections/*.tex`. One `##` heading pe
   - "high" response: correct for $x_\text{stim} > 28$ μm
 - correct responses are rewarded with water or juice
 
-## 4. Psychometric function
-Let response $r \sim \text{Bernoulli}(p = \psi)$, with
-
+## 4. Psychometric function: response $r \sim \text{Bernoulli}(p = \psi)$
   $\psi(x_\text{stim}) = \gamma_h + (1 - \gamma_h - \gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x_\text{stim})$
 
-- Figure (below the equation): Presentation/example_psych_func.png
+- Figure (below the equation, large): Presentation/example_psych_func.png
 
 ## 5. Parameters
   $\psi(x_\text{stim}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x_\text{stim}), \qquad \vec{\theta} = (\beta_0, \beta_1, \gamma_h, \gamma_l)$
@@ -49,9 +47,12 @@ Let response $r \sim \text{Bernoulli}(p = \psi)$, with
   - lower bound on $\mathbf{P}(\text{guess} = \text{"low"})$, even to the strongest stimuli
   - $1-\gamma_l$ = upper (right) asymptote of $\psi$
 - $\text{logit}^{-1}$: the logistic sigmoid, $\text{logit}^{-1}(z) = \frac{1}{1+\exp(-z)}$
-- Summaries, in μm:
-  - PSE: where $\psi = 0.5$
-  - JND: half the distance between $\psi = 0.25$ and $0.75$
+- PSE: stimulus where responses of "high" and "low" are equally likely
+  - $x_\text{stim}$ such that $\psi(x_\text{stim}) = 0.5$
+  - represents bias
+- JND: how much the stimulus needs to change to be noticed half the time
+  - half the distance between $\psi(x_\text{stim}) = 0.25$ and $0.75$
+  - represents sensitivity
 
 ## 6. The task: one trial
 - TikZ diagram (macros \trialhand, \trialpanel in the Presentation.tex preamble), two panels side by side:
@@ -74,11 +75,28 @@ Same bullets as slide 3, highlighting swapped: distractor bullets in [blue] ... 
 - correct responses are rewarded with water or juice [end gray]
 
 ## 8. The data
+Left column:
 - One monkey (Sirius), 42 sessions, 12,937 trials.
 - 8 stimulus amplitudes, 6–50 μm; 4 groups: hand × (unimanual, bimanual).
 - Each session uses a single distractor amplitude (6–32 μm) on its bimanual trials.
 
-TODO: figure: raw proportions of "high" by amplitude and group
+Right column: table of trial counts by distractor amplitude, generated from Sirius_Data.pkl
+by Presentation/Make_Data_Table.py into Presentation/data_table.tex (rerun the script, don't edit by hand):
+
+| $x_\text{d}$ (μm) | sessions | left uni | left bi | right uni | right bi | trials |
+|---|---|---|---|---|---|---|
+| 6 | 8 | 572 | 576 | 575 | 575 | 2,298 |
+| 12 | 6 | 482 | 480 | 479 | 477 | 1,918 |
+| 16 | 2 | 158 | 154 | 157 | 159 | 628 |
+| 18 | 1 | 80 | 80 | 80 | 80 | 320 |
+| 20 | 1 | 80 | 78 | 80 | 80 | 318 |
+| 22 | 1 | 78 | 78 | 78 | 79 | 313 |
+| 24 | 7 | 557 | 556 | 554 | 558 | 2,225 |
+| 26 | 1 | 79 | 80 | 80 | 80 | 319 |
+| 28 | 1 | 80 | 78 | 80 | 80 | 318 |
+| 30 | 1 | 79 | 73 | 76 | 72 | 300 |
+| 32 | 13 | 992 | 997 | 997 | 994 | 3,980 |
+| total | 42 | 3,237 | 3,230 | 3,236 | 3,234 | 12,937 |
 
 ## 9. Three models
 Table:

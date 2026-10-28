@@ -26,14 +26,14 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Psychometric function}
-  Let response $r \sim \text{Bernoulli}(p = \psi)$, with
+\begin{frame}{Psychometric function: response $r \sim \text{Bernoulli}(p = \psi)$}
+  \vspace{-0.5em}
   \[
     \psi(x_\text{stim}) = \gamma_h + (1 - \gamma_h - \gamma_l)\,
                           \invlogit(\beta_0 + \beta_1 x_\text{stim})
   \]
   \centering
-  \includegraphics[width=\textwidth,height=0.62\textheight,keepaspectratio]{example_psych_func.png}
+  \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio]{example_psych_func.png}
 \end{frame}
 
 \begin{frame}{Parameters}
@@ -54,10 +54,15 @@
       \item $1-\gamma_l$ = upper (right) asymptote of $\psi$
     \end{itemize}
     \item $\invlogit$: the logistic sigmoid, $\invlogit(z) = \dfrac{1}{1+\exp(-z)}$
-    \item Summaries, in $\mu m$:
+    \item PSE: stimulus where responses of ``high'' and ``low'' are equally likely
     \begin{itemize}
-      \item PSE: where $\psi = 0.5$
-      \item JND: half the distance between $\psi = 0.25$ and $0.75$
+      \item $x_\text{stim}$ such that $\psi(x_\text{stim}) = 0.5$
+      \item represents bias
+    \end{itemize}
+    \item JND: how much the stimulus needs to change to be noticed half the time
+    \begin{itemize}
+      \item half the distance between $\psi(x_\text{stim}) = 0.25$ and $0.75$
+      \item represents sensitivity
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -94,15 +99,22 @@
 \end{frame}
 
 \begin{frame}{The data}
-  \begin{itemize}
-    \item One monkey (Sirius), 42 sessions, 12{,}937 trials.
-    \item 8 stimulus amplitudes, 6--50~$\mu m$; 4 groups: hand $\times$
-          (unimanual, bimanual).
-    \item Each session uses a single distractor amplitude (6--32~$\mu m$) on its
-          bimanual trials.
-  \end{itemize}
-  \vfill
-  \todo{figure: raw proportions of ``high'' by amplitude and group}
+  \begin{columns}[T]
+    \begin{column}{0.36\textwidth}
+      \begin{itemize}
+        \item One monkey (Sirius), 42 sessions, 12{,}937 trials.
+        \item 8 stimulus amplitudes, 6--50~$\mu m$; 4 groups: hand $\times$
+              (unimanual, bimanual).
+        \item Each session uses a single distractor amplitude (6--32~$\mu m$) on its
+              bimanual trials.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.62\textwidth}
+      \centering\scriptsize
+      % trial counts; regenerate with: python Presentation/Make_Data_Table.py
+      \input{data_table.tex}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{Three models}
