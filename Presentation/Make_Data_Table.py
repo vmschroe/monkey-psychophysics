@@ -3,8 +3,8 @@
 Write the trial-count table on the presentation's "The data" slide.
 
 Reads Sirius_Data.pkl and writes Presentation/data_table.tex: one row per
-distractor amplitude with the number of sessions and the trials in each group,
-plus a total row. Run from the repo root:  python Presentation/Make_Data_Table.py
+stimulus amplitude with the number of trials in each group (hand x unimanual /
+bimanual), plus a total row. Run from the repo root:  python Presentation/Make_Data_Table.py
 """
 
 import os
@@ -14,17 +14,14 @@ here = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(here, "..", "Sirius_Data.pkl"), "rb") as f:
     DataDict = pickle.load(f)
 
-sess_sum = DataDict["session_summary"]
+trials = DataDict["data"]
 groups = ["left_uni", "left_bi", "right_uni", "right_bi"]
-cols = [g + "_trial_counts" for g in groups]
 
-by_amp = sess_sum.groupby("dist_amp")
-table = by_amp[cols].sum()
-table.insert(0, "sessions", by_amp.size())
-table["total"] = table[cols].sum(axis=1)
+table = trials.groupby(["stim_amp", "group"]).size().unstack()[groups]
+table["total"] = table[groups].sum(axis=1)
 
-# the counts must add up to the trial-level data
-assert table["total"].sum() == len(DataDict["data"])
+# every trial is counted once
+assert table["total"].sum() == len(trials)
 
 
 def fmt(n):
@@ -32,20 +29,19 @@ def fmt(n):
 
 
 lines = [
-    r"\begin{tabular}{rrrrrrr}",
+    r"\begin{tabular}{rrrrrr}",
     r"  \toprule",
-    r"  & & \multicolumn{2}{c}{left hand} & \multicolumn{2}{c}{right hand} & \\",
-    r"  \cmidrule(lr){3-4} \cmidrule(lr){5-6}",
-    r"  $x_\text{d}$ ($\mu m$) & sessions & uni & bi & uni & bi & trials \\",
+    r"  & \multicolumn{2}{c}{left hand} & \multicolumn{2}{c}{right hand} & \\",
+    r"  \cmidrule(lr){2-3} \cmidrule(lr){4-5}",
+    r"  $x_\text{stim}$ ($\mu m$) & unimanual & bimanual & unimanual & bimanual & total \\",
     r"  \midrule",
 ]
 for amp, row in table.iterrows():
-    cells = [str(amp), str(row["sessions"])] + [fmt(row[c]) for c in cols] + [fmt(row["total"])]
-    lines.append("  " + " & ".join(cells) + r" \\")
+    lines.append("  " + " & ".join([str(amp)] + [fmt(row[c]) for c in groups + ["total"]]) + r" \\")
 tot = table.sum()
 lines += [
     r"  \midrule",
-    "  total & " + " & ".join([str(tot["sessions"])] + [fmt(tot[c]) for c in cols] + [fmt(tot["total"])]) + r" \\",
+    "  total & " + " & ".join(fmt(tot[c]) for c in groups + ["total"]) + r" \\",
     r"  \bottomrule",
     r"\end{tabular}",
 ]

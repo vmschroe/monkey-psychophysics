@@ -75,28 +75,24 @@ Same bullets as slide 3, highlighting swapped: distractor bullets in [blue] ... 
 - correct responses are rewarded with water or juice [end gray]
 
 ## 8. The data
-Left column:
 - One monkey (Sirius), 42 sessions, 12,937 trials.
 - 8 stimulus amplitudes, 6–50 μm; 4 groups: hand × (unimanual, bimanual).
 - Each session uses a single distractor amplitude (6–32 μm) on its bimanual trials.
 
-Right column: table of trial counts by distractor amplitude, generated from Sirius_Data.pkl
+Below the bullets: table of trial counts by stimulus amplitude, generated from Sirius_Data.pkl
 by Presentation/Make_Data_Table.py into Presentation/data_table.tex (rerun the script, don't edit by hand):
 
-| $x_\text{d}$ (μm) | sessions | left uni | left bi | right uni | right bi | trials |
-|---|---|---|---|---|---|---|
-| 6 | 8 | 572 | 576 | 575 | 575 | 2,298 |
-| 12 | 6 | 482 | 480 | 479 | 477 | 1,918 |
-| 16 | 2 | 158 | 154 | 157 | 159 | 628 |
-| 18 | 1 | 80 | 80 | 80 | 80 | 320 |
-| 20 | 1 | 80 | 78 | 80 | 80 | 318 |
-| 22 | 1 | 78 | 78 | 78 | 79 | 313 |
-| 24 | 7 | 557 | 556 | 554 | 558 | 2,225 |
-| 26 | 1 | 79 | 80 | 80 | 80 | 319 |
-| 28 | 1 | 80 | 78 | 80 | 80 | 318 |
-| 30 | 1 | 79 | 73 | 76 | 72 | 300 |
-| 32 | 13 | 992 | 997 | 997 | 994 | 3,980 |
-| total | 42 | 3,237 | 3,230 | 3,236 | 3,234 | 12,937 |
+| $x_\text{stim}$ (μm) | left unimanual | left bimanual | right unimanual | right bimanual | total |
+|---|---|---|---|---|---|
+| 6 | 408 | 404 | 404 | 402 | 1,618 |
+| 12 | 407 | 400 | 408 | 400 | 1,615 |
+| 18 | 402 | 400 | 403 | 405 | 1,610 |
+| 24 | 402 | 405 | 402 | 406 | 1,615 |
+| 32 | 404 | 405 | 405 | 407 | 1,621 |
+| 38 | 403 | 408 | 404 | 408 | 1,623 |
+| 44 | 406 | 403 | 404 | 405 | 1,618 |
+| 50 | 405 | 405 | 406 | 401 | 1,617 |
+| total | 3,237 | 3,230 | 3,236 | 3,234 | 12,937 |
 
 ## 9. Three models
 Table:
