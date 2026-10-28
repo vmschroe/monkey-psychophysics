@@ -1,48 +1,266 @@
 % !TEX root = ../Presentation.tex
 % ---------------------------------------------------------------------------
-% Model C: distractor amplitude as a covariate; comparison with Model B
+% Model C: distractor amplitude as a covariate
 % Reports: Model_C/Convergence_C_Report.tex, Model_C/Fit_C_Report.tex
+% (the comparison with Model B is in sections/04_comparison.tex)
 % ---------------------------------------------------------------------------
 \section{Model C: Distractor Amplitude as a Covariate}
 
-\begin{frame}{Model C}
-  \[
-    \psi(x, d) = \gamma_h + (1 - \gamma_h - \gamma_l)\,
-                 \invlogit(\beta_0 + \beta_1 x + \beta_2 d)
-  \]
-  \begin{itemize}
-    \item $d$: distractor amplitude (0 on unimanual trials); one group per hand.
-    \item Uni- and bimanual trials share slope and lapse rates: the distractor only
-          shifts the curve, by an amount proportional to $d$.
-  \end{itemize}
+\subsection{Model Structure}
+
+% graphical model, likelihood and priors follow Model_C/Build_Model_C.py and
+% Convergence_C_Report, "Model Structure"
+\begin{frame}{Model C: graphical model}
+  \centering
+  \begin{tikzpicture}[gm, scale=0.8, transform shape]
+    \foreach \n/\lab [count=\k from 0] in {mub0/\mu_{\beta_0}, sb0/\sigma_{\beta_0},
+        mub1/\mu_{\beta_1}, sb1/\sigma_{\beta_1}, mub2/\mu_{\beta_2}, sb2/\sigma_{\beta_2},
+        mugh/\mu_{\gamma_h}, sgh/\sigma_{\gamma_h}, mugl/\mu_{\gamma_l}, sgl/\sigma_{\gamma_l}}
+      \node[latent] (\n) at (1.1*\k, 0) {$\lab$};
+
+    \node[latent] (b0) at ($(mub0)!0.5!(sb0) + (0,-1.6)$) {$\beta_{0,s}$};
+    \node[latent] (b1) at ($(mub1)!0.5!(sb1) + (0,-1.6)$) {$\beta_{1,s}$};
+    \node[latent] (b2) at ($(mub2)!0.5!(sb2) + (0,-1.6)$) {$\beta_{2,s}$};
+    \node[latent] (gh) at ($(mugh)!0.5!(sgh) + (0,-1.6)$) {$\gamma_{h,s}$};
+    \node[latent] (gl) at ($(mugl)!0.5!(sgl) + (0,-1.6)$) {$\gamma_{l,s}$};
+
+    \node[det] (psi) at ($(b2) + (0,-1.4)$) {$\psi_i$};
+    \node[obs, below=0.5cm of psi] (r) {$r_i$};
+    \node[const, right=0.8cm of psi, yshift=0.25cm] (x) {$x_i$};
+    \node[const, right=0.8cm of psi, yshift=-0.25cm] (d) {$d_i$};
+
+    \foreach \h/\p in {mub0/b0, sb0/b0, mub1/b1, sb1/b1, mub2/b2, sb2/b2, mugh/gh, sgh/gh, mugl/gl, sgl/gl}
+      \draw[arr] (\h) -- (\p);
+    \foreach \p in {b0, b1, b2, gh, gl}
+      \draw[arr] (\p) -- (psi);
+    \draw[arr] (x) -- (psi);
+    \draw[arr] (d) -- (psi);
+    \draw[arr] (psi) -- (r);
+
+    \node[plate, fit=(x)(d)(psi)(r), inner sep=5pt] (ptrial) {};
+    \node[font=\scriptsize, anchor=north east] at (ptrial.south east) {trials $i$ in session $s$};
+    \node[plate, fit=(b0)(gl)(ptrial), inner sep=12pt] (psess) {};
+    \node[font=\scriptsize, anchor=south west] at (psess.south west) {sessions $s = 1,\dots,42$};
+    \node[plate, fit=(mub0)(sgl)(psess), inner sep=8pt] (phand) {};
+    \node[font=\scriptsize, anchor=north east] at (phand.south east) {each hand};
+  \end{tikzpicture}
+
   \vfill
-  \todo{why: test the amplitude trend from Model B inside a model}
+  {\scriptsize\color{muted} Circles: random variables (shaded: observed); rectangle:
+  deterministic; $x_i$, $d_i$: fixed covariates. The same model is fit independently to each
+  hand, with unimanual and bimanual trials together.}
 \end{frame}
 
-\figframe{Model C: prior on the distractor effect}
+\begin{frame}{Model C: likelihood}
+  For each hand, fit independently to its $n \approx 6{,}470$ unimanual and bimanual trials,
+  with the distractor as a covariate $d_i$ (amplitude $/\,14.63$; $d_i = 0$ on unimanual trials):\\[0.3em]
+  Likelihood: probability of obtaining responses $\vec{r}$ given parameters
+  $\vec{\theta} = (\vec{\theta}_s)_{s=1}^{42}$,
+  $\vec{\theta}_s = (\beta_{0,s}, \beta_{1,s}, \beta_{2,s}, \gamma_{h,s}, \gamma_{l,s})$\\
+  $r_i \sim \mathbf{Bernoulli}[\psi(x_i, d_i;\vec{\theta}_{s[i]})]$, with
+  $\psi(x, d;\vec{\theta}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\invlogit(\beta_0 + \beta_1 x + \beta_2 d)$, so:
+  \[
+    \mathbf{P}[r_i = z] = \psi(x_i, d_i;\vec{\theta}_{s[i]})^{z}\,
+                          \big(1-\psi(x_i, d_i;\vec{\theta}_{s[i]})\big)^{1-z},
+    \qquad z \in \{0, 1\}
+  \]
+  \begin{align*}
+    L(\vec{\theta};\vec{r}) &= \prod_{i=1}^{n} \mathbf{P}[r_i \mid \vec{\theta}_{s[i]}]\\
+    &= \prod_{s=1}^{42}\ \prod_{i:\, s[i]=s} \psi(x_i, d_i;\vec{\theta}_s)^{r_i}\,
+       \big(1-\psi(x_i, d_i;\vec{\theta}_s)\big)^{1-r_i}
+  \end{align*}
+\end{frame}
+
+\begin{frame}{Model C: priors}
+  Session parameters drawn from the hand's population (non-centered in the code):
+  \begin{align*}
+    \beta_{k,s} &\sim \mathcal{N}(\mu_{\beta_k},\ \sigma_{\beta_k}),\ k = 0, 1, 2, &
+    \gamma_{h,s} &= 0.25\, w_{h,s}, \quad w_{h,s} \sim \text{LogitNormal}(\mu_{\gamma_h},\ \sigma_{\gamma_h}) \\
+    & & \gamma_{l,s} &= 0.25\, w_{l,s}, \quad w_{l,s} \sim \text{LogitNormal}(\mu_{\gamma_l},\ \sigma_{\gamma_l})
+  \end{align*}
+  Hyperpriors, the same for both hands; all but those of $\beta_2$ as in Model B:
+  \begin{align*}
+    \mu_{\beta_0} &\sim \mathcal{N}(0,\ 2), & \sigma_{\beta_0} &\sim \text{HalfNormal}(2), \\
+    \mu_{\beta_1} &\sim \text{LogNormal}(\log 4,\ 0.5), & \sigma_{\beta_1} &\sim \text{Exponential}(1), \\
+    \mu_{\beta_2} &\sim \mathcal{N}(0,\ 1), & \sigma_{\beta_2} &\sim \text{HalfNormal}(1), \\
+    \mu_{\gamma_h},\ \mu_{\gamma_l} &\sim \mathcal{N}(-3,\ 1.5), &
+    \sigma_{\gamma_h},\ \sigma_{\gamma_l} &\sim \text{HalfNormal}(0.5)
+  \end{align*}
+  \vspace{-0.6em}
+  {\small
+  \begin{itemize}
+    \item $\mu_{\beta_2}$ centered at 0: the distractor could push responses either way
+    \item Uni- and bimanual trials share slope and lapse rates: $\beta_2 d$ only shifts the curve
+  \end{itemize}}
+\end{frame}
+
+\plotframe{Model C: prior on the distractor effect}
   {\plotsC/Convergence_Plots_C/Prior_Check_C_distractor.png}
-  {\todo{weakly informative; a weak distractor can only shift a little (Convergence\_C\_Report)}}
 
-\figframe{Model C: convergence on synthetic data}
-  {\plotsC/Convergence_Plots_C/hyper_means_recovery_vs_sessions.png}
-  {\todo{all hand-level means recovered, $\mu_{\beta_2}$ well (Convergence\_C\_Report, ``Conclusions'')}}
+\subsection{Synthetic Data}
 
-\figframe{Model C: per-session $\beta_2$ is weak for small distractors}
+% numbers from Model_C/Convergence_C_Report.tex (made by Convergence_C.py)
+\begin{frame}{Model C on synthetic data: the study}
+  \begin{itemize}
+    \item True hyperparameters derived from Model B's fit to the real data, so the synthetic
+          data resemble the real data (e.g.\ $\mu_{\beta_2} = 0.93$ left, 1.13 right)
+    \item Each simulated session gets one distractor amplitude, drawn from the real sessions'
+    \item The same two sweeps as for Model B, each run twice with new data:
+    \begin{itemize}
+      \item sessions: 5, 10, 20, 40, 80 sessions of 308 trials
+      \item trials: 42 sessions of 20, 40, 80, 160, 320 trials
+    \end{itemize}
+    \item 20 fits: 2 divergences in total (in the two smallest datasets),
+          $\hat{R} \le 1.008$, bulk ESS $\ge 532$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Model C on synthetic data: hand-level means}
+  At 40 sessions: true value and posterior mean [95\% HDI], averaged over the two replicates
+  \vspace{0.5em}
+
+  \centering\small
+  \begin{tabular}{lcccc}
+    \toprule
+     & \multicolumn{2}{c}{left} & \multicolumn{2}{c}{right} \\
+     & true & posterior & true & posterior \\
+    \midrule
+    $\mu_{\beta_0}$  & $-1.49$ & $-1.56$ [$-1.90$, $-1.24$] & $-1.06$ & $-0.94$ [$-1.29$, $-0.57$] \\
+    $\mu_{\beta_1}$  & 4.64    & 4.65 [4.16, 5.18]          & 4.46    & 4.46 [4.06, 4.86] \\
+    $\mu_{\beta_2}$  & 0.93    & 0.93 [0.71, 1.18]          & 1.13    & 1.11 [0.74, 1.47] \\
+    $\mu_{\gamma_h}$ & $-2.80$ & $-2.89$ [$-3.45$, $-2.41$] & $-2.41$ & $-2.60$ [$-3.10$, $-2.11$] \\
+    $\mu_{\gamma_l}$ & $-3.20$ & $-3.39$ [$-4.34$, $-2.60$] & $-3.20$ & $-3.04$ [$-3.73$, $-2.37$] \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.5em}
+  \raggedright
+  \begin{itemize}
+    \item All five recovered without visible bias; $\mu_{\beta_2}$'s HDI excludes 0
+    \item Lapse means (logit scale) are the least precise
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Model C on synthetic data: between-session sds}
+  At 80 sessions: true value and posterior mean [95\% HDI], averaged over the two replicates
+  \vspace{0.5em}
+
+  \centering\small
+  \begin{tabular}{lcccc}
+    \toprule
+     & \multicolumn{2}{c}{left} & \multicolumn{2}{c}{right} \\
+     & true & posterior & true & posterior \\
+    \midrule
+    $\sigma_{\beta_0}$  & 0.76 & 0.74 [0.58, 0.92] & 1.01 & 0.94 [0.76, 1.14] \\
+    $\sigma_{\beta_1}$  & 0.78 & 0.83 [0.57, 1.09] & 0.39 & 0.17 [0.00, 0.40] \\
+    $\sigma_{\beta_2}$  & 0.62 & 0.51 [0.36, 0.67] & 0.83 & 0.86 [0.68, 1.06] \\
+    $\sigma_{\gamma_h}$ & 0.48 & 0.38 [0.00, 0.83] & 0.37 & 0.31 [0.00, 0.68] \\
+    $\sigma_{\gamma_l}$ & 0.38 & 0.35 [0.00, 0.85] & 0.41 & 0.29 [0.00, 0.69] \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.5em}
+  \raggedright
+  \begin{itemize}
+    \item The sds of $\beta_0$, $\beta_1$, $\beta_2$ are identified (a small $\sigma_{\beta_1}$ is
+          hard to tell from 0)
+    \item The lapse sds are not: their HDIs start at 0 and barely narrow with more data
+  \end{itemize}
+\end{frame}
+
+\plotframe{Model C on synthetic data: session $\beta_2$ is weak for small distractors}
   {\plotsC/Convergence_Plots_C/session_b2_true_vs_recovered.png}
-  {\todo{shrinkage toward the hand mean at 6~$\mu m$}}
 
-\figframe{Model C: the shift grows with distractor amplitude}
+\begin{frame}{Model C on synthetic data: what is recoverable}
+  At the size of the real data (42 sessions of about 308 trials), if the data follow Model C:
+  \begin{itemize}
+    \item \textbf{Recoverable:} per-session PSEs in both conditions and JNDs; all five hand-level
+          means, including the distractor effect $\mu_{\beta_2}$; the between-session sds of
+          $\beta_0$, $\beta_1$ and $\beta_2$
+    \item \textbf{Weakly determined:} the individual session coefficients, especially $\beta_2$
+          in sessions with a small distractor (HDI 2.6 wide at 6~$\mu m$, 1.2 at 32~$\mu m$),
+          which are pulled toward the hand mean
+    \item \textbf{Not identified:} $\sigma_{\gamma_h}$ and $\sigma_{\gamma_l}$; their posteriors
+          reflect the prior
+    \item \textbf{Not tested:} what happens when the data break Model C's assumptions (shared
+          lapse rates and slope, a shift proportional to amplitude)
+  \end{itemize}
+\end{frame}
+
+\subsection{Real Data}
+
+% numbers from Model_C/Fit_C_Report.tex (made by Main_Analysis_C.py)
+\begin{frame}{Model C on the real data: hand-level estimates}
+  \centering\small
+  \begin{tabular}{lcc}
+    \toprule
+     & left & right \\
+    \midrule
+    distractor coefficient $\mu_{\beta_2}$ & 0.90 [0.71, 1.09] & 1.18 [0.99, 1.37] \\
+    PSE, unimanual ($\mu m$) & 32.34 [31.51, 33.17] & 31.15 [29.92, 32.40] \\
+    JND ($\mu m$) & 3.75 [3.39, 4.11] & 3.88 [3.59, 4.19] \\
+    $\gamma_h$ & 0.0091 [0.0033, 0.0147] & 0.0113 [0.0042, 0.0189] \\
+    $\gamma_l$ & 0.0086 [0.0023, 0.0155] & 0.0085 [0.0029, 0.0143] \\
+    \midrule
+    $\sigma_{\beta_0}$ / $\sigma_{\beta_1}$ / $\sigma_{\beta_2}$ & 0.60 / 0.90 / 0.30 & 1.07 / 0.35 / 0.23 \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.6em}
+  {\scriptsize Posterior mean [95\% HDI]; PSE, JND and lapse rates of a typical session (JND and
+  lapse rates are the same on bimanual trials). 4 chains $\times$ 5{,}000 draws: 2 divergences,
+  $\hat{R} = 1.000$, bulk ESS $\ge 3{,}410$.}
+
+  \vfill
+  \raggedright
+  \begin{itemize}
+    \item $\mu_{\beta_2} > 0$ for both hands: the distractor lowers the PSE, more the stronger it is
+    \item The sessions vary little around the hand's amplitude line ($\sigma_{\beta_2}$ small)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Model C on the real data: fitted curves in one session (04-13)}
+  \centering
+  \includegraphics[width=0.48\textwidth]{\plotsC/Fit_Plots_C/curves_left_04-13.png}\hfill
+  \includegraphics[width=0.48\textwidth]{\plotsC/Fit_Plots_C/curves_right_04-13.png}
+\end{frame}
+
+\plotframe{Model C on the real data: PSE in each session}
+  {\plotsC/Fit_Plots_C/PSE_by_session.png}
+
+\plotframe{Model C on the real data: effect of the distractor on PSE}
+  {\plotsC/Fit_Plots_C/effect_PSE_by_session.png}
+
+\plotframe{Model C: the PSE shift grows with distractor amplitude}
   {\plotsC/Fit_Plots_C/pse_shift_vs_amplitude.png}
-  {\todo{$\mu_{\beta_2}$ and the typical shift at 6 and 32~$\mu m$ (Fit\_C\_Report, ``Effect of the Distractor'')}}
 
-\figframe{Model C misfits at the weakest stimuli}
+\plotframe{Model C on the real data: misfit at the weakest stimuli}
   {\plotsC/Fit_Plots_C/ppc_pooled_by_stimulus.png}
-  {\todo{shared lapse rates: 6 of 32 proportions outside (Fit\_C\_Report, ``Posterior predictive check'')}}
 
-\figframe{Model C against Model B}
-  {\plotsC/Fit_Plots_C/pse_shift_C_vs_B.png}
-  {\todo{LOO favors B by 37 (SE 12); 6~$\mu m$ shifts too small (Fit\_C\_Report, Comparison)}}
-
-\figframe{Model C: shift by distractor amplitude, observed vs predicted}
+\plotframe{Model C: observed vs predicted, by distractor amplitude}
   {\plotsC/Fit_Plots_C/ppc_by_distractor_amplitude.png}
-  {\todo{right hand at 6~$\mu m$ outside: a presence effect (Fit\_C\_Report, amplitude check)}}
+
+\begin{frame}{Model C: conclusions}
+  \small
+  \begin{itemize}
+    \item Reliable fit: 2 divergences in 20{,}000 draws, $\hat{R} = 1.000$
+          ($\text{elpd}_\text{loo} = -3217.0$, SE 65.7)
+    \item Effect of the distractor (bimanual $-$ unimanual), posterior mean [95\% HDI]:
+    \begin{itemize}
+      \item \textbf{PSE:} lowered, by $-4.51$ [$-5.15$, $-3.86$]~$\mu m$ (left) and
+            $-5.74$ [$-6.39$, $-5.11$]~$\mu m$ (right) on average over sessions; more the stronger
+            the distractor: a typical session shifts $-1.23$ and $-1.66$~$\mu m$ at 6~$\mu m$,
+            $-6.57$ and $-8.85$~$\mu m$ at 32~$\mu m$
+      \item \textbf{JND, \boldmath$\gamma_h$, \boldmath$\gamma_l$:} shared by both conditions, so
+            the model cannot show an effect on them
+    \end{itemize}
+    \item The misfit sits where its assumptions meet the data:
+    \begin{itemize}
+      \item shared lapse rates: 6 of 32 pooled proportions outside their intervals, all at weak
+            stimuli
+      \item a shift proportional to amplitude: for the right hand, even a 6~$\mu m$ distractor
+            shifts responses more than Model C allows
+    \end{itemize}
+    \item[$\Rightarrow$] Which model describes the data best? Model comparison
+  \end{itemize}
+\end{frame}
