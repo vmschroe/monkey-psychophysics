@@ -658,7 +658,7 @@ Session PSE shifts (μm): mean, and range of the posterior means, over the sessi
 - Suggests an effect of the distractor being present, on top of its amplitude
 
 ## 79. Model comparison: conclusions
-- **Sessions differ:** B predicts far better than A, and model recovery shows this is not B's flexibility alone..
+- **Sessions differ:** B predicts far better than A, and model recovery shows this is not B's flexibility alone.
 - **The models agree on the PSE shift:** about −4.2 to −4.5 μm (left) and −5.7 to −6.1 μm (right) on average.
 - **The shift depends on amplitude, but not only:** C confirms the trend inside a model, yet B still predicts better. C's misfit points to
   - lapse rates per condition (the strongest evidence)
