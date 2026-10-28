@@ -75,7 +75,8 @@ Same bullets as slide 3, highlighting swapped: distractor bullets in [blue] ... 
 - correct responses are rewarded with water or juice [end gray]
 
 ## 8. The data
-- One monkey (Sirius), 42 sessions, 12,937 trials.
+- One monkey (Sirius), 12,937 trials.
+- Collected over 42 sessions, averaging approximately 308 trials per session.
 - 8 stimulus amplitudes, 6–50 μm; 4 groups: hand × (unimanual, bimanual).
 - Each session uses a single distractor amplitude (6–32 μm) on its bimanual trials.
 
