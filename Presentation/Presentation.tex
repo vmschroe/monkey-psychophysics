@@ -14,7 +14,7 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{tikz}
-\usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{decorations.pathmorphing,positioning,fit,arrows.meta,calc}
 
 % ---- style: Beamer's default theme, colors from the plots' palette --------
 \usetheme{default}
@@ -101,6 +101,17 @@
         {unimanual trial\\[-1pt]{\normalfont\scriptsize\color{muted}(no distractor)}};
     \fi
   \end{scope}}
+
+% ---- graphical models -------------------------------------------------------
+\tikzset{
+  gm/.style={node distance=1.0cm and 0.8cm},
+  latent/.style={circle, draw, minimum size=10mm, inner sep=0pt, font=\small},
+  obs/.style={latent, fill=gray!25},
+  det/.style={rectangle, draw, minimum size=8mm, inner sep=2pt, font=\small},
+  const/.style={font=\small},
+  arr/.style={-{Stealth[length=2mm]}},
+  plate/.style={draw, rounded corners, inner sep=7pt},
+}
 
 % ---- title ---------------------------------------------------------------------
 \title{Modeling Bimanual Perceptual Interactions in Macaque Monkeys}

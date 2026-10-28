@@ -5,15 +5,84 @@
 % ---------------------------------------------------------------------------
 \section{Model A: Sessions Pooled}
 
-\begin{frame}{Model A}
+\subsection{Model Structure}
+
+% graphical model, likelihood and priors follow Model_A/Build_Model_A.py and
+% Convergence_A_Report, "Model Structure"
+\begin{frame}{Model A: graphical model}
+  \begin{columns}[c]
+    \begin{column}{0.64\textwidth}
+      \centering
+      \begin{tikzpicture}[gm, node distance=0.7cm and 0.6cm, scale=0.85, transform shape]
+        \node[latent] (b0) {$\beta_{0,g}$};
+        \node[latent, right=of b0] (b1) {$\beta_{1,g}$};
+        \node[latent, right=of b1] (gh) {$\gamma_{h,g}$};
+        \node[latent, right=of gh] (gl) {$\gamma_{l,g}$};
+        \node[det, above=0.6cm of $(b1)!0.5!(gh)$] (pse) {PSE$_g$, JND$_g$};
+
+        \node[det, below=1.0cm of $(b1)!0.5!(gh)$] (psi) {$\psi_i$};
+        \node[obs, below=0.6cm of psi] (r) {$r_i$};
+        \node[const, right=0.8cm of psi] (x) {$x_i$};
+
+        \foreach \p in {b0, b1, gh, gl}
+          \draw[arr] (\p) -- (psi);
+        \foreach \p in {b0, b1, gh, gl}
+          \draw[arr, densely dashed, gray] (\p) -- (pse);
+        \draw[arr] (x) -- (psi);
+        \draw[arr] (psi) -- (r);
+
+        \node[plate, fit=(x)(psi)(r), inner sep=5pt] (ptrial) {};
+        \node[font=\scriptsize, anchor=north east] at (ptrial.south east) {trials $i$ with $g[i]=g$};
+        \node[plate, fit=(pse)(b0)(gl)(ptrial), inner sep=14pt] (pgroup) {};
+        \node[font=\scriptsize, anchor=south west] at (pgroup.south west) {groups $g = 1,\dots,4$};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \footnotesize
+      \begin{itemize}
+        \item circles: random variables
+        \item shaded: observed
+        \item rectangles: deterministic
+        \item $x_i$: fixed covariate
+        \item dashed: derived quantities, not part of the likelihood
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Model A: likelihood}
+  For trial $i$ in group $g[i] \in \{\text{left\_uni},\ \text{left\_bi},\
+  \text{right\_uni},\ \text{right\_bi}\}$:
+  \[
+    r_i \sim \text{Bernoulli}(\psi_i), \qquad
+    \psi_i = \gamma_{h,g[i]} + (1 - \gamma_{h,g[i]} - \gamma_{l,g[i]})\,
+             \invlogit(\beta_{0,g[i]} + \beta_{1,g[i]}\, x_i)
+  \]
   \begin{itemize}
-    \item One psychometric curve per group (hand $\times$ condition), shared by all
-          42 sessions: 16 parameters.
-    \item Priors: $\beta_0 \sim \mathcal{N}(0, 6)$, $\beta_1 \sim \mathcal{N}(4, 2)$,
-          $\gamma = 0.25\,w$ with $w \sim \text{Beta}$.
+    \item $r_i = 1$ for ``high'', $0$ for ``low''
+    \item $x_i$: stimulus amplitude, standardized by the mean and sd of the 8 levels
+    \item One psychometric curve per group, shared by all 42 sessions:
+          $4 \times 4 = 16$ parameters
+    \item $\psi_i$ clipped to $[10^{-8},\, 1-10^{-8}]$ for numerical stability
   \end{itemize}
   \vfill
   \todo{one-line motivation: simplest model, a baseline}
+\end{frame}
+
+\begin{frame}{Model A: priors}
+  The same independent priors in every group $g$:
+  \begin{align*}
+    \beta_{0,g} &\sim \mathcal{N}(0,\ 6) \\
+    \beta_{1,g} &\sim \mathcal{N}(4,\ 2) \\
+    \gamma_{h,g} &= 0.25\, w_{h,g}, \qquad w_{h,g} \sim \text{Beta}(1.22,\ 4.89) \\
+    \gamma_{l,g} &= 0.25\, w_{l,g}, \qquad w_{l,g} \sim \text{Beta}(1.22,\ 4.89)
+  \end{align*}
+  \begin{itemize}
+    \item Beta with mean 0.2, sd 0.15; scaling by 0.25 keeps each lapse rate in
+          $(0, 0.25)$, so $\psi$ is increasing and the PSE and JND exist
+    \item Implied lapse rate: mean 0.05, 95\% range $[0.003,\ 0.141]$
+    \item Not checked by prior predictive simulation
+  \end{itemize}
 \end{frame}
 
 \figframe{Model A: convergence on synthetic data}
