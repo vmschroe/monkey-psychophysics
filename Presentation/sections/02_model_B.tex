@@ -97,8 +97,8 @@
 % numbers from Model_B/Convergence_B_Report.tex (made by Convergence_B.py)
 \begin{frame}{Model B on synthetic data: the study}
   \begin{itemize}
-    \item Fixed true hyperparameters per group (group slopes $\mu_{\beta_1} = 3$ for the left
-          hand, 6 for the right); session parameters drawn from them
+    \item Fixed true hyperparameters for 4 synthetic groups, chosen to cover high and low values
+          of each parameter (next slide); session parameters drawn from them
     \item Two sweeps, each run twice with new data:
     \begin{itemize}
       \item sessions: 5, 10, 20, 40, 80 sessions of 308 trials (tests the hyperparameters)
@@ -110,11 +110,95 @@
   \end{itemize}
 \end{frame}
 
-\plotframe{Model B on synthetic data: group means}
-  {\plotsB/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png}
+\begin{frame}{Model B on synthetic data: the true values}
+  The 4 synthetic groups cross a shallow or steep slope with a high or low PSE; they do not
+  correspond to hands or conditions.
+  \vspace{0.5em}
 
-\plotframe{Model B on synthetic data: between-session sds}
-  {\plotsB/Convergence_Plots_B/hyper_sds_recovery_vs_sessions.png}
+  \centering\small
+  \begin{tabular}{lcccccc}
+    \toprule
+    group & slope $\mu_{\beta_1}$ & $\mu_{\beta_0}$ & PSE ($\mu m$) & typical $\gamma_h$ & typical $\gamma_l$ & $\sigma_{\beta_0}$ \\
+    \midrule
+    shallow, PSE high & 3 & $-1$ & 32.6 & 0.033 & 0.0055 & 1.00 \\
+    shallow, PSE low  & 3 & $+1$ & 22.8 & 0.033 & 0.0050 & 0.50 \\
+    steep, PSE high   & 6 & $-1$ & 30.2 & 0.058 & 0.0143 & 0.25 \\
+    steep, PSE low    & 6 & $+1$ & 25.3 & 0.058 & 0.0108 & 0.75 \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.5em}
+  \raggedright
+  \begin{itemize}
+    \item The other between-session sds are near 0: $\sigma_{\beta_1}$ 0.002--0.008, $\sigma_{\gamma_h}$
+          0.024--0.147, $\sigma_{\gamma_l}$ 0.014--0.103 (logit scale)
+    \item A shallow curve shifted high never reaches its ceiling at 50~$\mu m$; shifted low, it
+          never reaches its floor at 6~$\mu m$
+  \end{itemize}
+\end{frame}
+
+% Recovery of the hyperparameters against the number of sessions, one slide per hyperparameter.
+% Each slide takes that hyperparameter's row of the 4 x 4 figure (2623 x 2097 px at 200 dpi,
+% 1 px = 0.36 bp), cuts it between its 2nd and 3rd panels (at the white gap, x = 1320 px for the means and
+% 1324 px for the sds) and
+% stacks the halves: shallow-slope groups on top, steep below. The x tick labels are taken
+% from the figure's bottom row (px 1944-2023) and put under the lower half.
+\newcommand{\recovslide}[5]{%
+  \begin{frame}{Model B on synthetic data: #1 vs number of sessions}
+    \centering
+    \begin{tikzpicture}
+      \node[inner sep=0, anchor=north west] (top) at (0,0)
+        {\includegraphics[scale=0.53, #3, clip]{\plotsB/Convergence_Plots_B/#2}};
+      \node[inner sep=0, anchor=north west] (bot) at ([yshift=-3pt]top.south west)
+        {\includegraphics[scale=0.53, #4, clip]{\plotsB/Convergence_Plots_B/#2}};
+      \node[inner sep=0, anchor=north west] (ticks) at (bot.south west)
+        {\includegraphics[scale=0.53, #5, clip]{\plotsB/Convergence_Plots_B/#2}};
+      \node[above, font=\scriptsize] at ($(top.north west)!0.29!(top.north east)$) {PSE high};
+      \node[above, font=\scriptsize] at ($(top.north west)!0.75!(top.north east)$) {PSE low};
+      \node[rotate=90, anchor=south, font=\scriptsize, muted] at (top.west) {shallow slope (3)};
+      \node[rotate=90, anchor=south, font=\scriptsize, muted] at (bot.west) {steep slope (6)};
+    \end{tikzpicture}
+  \end{frame}}
+
+\recovslide{$\mu_{\beta_0}$}{hyper_means_recovery_vs_sessions.png}
+  {viewport=0.00 551.88 475.20 715.32}
+  {viewport=475.20 551.88 944.28 715.32}
+  {viewport=475.20 26.64 944.28 55.08}
+
+\recovslide{$\mu_{\beta_1}$}{hyper_means_recovery_vs_sessions.png}
+  {viewport=0.00 387.00 475.20 551.88}
+  {viewport=475.20 387.00 944.28 551.88}
+  {viewport=475.20 26.64 944.28 55.08}
+
+\recovslide{$\mu_{\gamma_h}$}{hyper_means_recovery_vs_sessions.png}
+  {viewport=0.00 219.96 475.20 387.00}
+  {viewport=475.20 219.96 944.28 387.00}
+  {viewport=475.20 26.64 944.28 55.08}
+
+\recovslide{$\mu_{\gamma_l}$}{hyper_means_recovery_vs_sessions.png}
+  {viewport=0.00 55.08 475.20 219.96}
+  {viewport=475.20 55.08 944.28 219.96}
+  {viewport=475.20 26.64 944.28 55.08}
+
+\recovslide{$\sigma_{\beta_0}$}{hyper_sds_recovery_vs_sessions.png}
+  {viewport=0.00 551.16 476.64 715.32}
+  {viewport=476.64 551.16 944.28 715.32}
+  {viewport=476.64 26.64 944.28 55.08}
+
+\recovslide{$\sigma_{\beta_1}$}{hyper_sds_recovery_vs_sessions.png}
+  {viewport=0.00 385.92 476.64 551.16}
+  {viewport=476.64 385.92 944.28 551.16}
+  {viewport=476.64 26.64 944.28 55.08}
+
+\recovslide{$\sigma_{\gamma_h}$}{hyper_sds_recovery_vs_sessions.png}
+  {viewport=0.00 220.32 476.64 385.92}
+  {viewport=476.64 220.32 944.28 385.92}
+  {viewport=476.64 26.64 944.28 55.08}
+
+\recovslide{$\sigma_{\gamma_l}$}{hyper_sds_recovery_vs_sessions.png}
+  {viewport=0.00 55.08 476.64 220.32}
+  {viewport=476.64 55.08 944.28 220.32}
+  {viewport=476.64 26.64 944.28 55.08}
 
 \begin{frame}{Model B on synthetic data: session-level recovery}
   At 320 trials per session (42 sessions, both replicates):
@@ -125,7 +209,7 @@
   \resizebox{\textwidth}{!}{%
   \begin{tabular}{lcccc}
     \toprule
-     & left unimanual & left bimanual & right unimanual & right bimanual \\
+     & shallow, PSE high & shallow, PSE low & steep, PSE high & steep, PSE low \\
     \midrule
     PSE        & 0.14 / 0.49 / 0.90 & 0.12 / 0.42 / 0.90 & 0.05 / 0.16 / 0.93 & 0.09 / 0.32 / 0.94 \\
     JND        & 0.014 / 0.15 / 1.00 & 0.034 / 0.17 / 1.00 & 0.013 / 0.08 / 1.00 & 0.010 / 0.10 / 1.00 \\
@@ -144,16 +228,16 @@
 \begin{frame}{Model B on synthetic data: what is recoverable}
   At the size of the real data (42 sessions of about 308 trials):
   \begin{itemize}
-    \item \textbf{Recoverable:} per-session PSE and JND; the group means $\mu_{\beta_0}$;
-          $\mu_{\beta_1}$ for the left hand; the bias spread $\sigma_{\beta_0}$;
-          $\mu_{\gamma_h}$ except for left bimanual
-    \item \textbf{Weakly constrained:} $\mu_{\beta_1}$ for steep curves (slope 6, right hand):
-          the curve rises within one stimulus spacing, so only 2 levels inform it
-    \item \textbf{Biased in some datasets:} a lapse rate whose side of the curve never reaches
-          its asymptote: $\gamma_l$ for left unimanual (too high), $\gamma_h$ for left bimanual
-          (too low)
-    \item \textbf{Not identified:} $\sigma_{\beta_1}$, $\sigma_{\gamma_h}$, $\sigma_{\gamma_l}$ when
-          their true values are near 0; their posteriors reflect the prior
+    \item \textbf{Recoverable:} per-session PSE and JND; the bias mean $\mu_{\beta_0}$ ($\pm 1$);
+          the slope mean $\mu_{\beta_1}$ when the slope is shallow (3); the bias spread
+          $\sigma_{\beta_0}$ (0.25--1.0); $\mu_{\gamma_h}$ in most groups
+    \item \textbf{Weakly constrained:} $\mu_{\beta_1}$ when the slope is steep (6): the curve rises
+          within one stimulus spacing, so only 2 levels inform it (HDIs 1.8--2.6 wide)
+    \item \textbf{Biased in some datasets:} a lapse rate whose side of a shallow curve never
+          reaches its asymptote: $\gamma_l$ too high when the PSE is high, $\gamma_h$ too low when
+          it is low; the higher $\mu_{\gamma_l}$ ($-2.8$) is also overestimated at 80 sessions
+    \item \textbf{Not identified:} the sds with true values near 0 ($\sigma_{\beta_1}$,
+          $\sigma_{\gamma_h}$, $\sigma_{\gamma_l}$); their posteriors reflect the prior
     \item Session-level HDIs mostly conservative; PSE coverage slightly low (0.90--0.94)
   \end{itemize}
 \end{frame}
