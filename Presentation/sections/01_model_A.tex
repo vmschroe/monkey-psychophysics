@@ -94,12 +94,7 @@
 
 \begin{frame}{Model A on synthetic data: the 95\% HDIs are calibrated}
   \centering
-  \includegraphics[width=\textwidth,height=0.64\textheight,keepaspectratio]{\plotsA/Convergence_Plots_A/coverage_vs_size_all_params.png}
-  \par\vspace{0.3em}
-  {\small Coverage: the fraction of the 80 fits whose 95\% HDI contains the true value; a
-   calibrated model gives 0.90--0.99 (gray band). Every value is in the band, except a few of
-   1.00 (all HDIs cover the truth) for $\gamma_h$, $\gamma_l$ and $\beta_1$ at small sizes,
-   where the prior makes the HDIs wider than needed.\par}
+  \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{\plotsA/Convergence_Plots_A/coverage_vs_size_all_params.png}
 \end{frame}
 
 \figframe{Model A on synthetic data: $\gamma_l$ is pulled upward}
@@ -164,31 +159,66 @@
   pooled over sessions; dashed: the trained threshold of 28~$\mu m$.}
 \end{frame}
 
-\figframe{Model A on the real data: effect of the distractor}
-  {\plotsA/Fit_Plots_A/effect_densities.png}
-  {PSE $-4.19$ [$-4.96$, $-3.44$] (left), $-6.07$ [$-6.85$, $-5.30$] (right) $\mu m$;
-   $\gamma_h$ $+0.04$ for both hands; JND $+0.83$~$\mu m$ (left only).}
+% Distractor effect, one slide per quantity: its row of uni_bi_posteriors.png (unimanual and
+% bimanual posteriors overlaid) above its row of effect_densities.png (bimanual - unimanual).
+% Both PNGs are 2223 px wide at 200 dpi (1 px = 0.36 bp) with the same two hand columns;
+% the rows are cropped in LaTeX at the white gaps between them, hand titles left out.
+\newcommand{\effectpair}[4]{%
+  \begin{frame}{Model A on the real data: effect of the distractor on #1}
+    \centering
+    \begin{tikzpicture}
+      \node[inner sep=0] (ub) {\includegraphics[width=0.84\textwidth, #2]{\plotsA/Fit_Plots_A/uni_bi_posteriors.png}};
+      \node[inner sep=0, below=3pt of ub] (ef) {\includegraphics[width=0.84\textwidth, #3]{\plotsA/Fit_Plots_A/effect_densities.png}};
+      \node[above, font=\scriptsize] at ($(ub.north west)!0.255!(ub.north east)$) {Left Hand};
+      \node[above, font=\scriptsize] at ($(ub.north west)!0.752!(ub.north east)$) {Right Hand};
+      \node[left, rotate=90, anchor=south, font=\scriptsize, muted] at (ub.west) {uni vs bi};
+      \node[left, rotate=90, anchor=south, font=\scriptsize, muted] at (ef.west) {bi $-$ uni};
+    \end{tikzpicture}\\[0.1em]
+    {\scriptsize \textcolor{plotblue}{\rule[0.5ex]{1.2em}{1pt}}~Unimanual\quad
+     \textcolor{plotred}{\rule[0.5ex]{1.2em}{1pt}}~Bimanual\quad
+     {\color{muted}95\% HDI shaded, mean dotted#4}}
+  \end{frame}}
+
+\effectpair{PSE}
+  {trim=0 626.04bp 0 38.88bp, clip}
+  {trim=0 572.76bp 0 38.88bp, clip}
+  {; green dashed: trained threshold}
+
+\effectpair{JND}
+  {trim=0 418.32bp 0 246.24bp, clip}
+  {trim=0 383.40bp 0 227.52bp, clip}
+  {}
+
+\effectpair{$\gamma_h$}
+  {trim=0 211.68bp 0 453.96bp, clip}
+  {trim=0 194.04bp 0 416.88bp, clip}
+  {}
+
+\effectpair{$\gamma_l$}
+  {trim=0 0.00bp 0 660.60bp, clip}
+  {trim=0 0.00bp 0 606.24bp, clip}
+  {}
+
 
 \figframe{Model A on the real data: the pooled data are reproduced}
   {\plotsA/Fit_Plots_A/ppc_pooled_by_stimulus.png}
   {Pooled over sessions, all 32 group $\times$ amplitude proportions lie inside their 95\%
    posterior predictive intervals.}
 
-\figframe{Model A misses the variation between sessions}
-  {\plotsA/Fit_Plots_A/ppc_session_cells.png}
-  {Within sessions, counts vary more than Model A predicts (PIT tails 4.5\% and 4.0\%
-   vs 2.5\%); at 32~$\mu m$ only 79--86\% of sessions are covered.}
-
 \begin{frame}{Model A: conclusions}
   \begin{itemize}
     \item Reliable fit; the pooled data are reproduced at every amplitude
           ($\text{elpd}_\text{loo} = -3344.0$, SE 64.5)
-    \item The distractor lowers the PSE by 4.2 (left) and 6.1 (right)~$\mu m$ and raises
-          $\gamma_h$ by about 0.04
-    \item But the sessions' PSEs differ, and Model A treats that as trial noise:
+    \item Effect of the distractor (bimanual $-$ unimanual), posterior mean [95\% HDI]:
     \begin{itemize}
-      \item its HDIs are too narrow for the sessions as a whole
-      \item the pooled JND mixes within-session precision with between-session drift
+      \item \textbf{PSE:} lowered, by $-4.19$ [$-4.96$, $-3.44$]~$\mu m$ (left) and
+            $-6.07$ [$-6.85$, $-5.30$]~$\mu m$ (right)
+      \item \textbf{JND:} raised for the left hand, $+0.83$ [0.27, 1.37]~$\mu m$; unclear for
+            the right, $+0.27$ [$-0.29$, 0.80]~$\mu m$
+      \item \textbf{\boldmath$\gamma_h$:} raised, by $+0.038$ [0.023, 0.055] (left) and
+            $+0.042$ [0.021, 0.061] (right)
+      \item \textbf{\boldmath$\gamma_l$:} no clear effect, $+0.007$ [$-0.008$, 0.022] (left) and
+            $+0.006$ [$-0.006$, 0.017] (right)
     \end{itemize}
     \item[$\Rightarrow$] A curve for every session: Model B
   \end{itemize}
