@@ -24,7 +24,7 @@ Editable outline of `Presentation.tex` and `sections/*.tex`. One `##` heading pe
 - stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50\}$ μm
   - administered to one finger of one hand (left or right)
 - [gray] distractor $x_\text{dist} \in \{0, x_\text{d}\}$ μm
-  - $x_\text{d} \in \{6, 12, 18, 24, 32\}$ μm, value fixed for each session
+  - $x_\text{dist} \in [6, 32]$ μm, value fixed for each session
   - administered to the other (non-stimulus) hand
 - if present, distractor administered simultaneously with the stimulus [end gray]
 - monkey categorizes the stimulus as either "high" or "low" relative to a trained boundary of 28 μm
@@ -66,7 +66,7 @@ Same bullets as slide 3, highlighting swapped: distractor bullets in [blue] ... 
 - [gray] stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50\}$ μm
   - administered to one finger of one hand (left or right) [end gray]
 - [blue] distractor $x_\text{dist} \in \{0, x_\text{d}\}$ μm
-  - $x_\text{d} \in \{6, 12, 18, 24, 32\}$ μm, value fixed for each session
+  - $x_\text{dist} \in [6, 32]$ μm, value fixed for each session
   - administered to the other (non-stimulus) hand
 - if present, distractor administered simultaneously with the stimulus [end blue]
 - [gray] monkey categorizes the stimulus as either "high" or "low" relative to a trained boundary of 28 μm
@@ -140,7 +140,7 @@ The same priors in every group:
   $\gamma_h = 0.25\, w_h, \quad w_h \sim \text{Beta}(1.22, 4.89)$
   $\gamma_l = 0.25\, w_l, \quad w_l \sim \text{Beta}(1.22, 4.89)$
 
-- $\beta_1$ must be positive for the psychometric function to have a positive slope
+- $\beta_1$ should be positive for the psychometric function to have a positive slope
 - $\gamma$'s have support between 0 and 0.25, with prior mean of 0.05 and 95% range [0.003, 0.141]
 
 ### Subsection: Synthetic Data
