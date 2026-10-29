@@ -64,6 +64,18 @@
                      trim=0 0 0 22bp,clip]{#2}
   \end{frame}}
 
+% a sampling-diagnostics frame: the fit report's numbers as bullets, then one trace plot
+% (density per chain left, draws per chain right); the trace PNGs have no figure title
+\newcommand{\diagframe}[3]{%
+  \begin{frame}{#1}
+    \small
+    \begin{itemize}
+      #2
+    \end{itemize}
+    \centering
+    \includegraphics[width=\textwidth,height=0.44\textheight,keepaspectratio]{#3}
+  \end{frame}}
+
 % ---- trial schematic (slide "The task: one trial") -------------------------
 \tikzset{
   handline/.style={line width=1.1pt, line join=round, draw=muted},

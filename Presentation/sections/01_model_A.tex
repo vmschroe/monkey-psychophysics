@@ -124,6 +124,12 @@
 \subsection{Real Data}
 
 % numbers from Model_A/Fit_A_Report.tex (made by Main_Analysis_A.py)
+\diagframe{Model A on the real data: sampling diagnostics}
+  {\item NUTS, 4 chains $\times$ 5{,}000 draws after 1{,}000 tuning (2.4 min)
+   \item No divergences; tree depth never above 5
+   \item All 40 parameters: $\hat{R} = 1.000$, bulk ESS $\ge 15{,}213$, tail ESS $\ge 8{,}802$}
+  {\plotsA/Fit_Plots_A/trace_all_groups.png}
+
 \begin{frame}{Model A on the real data: group estimates}
   \centering
   \resizebox{\textwidth}{!}{%
@@ -139,8 +145,7 @@
   \end{tabular}}
 
   \vspace{0.6em}
-  {\scriptsize Posterior mean [95\% HDI]. 12{,}937 trials, 4 chains $\times$ 5{,}000 draws:
-  no divergences, $\hat{R} = 1.000$, bulk ESS $\ge 15{,}213$.}
+  {\scriptsize Posterior mean [95\% HDI], 12{,}937 trials.}
 
   \vfill
   \raggedright

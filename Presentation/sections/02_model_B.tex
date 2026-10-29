@@ -245,6 +245,15 @@
 \subsection{Real Data}
 
 % numbers from Model_B/Fit_B_Report.tex (made by Main_Analysis_B.py)
+\diagframe{Model B on the real data: sampling diagnostics}
+  {\item NUTS, 4 chains $\times$ 5{,}000 draws after 1{,}000 tuning (31 min)
+   \item No divergences; tree depth never above 6
+   \item All but 4 of the 2{,}080 parameters: $\hat{R} = 1.00$, bulk ESS $\ge 2{,}210$, tail ESS $\ge 4{,}527$
+   \item The 4 exceptions (raw \code{z\_sig\_b0}, $\hat{R}$ up to 1.73) are harmless: $\sigma_{\beta_0} = |2z|$, so
+         chains differ only in the sign of $z$; $\sigma_{\beta_0}$ itself has $\hat{R} = 1.00$
+   \item Below: left bimanual $\gamma_h$ (06-14) and its hyperparameters; $\sigma_{\gamma_h}$ piles up at 0 but mixes well}
+  {\plotsB/Fit_Plots_B/trace_gam_h_hyper_left_bi.png}
+
 \begin{frame}{Model B on the real data: a typical session}
   \centering
   \resizebox{\textwidth}{!}{%
@@ -260,10 +269,7 @@
   \end{tabular}}
 
   \vspace{0.6em}
-  {\scriptsize Quantities at the group-level means, posterior mean [95\% HDI]. 4 chains
-  $\times$ 5{,}000 draws: no divergences; $\hat{R} = 1.00$ and bulk ESS $\ge 2{,}210$
-  for all but 4 raw variables, whose only disagreement is a sign that does not enter
-  the model.}
+  {\scriptsize Quantities at the group-level means, posterior mean [95\% HDI].}
 
   \vfill
   \raggedright
