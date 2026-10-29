@@ -24,7 +24,7 @@ Editable outline of `Presentation.tex` and `sections/*.tex`. One `##` heading pe
 - stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50\}$ μm
   - administered to one finger of one hand (left or right)
 - [gray] distractor $x_\text{dist} \in \{0, x_\text{d}\}$ μm
-  - $x_\text{dist} \in [6, 32]$ μm, value fixed for each session
+  - $x_\text{d} \in [6, 32]$ μm, value fixed for each session
   - administered to the other (non-stimulus) hand
 - if present, distractor administered simultaneously with the stimulus [end gray]
 - monkey categorizes the stimulus as either "high" or "low" relative to a trained boundary of 28 μm
@@ -66,7 +66,7 @@ Same bullets as slide 3, highlighting swapped: distractor bullets in [blue] ... 
 - [gray] stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50\}$ μm
   - administered to one finger of one hand (left or right) [end gray]
 - [blue] distractor $x_\text{dist} \in \{0, x_\text{d}\}$ μm
-  - $x_\text{dist} \in [6, 32]$ μm, value fixed for each session
+  - $x_\text{d} \in [6, 32]$ μm, value fixed for each session
   - administered to the other (non-stimulus) hand
 - if present, distractor administered simultaneously with the stimulus [end blue]
 - [gray] monkey categorizes the stimulus as either "high" or "low" relative to a trained boundary of 28 μm
