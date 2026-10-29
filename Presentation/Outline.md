@@ -102,7 +102,7 @@ Table:
 |---|---|---|
 | A | pooled: one curve per group | uni and bi fit separately |
 | B | hierarchical: one curve per group and session | uni and bi fit separately |
-| C | hierarchical, one group per hand | covariate: shift $\beta_2 x_\text{dist}$ |
+| C | hierarchical: one curve per hand and session | covariate: shift $\beta_2 x_\text{dist}$ |
 
 Below the table: For each model: convergence study on synthetic data, then the fit to the real data.
 
@@ -158,7 +158,7 @@ The same priors in every group:
 
 ## 15. Model A on synthetic data: $\gamma_l$ is pulled upward
 - Figure: Model_A/Plots_A/Convergence_Plots_A/recovery_gam_l_mean_hdi_vs_size.png
-- Caption: True $\gamma_l$ (0.005, 0.01) sits in the prior's lower tail, and the data hold only 3–7 such lapses: the estimates are 1 sd too high at small sizes, 0.36 sd at 16,000.
+- Caption: True $\gamma_l$ (0.005, 0.01) sits in the prior's lower tail, and the data hold only 3–7 such lapses: the estimates are 1 posterior sd too high at small sizes, 0.36 sd at 16,000.
 
 ## 16. Model A on synthetic data: what is recoverable
 At the size of the real data (about 3,230 trials per group):
@@ -166,7 +166,7 @@ At the size of the real data (about 3,230 trials per group):
   - posterior sd about 0.3 μm for the PSE, 0.2 μm for the JND
 - **Recoverable, HDIs a little wide:** $\beta_1$ (coverage 0.98–0.99)
 - **Not reliably recoverable:** small $\gamma_l$
-  - biased upward by 0.4–0.5 sd; by about 1 sd when the curve never reaches its ceiling (left_uni), where $\gamma_l$ trades off with the slope
+  - biased upward by 0.4–0.5 sd; by about 1 sd when the curve never reaches its ceiling (left unimanual), where $\gamma_l$ trades off with the slope
   - HDIs still cover the truth, but the posterior mean should not be read literally
 - **Caveats:** one set of true values; data simulated with one curve per group, so this says nothing about variation between sessions
 
@@ -424,7 +424,7 @@ Small note: quantities at the group-level means, posterior mean [95% HDI].
 ## 54. Model B: conclusions
 - Reliable fit; no systematic misfit, pooled or within sessions (elpd_loo = −3180.0, SE 64.3)
 - Effect of the distractor (bimanual − unimanual), average over the 42 sessions, posterior mean [95% HDI]:
-  - **PSE:** lowered, by −4.29 [−5.05, −3.52] μm (left) and −6.06 [−6.80, −5.34] μm (right); negative in 40/42 and 42/42 sessions
+  - **PSE:** lowered, by −4.29 [−5.05, −3.52] μm (left) and −6.06 [−6.80, −5.34] μm (right); posterior mean negative in 40/42 (left) and 42/42 (right) sessions
   - **JND:** raised for the left hand, +1.03 [0.46, 1.59] μm, driven by a few sessions; unclear for the right, +0.49 [−0.07, 1.03] μm
   - **$\gamma_h$:** raised, by +0.025 [0.009, 0.042] (left) and +0.035 [0.016, 0.054] (right)
   - **$\gamma_l$:** no effect, 0.000 [−0.014, 0.013] (left) and +0.003 [−0.009, 0.015] (right)
@@ -486,7 +486,7 @@ Hyperpriors, the same for both hands; all but those of $\beta_2$ as in Model B:
 
 ## 60. Model C on synthetic data: the study
 - True hyperparameters derived from Model B's fit to the real data, so the synthetic data resemble the real data (e.g. $\mu_{\beta_2} = 0.93$ left, 1.13 right)
-- Each simulated session gets one distractor amplitude, drawn from the real sessions'
+- Each simulated session gets one distractor amplitude, drawn from the real sessions' amplitudes
 - The same two sweeps as for Model B, each run twice with new data:
   - sessions: 5, 10, 20, 40, 80 sessions of 308 trials
   - trials: 42 sessions of 20, 40, 80, 160, 320 trials

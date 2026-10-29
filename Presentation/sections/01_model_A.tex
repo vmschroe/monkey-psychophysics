@@ -100,7 +100,7 @@
 \figframe{Model A on synthetic data: $\gamma_l$ is pulled upward}
   {\plotsA/Convergence_Plots_A/recovery_gam_l_mean_hdi_vs_size.png}
   {True $\gamma_l$ (0.005, 0.01) sits in the prior's lower tail, and the data hold only
-   3--7 such lapses: the estimates are 1 sd too high at small sizes, 0.36 sd at 16{,}000.}
+   3--7 such lapses: the estimates are 1 posterior sd too high at small sizes, 0.36 sd at 16{,}000.}
 
 \begin{frame}{Model A on synthetic data: what is recoverable}
   At the size of the real data (about 3{,}230 trials per group):
@@ -113,7 +113,7 @@
     \item \textbf{Not reliably recoverable:} small $\gamma_l$
     \begin{itemize}
       \item biased upward by 0.4--0.5 sd; by about 1 sd when the curve never reaches its
-            ceiling (left\_uni), where $\gamma_l$ trades off with the slope
+            ceiling (left unimanual), where $\gamma_l$ trades off with the slope
       \item HDIs still cover the truth, but the posterior mean should not be read literally
     \end{itemize}
     \item \textbf{Caveats:} one set of true values; data simulated with one curve per group,

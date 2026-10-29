@@ -6,21 +6,21 @@
 
 \begin{frame}{The task: 2AFC categorization of vibration amplitude}
   \begin{itemize}
-    \item stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50 \} \mu m$
+    \item stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50 \}~\mu m$
     \begin{itemize}
       \item administered to one finger of one hand (left or right)
     \end{itemize}
-    \item \textcolor{muted!60}{distractor $x_\text{dist} \in \{0, x_\text{d}\} \mu m$}
+    \item \textcolor{muted!60}{distractor $x_\text{dist} \in \{0, x_\text{d}\}~\mu m$}
     \begin{itemize}
-      \item \textcolor{muted!60}{$x_\text{d} \in \{6, 12, 18, 24, 32\} \mu m$ value fixed for each session}
+      \item \textcolor{muted!60}{$x_\text{d} \in \{6, 12, 18, 24, 32\}~\mu m$, value fixed for each session}
       \item \textcolor{muted!60}{administered to the other (non-stimulus) hand}
     \end{itemize}
     \item \textcolor{muted!60}{if present, distractor administered simultaneously with the stimulus}
     \item monkey categorizes the stimulus as either
-          ``high'' or ``low'' relative to a trained boundary of 28~$\mu m$.
+          ``high'' or ``low'' relative to a trained boundary of 28~$\mu m$
     \begin{itemize}
-      \item "low" response: correct for $x_\text{stim} < 28 \mu m$
-      \item "high" response: correct for $x_\text{stim} > 28 \mu m$.
+      \item ``low'' response: correct for $x_\text{stim} < 28~\mu m$
+      \item ``high'' response: correct for $x_\text{stim} > 28~\mu m$
     \end{itemize}    
     \item correct responses are rewarded with water or juice
   \end{itemize}
@@ -78,21 +78,21 @@
 
 \begin{frame}{Modeling bimanual interactions}
   \begin{itemize}
-    \item \textcolor{muted!60}{stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50 \} \mu m$}
+    \item \textcolor{muted!60}{stimulus $x_\text{stim} \in \{6, 12, 18, 24, 32, 38, 44, 50 \}~\mu m$}
     \begin{itemize}
       \item \textcolor{muted!60}{administered to one finger of one hand (left or right)}
     \end{itemize}
-    \item \textcolor{plotblue}{distractor $x_\text{dist} \in \{0, x_\text{d}\} \mu m$}
+    \item \textcolor{plotblue}{distractor $x_\text{dist} \in \{0, x_\text{d}\}~\mu m$}
     \begin{itemize}
-      \item \textcolor{plotblue}{$x_\text{d} \in \{6, 12, 18, 24, 32\} \mu m$ value fixed for each session}
+      \item \textcolor{plotblue}{$x_\text{d} \in \{6, 12, 18, 24, 32\}~\mu m$, value fixed for each session}
       \item \textcolor{plotblue}{administered to the other (non-stimulus) hand}
     \end{itemize}
     \item \textcolor{plotblue}{if present, distractor administered simultaneously with the stimulus}
     \item \textcolor{muted!60}{monkey categorizes the stimulus as either
-          ``high'' or ``low'' relative to a trained boundary of 28~$\mu m$.}
+          ``high'' or ``low'' relative to a trained boundary of 28~$\mu m$}
     \begin{itemize}
-      \item \textcolor{muted!60}{"low" response: correct for $x_\text{stim} < 28 \mu m$}
-      \item \textcolor{muted!60}{"high" response: correct for $x_\text{stim} > 28 \mu m$.}
+      \item \textcolor{muted!60}{``low'' response: correct for $x_\text{stim} < 28~\mu m$}
+      \item \textcolor{muted!60}{``high'' response: correct for $x_\text{stim} > 28~\mu m$}
     \end{itemize}
     \item \textcolor{muted!60}{correct responses are rewarded with water or juice}
   \end{itemize}
@@ -122,7 +122,7 @@
     \midrule
     A & pooled: one curve per group & uni and bi fit separately \\
     B & hierarchical: one curve per group and session & uni and bi fit separately \\
-    C & hierarchical, one group per hand & covariate: shift $\beta_2 x_\text{dist}$ \\
+    C & hierarchical: one curve per hand and session & covariate: shift $\beta_2 x_\text{dist}$ \\
     \bottomrule
   \end{tabular}
   \vfill
