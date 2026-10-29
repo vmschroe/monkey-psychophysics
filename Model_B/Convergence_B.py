@@ -490,15 +490,6 @@ def pooled_summary(sr):
     return sr.groupby(['sweep', 'size', 'param', 'group']).agg(
         rmse=('error', rmse), mean_hdi_width=('hdi_width', 'mean'), coverage=('covered', 'mean'))
 
-old_path = MODEL_DIR / "Results_Convergence_B_oldpriors.pkl"   # the same study under the earlier priors
-if old_path.exists():
-    with open(old_path, "rb") as f:
-        saved_old = pickle.load(f)
-    hyper_old, session_old = saved_old['hyper_results'], saved_old['session_results']
-else:
-    hyper_old = session_old = None
-    print(f"{old_path.name} not found: skipping the comparison with the earlier priors")
-
 print("--- Priors: sigma_gam ~ HalfNormal(0.5), exact")
 print(f"mean {halfnorm.mean(scale=0.5):.2f}, median {halfnorm.median(scale=0.5):.2f}, "
       f"95% point {halfnorm.ppf(0.95, scale=0.5):.2f}")
@@ -525,7 +516,7 @@ psi_top = gh + (1 - gh - gl) * inv_logit(true_hyper['mu_b0'][g_i] + true_hyper['
 sig_top = inv_logit(true_hyper['mu_b0'][g_i] + true_hyper['mu_b1'][g_i] * levels.max())
 print(f"left_uni typical curve at the highest stimulus: sigmoid {sig_top:.3f}, psi {psi_top:.3f}")
 
-print("--- Sampling diagnostics (table, current priors; divergences summed over replicates)")
+print("--- Sampling diagnostics (table; divergences summed over replicates)")
 def diag_table(hr):
     fits = hr.drop_duplicates(['sweep', 'rep', 'size'])
     return (hr.groupby(['sweep', 'size'], sort=False).agg(max_r_hat=('r_hat', 'max'), min_ess=('ess_bulk', 'min'))
@@ -534,48 +525,32 @@ diag_cur = diag_table(hyper_results)
 print(diag_cur.round(3).to_string())
 n_fits = len(hyper_results.drop_duplicates(['sweep', 'rep', 'size']))
 print(f"{n_fits} fits: max r_hat {hyper_results['r_hat'].max():.3f}, min ESS {hyper_results['ess_bulk'].min():.0f}, "
-      f"{int(diag_cur['divergences'].sum())} divergences")
-if hyper_old is not None:
-    diag_old = diag_table(hyper_old)
-    first = ('sessions', SESSION_SWEEP[0])
-    div_reps = hyper_old.drop_duplicates(['sweep', 'rep', 'size']).set_index(['sweep', 'size', 'rep'])['divergences']
-    print(f"earlier priors, {SESSION_SWEEP[0]} sessions: {int(diag_old.loc[first, 'divergences'])} divergences "
-          f"(by replicate {div_reps.loc[first].tolist()}), "
-          f"max r_hat {diag_old.loc[first, 'max_r_hat']:.3f}, min ESS {diag_old.loc[first, 'min_ess']:.0f}")
-    for label, dt in [('earlier', diag_old), ('current', diag_cur)]:
-        others = dt.drop(first)['min_ess']
-        print(f"{label} priors, other fits: min ESS {others.min():.0f}-{others.max():.0f}")
+      f"{int(diag_cur['divergences'].sum())} divergences; session-level max r_hat {session_results['r_hat'].max():.3f}")
 
-print("--- Hyperparameter means")
-d = (hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['size'] == 40) & (hyper_results['param'] == 'mu_b0')]
-     .groupby('group')[['error', 'hdi_low', 'hdi_high']].mean())   # replicate averages
-print(f"mu_b0 at 40 sessions (replicate averages): largest |error| {d['error'].abs().max():.2f}, "
-      f"HDI widths {(d['hdi_high'] - d['hdi_low']).min():.2f}-{(d['hdi_high'] - d['hdi_low']).max():.2f}")
+print("--- Hyperparameter means: true and posterior mean [95% HDI], replicate averages, with coverage over the 2 fits")
 for size in [40, 80]:
-    print(f"mu_b1 at {size} sessions:", '; '.join(f"{g} {fmt_avg(hyper_avg(hyper_results, 'sessions', size, 'mu_b1', g))}"
-                                                  for g in groups))
-for grp in ['right_uni', 'right_bi']:
-    a = hyper_avg(hyper_results, 'sessions', 40, 'mu_b1', grp)
-    d = hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['size'] == 40)
-                      & (hyper_results['param'] == 'mu_b1') & (hyper_results['group'] == grp)]
-    print(f"mu_b1 {grp} at 40 sessions: HDI width {a['hdi_high'] - a['hdi_low']:.2f} (replicate average), "
-          f"highest HDI upper end {d['hdi_high'].max():.2f}")
-d = hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['size'] == 40) & (hyper_results['param'] == 'mu_gam_h')]
-d = d.assign(width=d['hdi_high'] - d['hdi_low']).groupby('group')['width'].mean()
-print("mu_gam_h HDI width at 40 sessions:", d.round(2).to_dict())
-print(f"mu_gam_h left_bi at 320 trials: {fmt_avg(hyper_avg(hyper_results, 'trials', 320, 'mu_gam_h', 'left_bi'))} "
-      f"(true {true_hyper['mu_gam_h'][groups.index('left_bi')]:.2f})")
-for grp in ['left_uni', 'left_bi']:
-    a = hyper_avg(hyper_results, 'sessions', 40, 'mu_gam_l', grp)
-    print(f"mu_gam_l {grp} at 40 sessions: {fmt_avg(a)}, HDI width {a['hdi_high'] - a['hdi_low']:.2f} "
-          f"(true {true_hyper['mu_gam_l'][groups.index(grp)]:.2f})")
-print(f"mu_gam_l left_uni at 320 trials: {fmt_avg(hyper_avg(hyper_results, 'trials', 320, 'mu_gam_l', 'left_uni'))}")
-for label, hr in [('current', hyper_results), ('earlier', hyper_old)]:
-    if hr is None:
-        continue
-    d = hr[(hr['sweep'] == 'sessions') & (hr['size'] == 80) & (hr['param'] == 'mu_gam_l') & (hr['group'] == 'right_uni')]
-    print(f"mu_gam_l right_uni at 80 sessions, {label} priors: {fmt_avg(d[['mean', 'hdi_low', 'hdi_high']].mean())} "
-          f"(true {d['true'].iloc[0]:.2f}), HDI covers the truth in {int(d['covered'].sum())} of {len(d)} replicates")
+    print(f"sessions sweep, {size} sessions (Table tab:means):")
+    for name in HYPER_FAMILIES['means']:
+        cov = hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['size'] == size)
+                            & (hyper_results['param'] == name)].groupby('group')['covered'].mean()
+        print(f"  {name}: " + '; '.join(f"{g} true {true_hyper[name][g_i]:.2f}, "
+                                        f"{fmt_avg(hyper_avg(hyper_results, 'sessions', size, name, g))}, cov {cov[g]:.1f}"
+                                        for g_i, g in enumerate(groups)))
+d = hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['size'] == 40) & (hyper_results['param'] == 'mu_b0')]
+d = d.groupby('group')[['error', 'hdi_low', 'hdi_high']].mean()
+print(f"mu_b0 at 40 sessions: largest |error| {d['error'].abs().max():.2f}, "
+      f"HDI widths {(d['hdi_high'] - d['hdi_low']).min():.2f}-{(d['hdi_high'] - d['hdi_low']).max():.2f}")
+for name in HYPER_FAMILIES['means']:
+    d = hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['size'] == 40) & (hyper_results['param'] == name)]
+    w = (d['hdi_high'] - d['hdi_low']).groupby(d['group']).mean()
+    print(f"{name} HDI width at 40 sessions: " + ', '.join(f"{g} {w[g]:.2f}" for g in groups))
+for grp in ['left_bi', 'right_bi']:
+    print(f"mu_gam_h {grp} at 320 trials: {fmt_avg(hyper_avg(hyper_results, 'trials', 320, 'mu_gam_h', grp))} "
+          f"(true {true_hyper['mu_gam_h'][groups.index(grp)]:.2f})")
+print(f"mu_gam_l left_uni at 320 trials: {fmt_avg(hyper_avg(hyper_results, 'trials', 320, 'mu_gam_l', 'left_uni'))} "
+      f"(true {true_hyper['mu_gam_l'][groups.index('left_uni')]:.2f})")
+print("hyperparameter coverage over all 20 fits (fraction of 4 groups x 2 replicates x 5 sizes per sweep):")
+print(hyper_results.groupby(['param'])['covered'].mean().round(2).to_string())
 
 print("--- Hyperparameter sds at 80 sessions (Table tab:sds80)")
 for name in HYPER_FAMILIES['sds']:
@@ -584,11 +559,13 @@ for name in HYPER_FAMILIES['sds']:
 d = hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['param'] == 'sig_b0')]
 print("sig_b0 posterior mean by number of sessions (replicate average):")
 print(d.pivot_table(index='group', columns='size', values='mean').round(2).to_string())
-print("sig_b0 coverage by number of sessions:", d.groupby('size')['covered'].mean().round(2).to_dict())
-d = hyper_results[hyper_results['param'] == 'sig_gam_l']
-print(f"sig_gam_l over all fits: posterior means {d.groupby(['sweep', 'size', 'group'])['mean'].mean().min():.2f}-"
-      f"{d.groupby(['sweep', 'size', 'group'])['mean'].mean().max():.2f}, HDI upper ends "
-      f"{d.groupby(['sweep', 'size', 'group'])['hdi_high'].mean().min():.2f}-{d.groupby(['sweep', 'size', 'group'])['hdi_high'].mean().max():.2f}")
+d = hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['param'] == 'sig_b1')]
+print("sig_b1 posterior mean by number of sessions (replicate average):")
+print(d.pivot_table(index='group', columns='size', values='mean').round(2).to_string())
+for name in ['sig_gam_h', 'sig_gam_l']:
+    d = hyper_results[hyper_results['param'] == name].groupby(['sweep', 'size', 'group'])[['mean', 'hdi_low', 'hdi_high']].mean()
+    print(f"{name} over all fits: posterior means {d['mean'].min():.2f}-{d['mean'].max():.2f}, "
+          f"HDI lower ends {d['hdi_low'].max():.2f} at most, upper ends {d['hdi_high'].min():.2f}-{d['hdi_high'].max():.2f}")
 
 print("--- Session-level parameters")
 summ_avg = pooled_summary(session_results)
@@ -601,51 +578,20 @@ for par in SESSION_PARAMS:
                                                          f"{summ_avg.loc[('trials', 320, par, g), 'mean_hdi_width']:{f}}",
                                                          f"{summ_avg.loc[('trials', 320, par, g), 'coverage']:.2f}"])
                                    for g in groups))
-for size in [20, 40, 80]:
-    print(f"JND RMSE at {size} trials:", summ_avg.loc[('trials', size, 'JND'), 'rmse'].round(2).to_dict())
+for par in ['PSE', 'JND']:
+    for size in [20, 40, 80]:
+        print(f"{par} RMSE at {size} trials:", summ_avg.loc[('trials', size, par), 'rmse'].round(3).to_dict())
 n_sess_group = N_REPS * N_SESSIONS_FIXED
 print(f"{n_sess_group} sessions per group in the trials sweep: sd of a coverage estimate at 0.95 = "
       f"{np.sqrt(HDI_PROB * (1 - HDI_PROB) / n_sess_group):.3f}")
-for rep in range(N_REPS):
-    h = hyper_results[(hyper_results['sweep'] == 'sessions') & (hyper_results['size'] == 40) & (hyper_results['rep'] == rep)
-                      & (hyper_results['param'] == 'mu_b1') & (hyper_results['group'] == 'left_bi')].iloc[0]
-    c = session_summary[(session_summary['sweep'] == 'sessions') & (session_summary['size'] == 40)
-                        & (session_summary['rep'] == rep) & (session_summary['group'] == 'left_bi')].set_index('param')['coverage']
-    print(f"left_bi, 40 sessions, replicate {rep}: mu_b1 {h['mean']:.2f} (true {h['true']:.0f}), "
-          f"coverage b1 {c['b1']:.2f}, JND {c['JND']:.2f}")
-print("left_bi, 40 sessions, coverage over both replicates:",
-      summ_avg.loc[('sessions', 40, ['b1', 'JND'], 'left_bi'), 'coverage'].round(2).tolist())
-for par in ['gam_h', 'gam_l']:
-    print(f"{par} mean HDI width at 320 trials (over groups): {summ_avg.loc[('trials', 320, par), 'mean_hdi_width'].mean():.3f}")
-for rep in range(N_REPS):
-    d = sess_sub(session_results, 'trials', 160, 'gam_l', 'right_bi')
-    d = d[d['rep'] == rep]
-    print(f"right_bi gam_l, 160 trials, replicate {rep}: posterior means average {d['mean'].mean():.3f}, "
-          f"true values average {d['true'].mean():.3f}")
-print(f"gam_l coverage at 160 trials (all groups): {sess_sub(session_results, 'trials', 160, 'gam_l')['covered'].mean():.2f}")
+for grp in ['left_bi', 'right_bi']:
+    for rep in range(N_REPS):
+        d = sess_sub(session_results, 'trials', 320, 'gam_h', grp)
+        d = d[d['rep'] == rep]
+        print(f"{grp} gam_h, 320 trials, replicate {rep}: posterior means average {d['mean'].mean():.3f}, "
+              f"true values average {d['true'].mean():.3f}, coverage {d['covered'].mean():.2f}")
 d = sess_sub(session_results, 'trials', 320, 'gam_l', 'left_uni')
-print(f"left_uni gam_l at 320 trials: posterior means average {d['mean'].mean():.3f}, true {d['true'].mean():.4f}, "
-      f"RMSE {summ_avg.loc[('trials', 320, 'gam_l', 'left_uni'), 'rmse']:.3f}")
-print(f"left_uni gam_l RMSE at 40 sessions: {summ_avg.loc[('sessions', 40, 'gam_l', 'left_uni'), 'rmse']:.4f}")
-d = sess_sub(session_results, 'trials', 320, 'gam_h', 'left_bi')
-print(f"left_bi gam_h at 320 trials: posterior means average {d['mean'].mean():.3f}, true {d['true'].mean():.3f}")
-
-if hyper_old is not None:
-    print("--- Comparison with the earlier priors (Table tab:prior_comparison): earlier | current")
-    for sweep, size, name, grp in [('sessions', 40, 'mu_b1', 'right_uni'), ('sessions', 80, 'mu_b1', 'right_bi'),
-                                   ('sessions', 40, 'mu_gam_l', 'left_uni'), ('sessions', 40, 'mu_gam_l', 'left_bi'),
-                                   ('trials', 320, 'mu_gam_l', 'left_uni')]:
-        print(f"{name} {grp}, {size} {sweep}: {fmt_avg(hyper_avg(hyper_old, sweep, size, name, grp))} | "
-              f"{fmt_avg(hyper_avg(hyper_results, sweep, size, name, grp))}")
-    def mean_rmse(sr, sweep, size, par, grp):
-        return rmse(sess_sub(sr, sweep, size, par, grp)['error'])   # pooled over replicates
-    print(f"gam_l left_uni session RMSE, 40 sessions: {mean_rmse(session_old, 'sessions', 40, 'gam_l', 'left_uni'):.4f} | "
-          f"{mean_rmse(session_results, 'sessions', 40, 'gam_l', 'left_uni'):.4f}")
-    def sig_range(hr):
-        m = hr[(hr['sweep'] == 'sessions') & (hr['size'] == 80) & (hr['param'] == 'sig_gam_l')].groupby('group')['mean'].mean()
-        return f"{m.min():.2f}-{m.max():.2f}"
-    print(f"sig_gam_l posterior means, 80 sessions: {sig_range(hyper_old)} | {sig_range(hyper_results)}")
-    def lapse_widths(sr):
-        w = sr[(sr['sweep'] == 'trials') & (sr['size'] == 320)].groupby(['param', 'group', 'rep'])['hdi_width'].mean()
-        return f"{w.loc['gam_h'].mean():.3f} / {w.loc['gam_l'].mean():.3f}"
-    print(f"mean HDI width gam_h / gam_l, 320 trials: {lapse_widths(session_old)} | {lapse_widths(session_results)}")
+print(f"left_uni gam_l at 320 trials: posterior means average {d['mean'].mean():.4f}, true {d['true'].mean():.4f}")
+d = sess_sub(session_results, 'trials', 320, 'JND', 'left_bi')
+print(f"left_bi JND at 320 trials: true values range {d['true'].min()*amp_sig:.1f}-{d['true'].max()*amp_sig:.1f} um, "
+      f"RMSE {summ_avg.loc[('trials', 320, 'JND', 'left_bi'), 'rmse']*amp_sig:.2f} um")

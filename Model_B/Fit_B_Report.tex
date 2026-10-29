@@ -263,9 +263,9 @@ $\sigma_{\gamma_l}$ & 0.57 (0.43) & 0.37 (0.28) & 0.74 (0.54) & 0.39 (0.29) & 0.
 
 The bias and slope parameters barely change with the new priors
 (Table~\ref{tab:hyper}); the group slopes move down by 0.05--0.19, well
-within one posterior sd. The group slopes are 4.3--5.0 for every group, below
-the steep range ($\mu_{\beta_1} \approx 6$) where the convergence study found
-the slope poorly identified.
+within one posterior sd. The group slopes are 4.3--5.0 for every group. The
+convergence study, run with these posterior means as true values, recovers group
+slopes of this size.
 
 The lapse-rate parameters change more. The lapse means $\mu_{\gamma_h}$ of the
 unimanual groups, which have almost no lapses, move lower (left\_uni from
@@ -366,7 +366,11 @@ Section~\ref{sec:amplitude}.
 adds to the perceived strength of the stimulus, enough to make even the weakest
 stimuli occasionally seem ``high''. The convergence study found left\_bi
 $\gamma_h$ estimated too low in some datasets, so the left-hand effect may be
-somewhat larger than reported here, not smaller.
+somewhat larger than reported here, not smaller. It also found the session-level
+$\gamma_h$ HDIs of the bimanual groups overconfident (they contained the true value in
+57\% and 86\% of sessions), because a miss in the group's typical $\gamma_h$ carries
+over to every session; the per-session counts of HDIs excluding 0 should be read with
+this in mind.
 
 \begin{figure}[H]
 \centering

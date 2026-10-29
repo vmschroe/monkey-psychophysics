@@ -275,28 +275,29 @@ Hyperpriors, the same in every group:
 - Typical lapse rate: median 0.012, 95% in $[0.0007, 0.12]$
 
 ### Subsection: Synthetic Data
-(numbers from Model_B/Convergence_B_Report)
+(numbers from Model_B/Convergence_B_Report, study with true values from the real-data fit)
 
 ## 29. Model B on synthetic data: the study
-- Fixed true hyperparameters for 4 synthetic groups, chosen to cover high and low values of each parameter (next slide); session parameters drawn from them
+- True hyperparameters = posterior means of Model B's fit to the real data (next slide), so the synthetic data resemble the real data; session parameters drawn from them
 - Two sweeps, each run twice with new data:
   - sessions: 5, 10, 20, 40, 80 sessions of 308 trials (tests the hyperparameters)
   - trials: 42 sessions of 20, 40, 80, 160, 320 trials (tests the session parameters)
 - The real data (42 sessions of about 308 trials) are closest to the 40-session and 320-trial fits
-- All 20 fits sampled well: no divergences, $\hat{R} \le 1.010$, bulk ESS $\ge 579$
+- All 20 fits sampled well: no divergences, $\hat{R} \le 1.011$, bulk ESS $\ge 670$
 
 ## 30. Model B on synthetic data: the true values
-One set of fixed values per group, chosen to cover high and low values of each parameter (not taken from the real data):
+Posterior means of the real-data fit (lapse-rate hyperparameters on the logit scale):
 
-| group | slope $\mu_{\beta_1}$ | $\mu_{\beta_0}$ | PSE (μm) | typical $\gamma_h$ | typical $\gamma_l$ | $\sigma_{\beta_0}$ |
-|---|---|---|---|---|---|---|
-| left unimanual | 3 | −1 | 32.6 | 0.033 | 0.0055 | 1.00 |
-| left bimanual | 3 | +1 | 22.8 | 0.033 | 0.0050 | 0.50 |
-| right unimanual | 6 | −1 | 30.2 | 0.058 | 0.0143 | 0.25 |
-| right bimanual | 6 | +1 | 25.3 | 0.058 | 0.0108 | 0.75 |
+| | $\mu_{\beta_0}$ | $\mu_{\beta_1}$ | $\mu_{\gamma_h}$ | $\mu_{\gamma_l}$ | $\sigma_{\beta_0}$ | $\sigma_{\beta_1}$ | $\sigma_{\gamma_h}$ | $\sigma_{\gamma_l}$ |
+|---|---|---|---|---|---|---|---|---|
+| left unimanual | −1.49 | 4.97 | −5.20 | −3.44 | 0.76 | 0.29 | 0.36 | 0.37 |
+| left bimanual | −0.10 | 4.32 | −2.35 | −3.44 | 0.77 | 1.27 | 0.59 | 0.39 |
+| right unimanual | −1.06 | 4.58 | −4.73 | −3.72 | 1.01 | 0.17 | 0.37 | 0.38 |
+| right bimanual | 0.69 | 4.34 | −1.82 | −3.23 | 0.76 | 0.62 | 0.36 | 0.43 |
 
-- The other between-session sds are near 0: $\sigma_{\beta_1}$ 0.002–0.008, $\sigma_{\gamma_h}$ 0.024–0.147, $\sigma_{\gamma_l}$ 0.014–0.103 (logit scale)
-- The left-hand curves are shallow: left unimanual never reaches its ceiling at 50 μm, left bimanual never reaches its floor at 6 μm
+- Group slopes 4.3–5.0, and slopes that vary between sessions (left bimanual most)
+- Typical $\gamma_h$ near 0 on unimanual trials (0.001–0.002), 0.02–0.04 on bimanual
+- Replaces an earlier study with hand-picked values (slopes 3 and 6, sessions with almost equal slopes and lapse rates) that did not resemble the real data
 
 ## 31. Model B on synthetic data: $\mu_{\beta_0}$ vs number of sessions
 - Figure (no caption): $\mu_{\beta_0}$'s row of Model_B/Plots_B/Convergence_Plots_B/hyper_means_recovery_vs_sessions.png, cut in half and stacked 2 × 2 in LaTeX: left hand on top, right hand below; unimanual left, bimanual right; x tick labels under the lower half
@@ -327,25 +328,22 @@ At 320 trials per session (42 sessions, both replicates): RMSE of the posterior 
 
 | | left unimanual | left bimanual | right unimanual | right bimanual |
 |---|---|---|---|---|
-| PSE | 0.14 / 0.49 / 0.90 | 0.12 / 0.42 / 0.90 | 0.05 / 0.16 / 0.93 | 0.09 / 0.32 / 0.94 |
-| JND | 0.014 / 0.15 / 1.00 | 0.034 / 0.17 / 1.00 | 0.013 / 0.08 / 1.00 | 0.010 / 0.10 / 1.00 |
-| $\beta_0$ | 0.41 / 1.67 / 0.93 | 0.34 / 1.20 / 0.92 | 0.26 / 1.01 / 0.95 | 0.55 / 1.99 / 0.94 |
-| $\beta_1$ | 0.19 / 1.39 / 1.00 | 0.23 / 1.18 / 1.00 | 0.29 / 2.11 / 1.00 | 0.35 / 2.97 / 1.00 |
-| $\gamma_h$ | 0.003 / 0.047 / 1.00 | 0.012 / 0.052 / 1.00 | 0.009 / 0.071 / 1.00 | 0.013 / 0.062 / 1.00 |
-| $\gamma_l$ | 0.016 / 0.048 / 1.00 | 0.003 / 0.019 / 1.00 | 0.004 / 0.021 / 1.00 | 0.003 / 0.023 / 1.00 |
+| PSE | 0.08 / 0.33 / 0.95 | 0.11 / 0.42 / 0.98 | 0.11 / 0.38 / 0.92 | 0.11 / 0.40 / 0.92 |
+| JND | 0.017 / 0.07 / 0.98 | 0.095 / 0.28 / 0.93 | 0.013 / 0.08 / 1.00 | 0.039 / 0.16 / 0.98 |
+| $\beta_0$ | 0.45 / 1.83 / 0.96 | 0.40 / 1.47 / 0.92 | 0.49 / 1.76 / 0.90 | 0.46 / 1.75 / 0.92 |
+| $\beta_1$ | 0.44 / 1.88 / 0.99 | 1.02 / 2.90 / 0.87 | 0.23 / 1.39 / 1.00 | 0.60 / 2.43 / 0.94 |
+| $\gamma_h$ | 0.001 / 0.005 / 1.00 | 0.018 / 0.023 / 0.57 | 0.002 / 0.008 / 1.00 | 0.018 / 0.054 / 0.86 |
+| $\gamma_l$ | 0.009 / 0.031 / 1.00 | 0.008 / 0.026 / 0.99 | 0.003 / 0.012 / 0.96 | 0.006 / 0.030 / 1.00 |
 
 Small note: PSE and JND in standardized units (1 unit = 14.6 μm).
 
 ## 40. Model B on synthetic data: what is recoverable
-At the size of the real data (42 sessions of about 308 trials):
-- **Recoverable:** per-session PSE and JND; the bias mean $\mu_{\beta_0}$ (±1); the slope mean $\mu_{\beta_1}$ when the slope is shallow (3); the bias spread $\sigma_{\beta_0}$ (0.25–1.0); $\mu_{\gamma_h}$ in most groups
-- **Weakly constrained:** $\mu_{\beta_1}$ when the slope is steep (6): the curve rises within one stimulus spacing, so only 2 levels inform it (HDIs 1.8–2.6 wide)
-- **Biased in some datasets:** a lapse rate whose side of a shallow curve never reaches its asymptote: $\gamma_l$ too high when the PSE is high, $\gamma_h$ too low when it is low; the higher $\mu_{\gamma_l}$ (−2.8) is also overestimated at 80 sessions
-- **Not identified:** the sds with true values near 0 ($\sigma_{\beta_1}$, $\sigma_{\gamma_h}$, $\sigma_{\gamma_l}$); their posteriors reflect the prior
-- Session-level HDIs mostly conservative; PSE coverage slightly low (0.90–0.94)
-
-### Subsection: Real Data
-(numbers from Model_B/Fit_B_Report)
+At the size of the real data (42 sessions of about 308 trials), at values like the real ones:
+- **Recoverable:** per-session PSE (RMSE about 1.5 μm) and JND; the group means $\mu_{\beta_0}$ and $\mu_{\beta_1}$; the bias spread $\sigma_{\beta_0}$; the slope spread $\sigma_{\beta_1}$ when it is large (left bimanual)
+- **Weakly determined:** the lapse-rate means, especially $\mu_{\gamma_h}$ for unimanual trials ($\gamma_h$ near 0); smaller slope spreads, which cannot be told from 0
+- **Biased in some datasets:** $\mu_{\gamma_l}$ for right unimanual (too high); $\gamma_h$ for left bimanual (too low) and $\gamma_l$ for left unimanual (too high), where the curve does not reach that asymptote
+- **Overconfident:** session lapse rates. A miss in the group's $\gamma_h$ carries over to every session: bimanual session $\gamma_h$ HDIs cover the truth in only 57% (left) and 86% (right) of sessions
+- **Not identified:** $\sigma_{\gamma_h}$, $\sigma_{\gamma_l}$; their posteriors reflect the prior
 
 ## 41. Model B on the real data: sampling diagnostics
 - NUTS, 4 chains × 5,000 draws after 1,000 tuning (31 min)
