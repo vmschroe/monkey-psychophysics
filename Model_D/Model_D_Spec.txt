@@ -1,0 +1,159 @@
+MODEL D: STRUCTURE AND PRIORS (working specification, 2026-10-30)
+
+Status labels: DECIDED = agreed. PROPOSED = drafted, not yet agreed.
+Developed under Betancourt's principled Bayesian workflow. This document covers
+Step 4 (model development). No Model D fit has been run on real or simulated data.
+
+
+1. DATA
+
+12937 trials, 42 sessions, one monkey (Sirius).
+Response y = 1 for "high", 0 for "low".
+Indices: s = session, j = hand (left, right), c = condition (uni, bi).
+
+  x_stim   (stim_amp - 28) / 14.63
+  x_bi     1 on bimanual trials, 0 on unimanual trials
+  d_s      the session's distractor amplitude / 14.63, not centered
+  x_dist   d_s * x_bi
+
+Each session uses one distractor amplitude, between 6 and 32 um.
+
+
+2. LIKELIHOOD (DECIDED)
+
+  y_t ~ Bernoulli(psi_t)
+
+  psi_t = gam_h[j,c] + (1 - gam_h[j,c] - gam_l[j,c]) * invlogit(eta_t)
+
+  eta_t = b0[s,j] + b1[s,j] * x_stim + delta[s,j] * x_bi
+
+The slope b1 is shared by the two conditions.
+
+
+3. SESSION SHIFT, OPTION A (DECIDED)
+
+The intended form is b0 + b1*x_stim + b2*x_dist + b3*x_bi, with b0, b1, b2 and b3
+fit per session. Within a session x_dist = d_s * x_bi, so the data inform only the
+sum delta = b3 + b2*d_s. Integrating out that split gives the same model:
+
+  delta[s,j] ~ Normal( mu3[j] + mu2[j]*d_s , sqrt( sig3[j]^2 + sig2[j]^2 * d_s^2 ) )
+
+Coded non-centered:
+
+  delta[s,j] = mu3[j] + mu2[j]*d_s + sqrt( sig3[j]^2 + sig2[j]^2 * d_s^2 ) * z[s,j]
+  z[s,j] ~ Normal(0, 1)
+
+Session-level b2 and b3 are not reported, because their split would come from the
+prior. Only delta is meaningful per session.
+
+
+4. PRIORS
+
+All priors are set separately per hand. Lapses are also separate per condition.
+
+Lapse rates: 8 parameters, no session level, as in Model A
+  4*gam_h[j,c], 4*gam_l[j,c] ~ LogitNormal(-2.5, 1.5)        DECIDED
+    gam median 0.019, mean 0.034, 95% in [0.001, 0.152]
+    Coded: gam = 0.25 * invlogit(1.5*z - 2.5), z ~ Normal(0, 1)
+
+Intercept
+  b0[s,j] ~ Normal(mu0[j], sig0[j])                          DECIDED
+  mu0[j]  ~ Normal(0, 1)                                     DECIDED
+  sig0[j] ~ HalfNormal(1)                                    DECIDED (may be revised)
+
+Slope
+  log b1[s,j] ~ Normal(mu1[j], sig1[j])                      DECIDED
+  mu1[j]  ~ Normal(log 4, 0.5)                               DECIDED
+    typical b1 median 4, 95% in [1.5, 10.7]
+  sig1[j] ~ HalfNormal(0.3)                                  DECIDED
+
+Distractor shift
+  mu3[j]  ~ Normal(0, 1.5)                                   DECIDED (new parameter: wide)
+  mu2[j]  ~ Normal(0, 0.75)                                  DECIDED
+  sig3[j] ~ HalfNormal(1)                                    DECIDED (new parameter: wide)
+  sig2[j] ~ HalfNormal(0.5)                                  DECIDED
+
+New parameters err toward uninformative. mu2 and sig2 are set at half the width
+of mu3 and sig3 so that, at d = 2 (about 29 um), the prior favors neither the
+constant nor the amplitude-dependent term.
+
+
+5. DERIVED QUANTITIES
+
+Per hand, condition and session, with delta = 0 on unimanual trials:
+
+  PSE = ( -(b0 + delta) + log( (1 - 2*gam_h) / (1 - 2*gam_l) ) ) / b1
+  JND = log( (3 - 4*gam_h)(3 - 4*gam_l) / ((1 - 4*gam_h)(1 - 4*gam_l)) ) / (2*b1)
+
+Both are on the x_stim scale. For um: PSE * 14.63 + 28, and JND * 14.63.
+
+
+6. CHANGES FROM MODEL C
+
+  Lapses       per hand x condition, pooled over sessions (C: per hand and session)
+  Lapse prior  fixed LogitNormal(-2.5, 1.5) (C: hierarchical logit-normal)
+  Shift        mu3 + mu2*d with its own scatter (C: b2*d only)
+  Slope        lognormal per session (C: normal, allowing negative slopes)
+  mu0          Normal(0, 1) (C: Normal(0, 2))
+  sig0         HalfNormal(1) (C: HalfNormal(2))
+
+
+7. PRIOR CHECK SCORES FOR THE CURRENT SET
+
+Share of the ensemble beyond each draft threshold. The target is 0.1% to 5%.
+These come from a quick simulation of one hand on the real session amplitudes,
+not from the PyMC model, and are to be rerun properly in Step 7.
+
+  Session PSE outside 6-50 um, unimanual        1.8%
+  Session PSE outside 0-56 um, bimanual         5.2%   marginally over the limit
+  Session JND outside 1-22 um                   1.2%
+  Between-session PSE sd above 11 um            5.2%   marginally over the limit
+  Typical shift beyond +-22 um at 6 um          1.5%
+  Typical shift beyond +-22 um at 32 um         4.7%
+  Session shift beyond +-22 um at 6 um          3.6%
+  Session shift beyond +-33 um at 32 um         3.3%
+  Overall accuracy outside 0.6-0.98             0.3%
+
+The shift and bimanual PSE thresholds were loosened to suit the wide priors on the
+new parameters. The two results marginally over the limit are accepted, since the
+limits are approximate. The remaining thresholds are drafts, not yet confirmed, along with the lapse threshold of 0.15.
+
+
+8. KNOWN LIMITATIONS
+
+Amplitude and time are confounded. Distractor amplitude climbs with session order
+(Spearman 0.90), and only the last 12 sessions alternate, between 24 and 32 um.
+So mu2 and mu3 are associations with amplitude and could partly reflect training,
+adaptation or novelty. The shift within a session is not affected, assuming the
+trial types were interleaved.
+
+mu3 is an extrapolation to zero amplitude, because the weakest distractor is 6 um.
+Report the shift at 6 um alongside it. A compressive response to amplitude could
+also produce a nonzero mu3 with no separate "presence" effect.
+
+mu2 and mu3 are strongly correlated (about -0.90 from the design), so read them
+jointly. sig2 and sig3 may be weakly identified.
+
+Lapses pooled over sessions mean any real day-to-day lapse variation goes into
+the session betas.
+
+delta is on the logit scale and assumed independent of b1, though a mechanism such
+as summation predicts a shift in um, which would scale with the session's slope.
+
+
+9. OPEN QUESTIONS
+
+  - Thresholds: confirm the remaining drafts, especially JND 1-22 um, lapses 0.15 and
+    11 um between-session PSE scatter.
+  - Was the amplitude ramp deliberate, and had the monkey met the distractor before
+    these sessions? This decides whether a time term belongs in Model D.
+  - Is Weber's law a goal of this model or background?
+  - Target position: is a spatial response bias plausible, given the "high" target
+    appears at +-14 on the screen?
+  - Inferential goals (Step 1): confirm them, and any formal claim to calibrate.
+  - Calibration budget: 100-200 prior-drawn fits, roughly 5-10 hours.
+
+Planned as retrodictive checks, not parameters, in this first iteration:
+bimanual slope and JND by amplitude, correlation between the hands, curve asymmetry
+around the PSE (log amplitude), day-to-day lapse variation, target-side bias,
+serial dependence, and within-session drift.
