@@ -1,0 +1,28 @@
+\section{Further extensions worth trying}\label{sec:further}
+
+These were not fitted here. Each stays close to the current models and uses data that already exist.
+
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{Use the frequency-probe trials.}
+Vera's selection drops 3,232 completed trials in which a single vibration was given at 150 or 250\,Hz instead of 200\,Hz (all unimanual, from the same days).
+With a frequency term in $\eta$ they would add about 75 unimanual trials per session, which would sharpen each session's bias, slope and unimanual lapses: the baseline against which every bimanual effect is measured.
+They also test whether Sirius judges amplitude or perceived intensity, which bears on whether the distractor adds to the target's intensity.
+
+\item \textbf{Response times.}
+The trial files record when the choice targets appear and when the response movement starts (median response time 562\,ms).
+A first look supports treating some bimanual ``lapses'' as real decisions driven by the distractor (Section~\ref{sec:interp}).
+A drift-diffusion version of Model~E, in which the distractor adds to the drift rate and lapses are a separate response process, would use both choices and times and could tell a change in the evidence from a change in the criterion.
+
+\item \textbf{A more flexible trend in the criterion.}
+The linear trend and the amplitude term fit equally well. A random walk over sessions would let the criterion wander without assuming a shape, and a criterion that follows a running average of recent distractor amplitudes would describe slow adaptation. On these data they would be hard to tell apart for the same reason as D+crit and D+order, but they are the right models for data in which amplitude and time are not confounded.
+
+\item \textbf{Trial history.}
+A logistic check with the full session-by-hand structure finds only a weak tendency to switch away from the previous choice (logit $-0.20\pm0.11$) and no clear win-stay effect ($0.13\pm0.12$).
+Adding the previous choice to $\eta$ is cheap, but it is unlikely to change the conclusions.
+
+\item \textbf{Correlated session effects.}
+The models draw each session parameter independently. A full covariance across a session's parameters (an LKJ prior on bias, slope and lapses, and across the two hands) is the general form of the shared daily bias tested in D+shared.
+
+\item \textbf{More animals.}
+A monkey level above the session level would separate effects that hold for every animal from the individual pattern seen here, such as the right hand's extra shift.
+\end{enumerate}

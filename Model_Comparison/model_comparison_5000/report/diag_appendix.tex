@@ -1,0 +1,19 @@
+\section{Sampling diagnostics and checks of the comparison}\label{app:diag}
+
+Table~\ref{tab:diag} lists, for every model, the sampler, the run time on two cores, the number of divergent transitions, the largest $\hat R$, the smallest bulk and tail effective sample sizes over all parameters (Model~B's sign-free $z_\sigma$ variables excluded, as in Vera's reports), and the largest Pareto $k$ of the two cross-validation scores.
+Trial-level LOO has every $k$ below 0.7 for every model.
+
+\begin{table}[h]
+\centering\small
+\caption{Sampling diagnostics (4 chains $\times$ 5000 draws after 1000 tuning steps).}\label{tab:diag}
+\input{../results5000/tex/tab_diagnostics.tex}
+\end{table}
+
+\paragraph{Checks of the leave-one-session-out scores}
+The LOSO score of a session is an importance-sampling estimate, so it was checked directly in the earlier 1000-draw runs: for four held-out sessions the model was refit on the other 41 sessions and the session predicted from the refit.
+The exact and estimated scores agreed to within 0.2 (Model~B, session 05-12: $-99.64$ vs $-99.59$; Model~D, 05-12: $-101.54$ vs $-101.41$; C+L, 04-10: $-61.26$ vs $-61.29$ with $k=1.03$; C+LKPS, 04-10: $-60.93$ vs $-60.76$ with $k=0.79$).
+A second random seed changed the totals by less than 0.1 in those runs, and by at most \losoSeedMax\ for B, D, D+crit and E in the 5000-draw runs.
+Sessions with $k>0.7$ in Table~\ref{tab:diag} are therefore not a concern at the precision used in this report.
+
+\paragraph{1000 versus 5000 draws}
+\input{../results5000/tex/draws_note.tex}

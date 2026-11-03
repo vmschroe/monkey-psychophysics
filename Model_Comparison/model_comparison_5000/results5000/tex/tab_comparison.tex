@@ -1,0 +1,47 @@
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}Xrrr@{\ }lr@{\ }l@{}}
+\toprule
+Model & What it is & Parameters & $p_\mathrm{loo}$ & \multicolumn{2}{c}{Trial LOO} & \multicolumn{2}{c}{LOSO} \\
+ & & pop.\,/\,session & & \multicolumn{2}{c}{vs D (SE)} & \multicolumn{2}{c}{vs D (SE)} \\
+\midrule
+\multicolumn{8}{@{}l}{\textit{Vera's models}} \\
+A & pooled: no session differences & 16\,/\,0 & 13 & \ensuremath{-}176.1 & (36.5) & \ensuremath{-}130.0 & (29.6) \\
+B & separate unimanual and bimanual hierarchies & 32\,/\,16 & 179 & \ensuremath{-}12.7 & (8.2) & \ensuremath{-}19.6 & (9.0) \\
+B-wide & B with a 3$\times$ wider prior on the lapse sd & 32\,/\,16 & 196 & \ensuremath{-}15.3 & (8.0) & \ensuremath{-}20.7 & (8.8) \\
+B-fixlapse & B with lapses fixed per group & 24\,/\,8 & 169 & \ensuremath{-}12.3 & (8.6) & \ensuremath{-}19.6 & (9.0) \\
+C & shared curve, bimanual offset $\propto$ amplitude & 20\,/\,10 & 139 & \ensuremath{-}49.5 & (13.3) & \ensuremath{-}55.9 & (13.2) \\
+\addlinespace[3pt]
+\multicolumn{8}{@{}l}{\textit{Variants of C}} \\
+C+L & C + own lapse rates on bimanual trials & 28\,/\,14 & 142 & \ensuremath{-}2.4 & (5.1) & \ensuremath{-}8.9 & (6.2) \\
+C+LK & C+L + bimanual lapses depend on amplitude & 32\,/\,14 & 143 & \ensuremath{-}0.4 & (3.5) & \ensuremath{-}6.0 & (3.9) \\
+C+LP & C+L + presence offset & 32\,/\,16 & 147 & \ensuremath{-}3.2 & (3.3) & \ensuremath{-}5.8 & (4.5) \\
+C+LPS & C+LP + bimanual slope change & 36\,/\,18 & 155 & 0.4 & (5.8) & \ensuremath{-}3.4 & (5.8) \\
+C+LKPS & D + bimanual slope change & 40\,/\,18 & 156 & 1.5 & (3.4) & 0.9 & (2.8) \\
+C+Mmax & C + judges the stronger vibration & 22\,/\,10 & 134 & \ensuremath{-}13.5 & (8.8) & \ensuremath{-}21.2 & (8.1) \\
+C+Mdist & C + judges the distractor & 22\,/\,10 & 135 & \ensuremath{-}41.7 & (12.5) & \ensuremath{-}47.6 & (12.3) \\
+C+LMmax & C+L + judges the stronger vibration & 30\,/\,14 & 138 & \ensuremath{-}4.2 & (6.3) & \ensuremath{-}9.3 & (5.9) \\
+C+LPMmax & C+LP + judges the stronger vibration & 34\,/\,16 & 141 & \ensuremath{-}5.0 & (5.3) & \ensuremath{-}4.8 & (4.2) \\
+C+LPMdist & C+LP + judges the distractor & 34\,/\,16 & 141 & \ensuremath{-}2.4 & (3.4) & \ensuremath{-}4.5 & (4.4) \\
+\addlinespace[3pt]
+\multicolumn{8}{@{}l}{\textit{Model D, recommended in the previous report}} \\
+\textbf{D (= C+LKP)} & C+LK + presence offset & 36\,/\,16 & 145 & 0 &  & 0 &  \\
+\addlinespace[3pt]
+\multicolumn{8}{@{}l}{\textit{Simpler versions of D}} \\
+D4 & D, distractor terms fixed per hand & 32\,/\,12 & 125 & \ensuremath{-}2.7 & (3.7) & \ensuremath{-}1.2 & (2.8) \\
+D1 & D, lapses fixed per hand and condition & 28\,/\,8 & 130 & \ensuremath{-}10.4 & (5.7) & \ensuremath{-}6.7 & (3.6) \\
+D2 & D1 and D4 combined & 24\,/\,4 & 109 & \ensuremath{-}12.4 & (6.7) & \ensuremath{-}7.2 & (4.8) \\
+D3 & D2 + slope fixed: only the bias varies & 22\,/\,2 & 88 & \ensuremath{-}15.7 & (7.6) & \ensuremath{-}8.7 & (5.3) \\
+D0 & D with no session differences & 20\,/\,0 & 18 & \ensuremath{-}152.0 & (35.2) & \ensuremath{-}108.2 & (28.2) \\
+\addlinespace[3pt]
+\multicolumn{8}{@{}l}{\textit{Extensions of D}} \\
+D+shared & D + daily bias shared by the two hands & 37\,/\,17 & 141 & 3.5 & (2.4) & 6.6 & (4.7) \\
+D+crit & D + bias follows the distractor amplitude & 38\,/\,16 & 144 & 4.2 & (1.8) & 16.2 & (4.6) \\
+D+order & D + bias drifts over the study & 38\,/\,16 & 144 & 3.7 & (1.8) & 15.7 & (4.3) \\
+D+crit+order & D + both & 40\,/\,16 & 144 & 4.1 & (1.8) & 16.6 & (4.7) \\
+\addlinespace[3pt]
+\multicolumn{8}{@{}l}{\textit{Simpler versions with the trend}} \\
+\textbf{E (= D4+crit)} & D4 + bias follows the distractor amplitude & 34\,/\,12 & 123 & 1.6 & (4.5) & 14.6 & (5.6) \\
+D3+crit & D3 + bias follows the distractor amplitude & 24\,/\,2 & 84 & \ensuremath{-}12.4 & (7.9) & 6.1 & (6.5) \\
+E+shared & E + daily bias shared by the two hands & 35\,/\,13 & 121 & 2.3 & (4.9) & 16.7 & (6.9) \\
+\bottomrule
+\end{tabularx}

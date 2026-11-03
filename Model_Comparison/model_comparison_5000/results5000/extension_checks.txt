@@ -1,0 +1,16 @@
+1. history (12903 trials): prev_choice = -0.204 (SE 0.114, z -1.8); prev_choice_x_rewarded = 0.125 (SE 0.119, z 1.0)
+   history, previous trial immediately before (10586 trials): prev_choice = -0.222 (SE 0.149, z -1.5); prev_choice_x_rewarded = 0.140 (SE 0.154, z 0.9)
+2. side of the 'high' target (12937 trials): high_target_right = 0.016 (SE 0.033, z 0.5)
+3. lapse-like answers by third of the session:
+             weak stim: P(high)  strong stim: P(low)
+cond third                                          
+bi   early                0.045                0.016
+     middle               0.054                0.027
+     late                 0.052                0.016
+uni  early                0.004                0.016
+     middle               0.002                0.022
+     late                 0.002                0.021
+   overall P(high) trend within session: pos_centered = -0.123 (SE 0.113, z -1.1)
+4. left unimanual: logit shift per 10 um of session distractor -0.322 (session-clustered SE 0.240); PSE shift = 1.08 um per 10 um; order per 10 sessions 0.036 (SE 0.171)
+4. right unimanual: logit shift per 10 um of session distractor -0.349 (session-clustered SE 0.261); PSE shift = 1.26 um per 10 um; order per 10 sessions -0.264 (SE 0.216)
+dropped frequency-manipulation trials with a valid choice: 3232; FR values: [0, 150, 250]

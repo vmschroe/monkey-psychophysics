@@ -1,0 +1,14 @@
+\begin{keybox}
+{\sffamily\bfseries Summary}\par\smallskip
+All \nModels\ models were fit with Vera's chain length (4 chains $\times$ 5000 draws) and scored two ways: trial-level LOO, as in her reports, and leave-one-session-out (LOSO), which asks how well a model predicts a session it has not seen.
+New since the last report: simpler versions of Model~D, extensions in which the monkey's criterion changes over the study, a shared daily bias and a second capture model.
+\begin{enumerate}[leftmargin=1.3em, itemsep=0.2em]
+\item \textbf{Longer chains change nothing.} Scores moved by at most \drawsMaxTrial\ elpd units (trial level) and \drawsMaxLoso\ (new sessions); the only change of order is between two models that were within half a unit of each other.
+\item \textbf{Model D still beats Vera's models}: by \DvsBTrial\ $\pm$ \DvsBTrialSE\ (trial level) and \DvsBLoso\ $\pm$ \DvsBLosoSE\ (new sessions) over B, and by about 50 over C. The gain comes from bimanual lapse rates that depend on the distractor.
+\item \textbf{Sirius's criterion moved over the study.} Letting the session bias follow the distractor amplitude, or drift over time, is the largest improvement found (\CritvsDLoso\ $\pm$ \CritvsDLosoSE\ over D for new sessions). The two versions cannot be told apart, because the amplitude was raised steadily during the study. The unimanual PSE rose by about \critPseLeft\um\ (left hand) and \critPseRight\um\ (right).
+\item \textbf{Fewer parameters work.} The distractor terms, and largely the slope, can be the same in every session; the bias and the lapse rates must vary. \textbf{Model~E} (D with fixed distractor terms, plus the trend; 12 instead of 16 parameters per session) predicts as well as D+crit with 20 fewer effective parameters, and no model predicts clearly better. With only one bias per hand and session, plus the trend, a model still predicts new sessions better than B.
+\item \textbf{The distractor makes the target feel stronger}: on bimanual trials the PSE shifts by \ShiftDfourCritLeft\um\ (left hand) and \ShiftDfourCritRight\um\ (right) on average, more for stronger distractors. For the left hand the shift is proportional to the distractor amplitude; the right hand has an extra shift whatever the amplitude. There is no change in sensitivity.
+\item \textbf{The extra bimanual errors look like answers driven by the distractor}: for the left hand they occur only with strong distractors, and they are nearly as fast as correct answers.
+\end{enumerate}
+\textbf{Recommendation:} use Model~E, report both scores, and treat ``adaptation to the distractor'' versus ``slow drift'' as unresolved by this design (Section~\ref{sec:recs}).
+\end{keybox}

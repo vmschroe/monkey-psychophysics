@@ -1,0 +1,34 @@
+\section{Data, models and how they were compared}\label{sec:methods}
+
+\paragraph{Data}
+The analysis uses the 12,937 trials of monkey Sirius that Vera selected: 42 sessions from 30 March to 31 July 2023, both hands tested in every session, about 80 trials per hand and condition in each session.
+A vibration of 6--50\um\ is applied to one hand and the monkey reports whether it is stronger or weaker than the trained boundary of 28\um.
+On half of the trials (bimanual) the other hand receives a distractor vibration at the same time.
+The distractor amplitude is fixed within a session and was raised over the study, from 6\um\ in the first eight sessions to 32\um\ in most of the later ones (Fig.~\ref{fig:time}, top).
+
+\paragraph{Models}
+All models share one psychometric curve with ``high'' and ``low'' lapse rates (Appendix~\ref{app:models}).
+They differ in what is allowed to change between hands, conditions and sessions.
+Vera's Model~B fits unimanual and bimanual trials of each hand as unrelated data sets.
+Her Model~C fits one curve per hand and shifts it on bimanual trials by an amount proportional to the distractor amplitude, with the same lapse rates in both conditions.
+Model~D, recommended in the previous report, is C with three additions: bimanual trials get their own lapse rates (L), these change with the distractor amplitude (K), and a distractor of any amplitude can shift the curve (presence, P).
+This report adds simpler versions of D, which keep parameters fixed across sessions, and extensions of D that ask whether the monkey's criterion moved between sessions in a systematic way. The recommended Model~E combines one of each.
+Table~\ref{tab:comparison} lists all \nModels\ models.
+
+\paragraph{Sampling}
+Every model was refit with Vera's setting: 4 chains of 5000 draws after 1000 tuning steps, target acceptance 0.9.
+Model~C and its variants were sampled with nutpie, a faster implementation of the same NUTS algorithm; A and the B family with PyMC's own sampler, which handles B's parameterization better.
+The model code is the same in both cases, and every model's likelihood was checked against an independent implementation.
+All fits are clean (Appendix~\ref{app:diag}): \totalDiv\ divergences in total, $\hat R\le\maxRhatAll$, and at least \minEssAll\ effective draws for every parameter.
+
+\paragraph{Two ways to score a model}
+Both scores estimate the expected log predictive density (elpd) of data the model has not seen; higher is better, and differences are in log-likelihood units summed over trials.
+\begin{itemize}
+\item \textbf{Trial-level LOO} is the criterion in Vera's reports (PSIS-LOO). It predicts each trial from all the others, including the other trials of the same session, so it asks how well the model describes the sessions it was fit to.
+Trials from one session share parameters, so the usual standard error, which treats trials as independent, is unreliable (for the larger differences here it is too small); the standard error of every difference is computed from the 42 per-session sums instead.
+\item \textbf{Leave-one-session-out (LOSO)} predicts every trial of a session from the other 41 sessions, with that session's own parameters drawn from the population distribution.
+It asks how well the model would predict a new session, which is what claims about the population-level effects (the shift per\um\ of distractor, the presence offset) rest on.
+It is computed without refitting, by importance sampling over the held-out session's parameters followed by PSIS over the posterior draws (1000 draws thinned from the 20,000).
+In checks with exact refits without the held-out session, the two agreed to within 0.2 elpd, including sessions with Pareto $k$ up to 1.03 (Appendix~\ref{app:diag}).
+\end{itemize}
+A difference is treated as clear when it exceeds about twice its standard error.

@@ -1,0 +1,190 @@
+\input{preamble.tex}
+\usepackage{makecell}
+\input{../results5000/tex/numbers.tex}
+\input{../results5000/tex/concl_numbers.tex}
+\fancyhead[L]{\sffamily\footnotesize\color{ink2}Sirius: which model does best}
+\newcommand{\hi}{\mathrm{hi}}
+\newcommand{\lo}{\mathrm{lo}}
+\newcommand{\bi}{\mathrm{bi}}
+\newcommand{\sig}{\operatorname{logistic}}
+\newcommand{\HN}{\operatorname{HalfNormal}}
+\newcommand{\N}{\mathcal{N}}
+
+\begin{document}
+
+\begin{center}
+{\sffamily\bfseries\LARGE Which model does best for Sirius}\\[0.35em]
+{\sffamily\large Conclusions, and the recommended model in precise terms}\\[0.6em]
+{\small\color{ink2} Vera Schroeder's bimanual interference data \textperiodcentered{} prepared for Kre\v{s}imir Josi\'c \textperiodcentered{} 3 November 2026}
+\end{center}
+\vspace{0.3em}
+
+{\small This note states the conclusions of the full comparison (28 models, 4 chains $\times$ 5000 draws each; see the longer report, \emph{Sirius\_model\_comparison\_5000\_draws.pdf}) and writes the recommended model, Model~E, exactly as it was fitted.
+Scores are expected log predictive densities (elpd, log-likelihood units summed over trials; higher is better); ``$\pm$'' gives one standard error.}
+
+\section{Conclusions}
+
+\subsection{Which model does best}
+No single model wins.
+Five models are tied at the top (Table~\ref{tab:top}): their scores span \cnTopSpreadTrial\ units at the trial level and \cnTopSpreadLoso\ units for new sessions, less than their standard errors of 2--5.
+All five share the same structure:
+\begin{enumerate}[label=(\roman*)]
+\item each session has its own bias, slope and lapse rates;
+\item a distractor shifts the psychometric curve by a fixed amount plus an amount proportional to its amplitude, and bimanual trials have their own lapse rates, which change with the distractor amplitude;
+\item the session bias follows a trend across the study.
+\end{enumerate}
+\textbf{We recommend Model~E} because it is the simplest of the five: its distractor terms are the same in every session, so it has 12 parameters per session (E+shared 13, the three D-based models 16) and \cnPlooE\ effective parameters (the D-based models \cnPlooCrit), while predicting as well as the others.
+The next models, D+shared and D3+crit, are \cnEminusDsharedLoso\ and \cnEminusDthreeCritLoso\ units behind E for new sessions; all others are further behind.
+
+\begin{table}[h]
+\centering\small
+\caption{The five tied models (top) and the next models and references (bottom), each minus Model~E (positive: better than E). ``Trial-level'': PSIS-LOO over trials, as in Vera's reports. ``New sessions'': leave-one-session-out. Standard errors are computed from the 42 per-session differences. $p_\mathrm{loo}$: effective number of parameters. D is Vera's Model~C with separate, amplitude-dependent bimanual lapse rates and a distractor-presence term; ``trend'': the session bias follows the session's distractor amplitude (or time, in D+order). Definitions in Section~\ref{sec:others}.}\label{tab:top}
+\input{../results5000/tex/concl_models.tex}
+\end{table}
+
+\subsection{What Model E says}
+\begin{itemize}
+\item \textbf{A distractor makes the target feel stronger.} On bimanual trials the PSE shifts by \cnEShiftLeft\um\ for the left hand (95\% interval \cnEShiftLeftLo\ to \cnEShiftLeftHi) and \cnEShiftRight\um\ for the right (\cnEShiftRightLo\ to \cnEShiftRightHi), averaged over sessions, so a weaker target is enough for a ``high'' answer.
+The shift grows with the distractor: from \cnEShiftSixLeft\ (left) and \cnEShiftSixRight\um\ (right) in the 6\um\ sessions to \cnEShiftThirtytwoLeft\ and \cnEShiftThirtytwoRight\um\ in the 32\um\ sessions.
+\item \textbf{The two hands differ in the form of the shift.} The amplitude term is similar for the two hands ($\beta_{2,L}=\cnEbtwoLeft$, $\beta_{2,R}=\cnEbtwoRight$ per unit of $d$).
+For the left hand the shift is proportional to the distractor amplitude: the presence term $\beta_{3,L}=\cnEbthreeLeft$ (\cnEbthreeLeftLo\ to \cnEbthreeLeftHi) is indistinguishable from zero.
+The right hand has an extra shift for any distractor, $\beta_{3,R}=\cnEbthreeRight$ (\cnEbthreeRightLo\ to \cnEbthreeRightHi).
+\item \textbf{Sensitivity does not change.} E has one slope for both conditions; adding a separate bimanual slope to Model~D does not improve prediction (\SvsDTrial\ $\pm$ \SvsDTrialSE\ at the trial level, \SvsDLoso\ $\pm$ \SvsDLosoSE\ for new sessions).
+In E the JND is slightly larger on bimanual trials (by \cnEJndLeft\um\ left, \cnEJndRight\um\ right) only because of the bimanual lapses; Model~B, with its separate bimanual slopes, gives \cnBJndLeft\um\ for the left hand.
+\item \textbf{Distractors cause extra ``high'' answers.} In a typical session lapses are rare on unimanual trials: \cnUniHiLeft\% ``high'' and \cnUniLoLeft\% ``low'' for the left hand, \cnUniHiRight\% and \cnUniLoRight\% for the right.
+On bimanual trials the left hand's ``high'' lapse rate rises from \cnBiHiLeftSix\% (\cnBiHiLeftSixLo\ to \cnBiHiLeftSixHi\%) with a 6\um\ distractor to \cnBiHiLeftThirtytwo\% (\cnBiHiLeftThirtytwoLo\ to \cnBiHiLeftThirtytwoHi\%) with a 32\um\ one.
+The right hand's is raised at every amplitude (\cnBiHiRightSix\% at 6\um, \cnBiHiRightThirtytwo\% at 32\um); its rise with amplitude is not clear ($\kappa^{\hi}_R=\cnEkappaHiRight$, \cnEkappaHiRightLo\ to \cnEkappaHiRightHi).
+\item \textbf{The criterion moved.} In a typical session the unimanual PSE is \cnCritLeft\um\ (left; 95\% interval \cnCritLeftLo\ to \cnCritLeftHi) and \cnCritRight\um\ (right; \cnCritRightLo\ to \cnCritRightHi) higher in the 32\um\ sessions than in the 6\um\ sessions, comparable to the distractor effect itself.
+\end{itemize}
+
+\subsection{How confident we can be}
+\paragraph{Well beyond the noise}
+\begin{itemize}
+\item \textbf{The tied models beat Vera's.} For predicting a new session, E is ahead of B by \cnEminusBLoso\ $\pm$ \cnBvsELosoSE\ and of C by \cnEminusCLoso\ $\pm$ \cnCvsELosoSE.
+\item \textbf{The criterion trend is needed.} Removing it from E (model D4) lowers the score for new sessions by \cnTrendLoso\ $\pm$ \cnTrendLosoSE, with \cnTrendNbetter\ of the 42 sessions predicted less well, and at the trial level by \cnTrendTrial\ $\pm$ \cnTrendTrialSE.
+\item \textbf{Bimanual trials need their own lapse rates.} Giving them their own (C+L against C) improves prediction of new sessions by \cnLapseLoso\ $\pm$ \cnLapseLosoSE.
+For the left hand the raw counts show the rise with the distractor directly: no weak-target ($\le 12$\um) ``high'' answers in 262 bimanual trials with 6--12\um\ distractors, but 36 in 447 with 24--32\um\ distractors.
+The observed rates of weak-target ``high'' and strong-target ($\ge 44$\um) ``low'' answers on bimanual trials, in \ppcN\ cells (hand $\times$ error type $\times$ five distractor-amplitude bins), lie inside E's 95\% predictive intervals in \ppcInE\ cells, B's in \ppcInB\ and C's in \ppcInC.
+\item \textbf{The computation is reliable.} No fit had divergent transitions; $\hat R\le\maxRhatAll$ and at least \minEssAll\ effective draws for every parameter. Chains five times longer than in the first comparison moved the scores by at most \drawsMaxTrial\ units. The leave-one-session-out estimates agreed with exact refits to within 0.2 and changed by at most \losoSeedMax\ with a new random seed (checked for B, D, D+crit and E).
+\end{itemize}
+\paragraph{Not settled by these data}
+\begin{itemize}
+\item \textbf{Which of the five tied models is best.} Their scores differ by less than one standard error; E is preferred only because it is the simplest.
+\item \textbf{Why the criterion moved.} A criterion that follows the session's distractor amplitude and one that drifts linearly in time fit equally well (difference \CritvsOrderLoso\ $\pm$ \CritvsOrderLosoSE\ for new sessions), because the distractor amplitude was raised over the study (correlation 0.91 with session order).
+\item \textbf{How much the amplitude dependence of the bimanual lapses adds.} For the left hand it is clear in the parameters ($\kappa^{\hi}_L=\cnEkappaHiLeft$, \cnEkappaHiLeftLo\ to \cnEkappaHiLeftHi) and in the raw counts, but it improves prediction of new sessions by only \cnKappaLoso\ $\pm$ \cnKappaLosoSE\ (D against D without it, C+LP): without it, the session-to-session variation of the lapse rates takes up part of the pattern.
+\item \textbf{The size of the right hand's fixed shift.} It is clearly positive in every tied model, but it fell from \muBthreeDRight\ (Model~D) to \cnEbthreeRight\ when the trend was added, so its size depends on how the trend is modelled.
+\item \textbf{Vera's trial-level score alone is not decisive}: on it, E is ahead of B by only \cnEminusBTrial\ $\pm$ \cnBvsETrialSE. The clear separation is in predicting new sessions.
+\item \textbf{The mechanism of the bimanual errors.} Replacing D's amplitude-dependent lapses by a fixed fraction of bimanual trials on which the monkey judges the distractor, or the stronger of the two vibrations, fits slightly but not clearly worse (\cnCapDistLoso\ $\pm$ \cnCapDistLosoSE\ and \cnCapMaxLoso\ $\pm$ \cnCapMaxLosoSE\ for new sessions). The lapse terms describe the errors; they do not identify what causes them.
+\end{itemize}
+\paragraph{Caveats}
+The data come from one monkey, and with 28 models compared, differences of a few units should not be trusted.
+The step that would raise confidence most is a model-recovery study: simulate data from E and from B, refit both, and check that the comparison picks the model that generated the data.
+
+\section{Model E in precise terms}
+
+\subsection{Data and notation}
+Trials $i=1,\dots,N$ ($N=12{,}937$); sessions $s=1,\dots,S$ in date order ($S=42$, each with both hands); stimulated hand $h\in\{L,R\}$; $h(i)$ and $s(i)$ are the hand and session of trial $i$.
+The response is $y_i=1$ if Sirius answered ``high'' and $y_i=0$ otherwise; $c_i=1$ marks bimanual trials.
+The target amplitude $a_i\in\{6,12,18,24,32,38,44,50\}$\,\textmu m enters as
+\[
+x_i=\frac{a_i-28}{\sigma_a},\qquad \sigma_a=\cnSigA\,\text{\textmu m (the standard deviation of the eight amplitudes)}.
+\]
+Each session has one distractor amplitude $a^{\mathrm{dist}}_s$ (6 to 32\,\textmu m), with $d_s=a^{\mathrm{dist}}_s/\sigma_a$, $d_i=c_i\,d_{s(i)}$ and $\bar d=S^{-1}\sum_s d_s=\cnDbar$ (\cnDbarUm\,\textmu m).
+$\sig(u)=1/(1+e^{-u})$, and $\HN(\tau)$ is the distribution of $|X|$ with $X\sim\N(0,\tau^2)$.
+
+\subsection{Likelihood}
+Given the parameters, the responses are independent with
+\begin{align*}
+y_i &\sim \operatorname{Bernoulli}(p_i), &
+p_i &= \gamma^{\hi}_i + \bigl(1-\gamma^{\hi}_i-\gamma^{\lo}_i\bigr)\,\sig(\eta_i),\\
+\eta_i &= \beta_{0,hs} + \beta_{1,hs}\,x_i + \beta_{2,h}\,d_i + \beta_{3,h}\,c_i, &
+\gamma^{k}_i &= \begin{cases} \tfrac14\,\sig\bigl(\omega^{k}_{hs}\bigr) & c_i=0,\\[2pt] \tfrac14\,\sig\bigl(\omega^{k,\bi}_{hs}\bigr) & c_i=1,\end{cases}
+\end{align*}
+with $h=h(i)$, $s=s(i)$ and $k\in\{\hi,\lo\}$.
+$\gamma^{\hi}_i$ and $\gamma^{\lo}_i$ are the probabilities of answering ``high'' or ``low'' regardless of the target; each lies in $(0,\tfrac14)$.
+(For numerical stability $p_i$ is clipped to $[10^{-8},1-10^{-8}]$.)
+
+\subsection{Session level}
+For each hand $h$ and session $s$, with all $z$'s independent standard normal,
+\begin{align*}
+\beta_{0,hs} &= \mu_{0,h} + \lambda_h\,(d_s-\bar d) + \sigma_{0,h}\,z^{(0)}_{hs}, &
+\omega^{k}_{hs} &= \mu^{k}_{h} + \sigma^{k}_{h}\,z^{(k)}_{hs},\\
+\beta_{1,hs} &= \mu_{1,h} + \sigma_{1,h}\,z^{(1)}_{hs}, &
+\omega^{k,\bi}_{hs} &= \mu^{k,\bi}_{h} + \kappa^{k}_{h}\,(d_s-\bar d) + \sigma^{k,\bi}_{h}\,z^{(k,\bi)}_{hs}.
+\end{align*}
+The distractor terms $\beta_{2,h}$ and $\beta_{3,h}$ are the same in every session.
+$\lambda_h$ is the criterion trend: it moves the bias of both conditions with the session's distractor amplitude.
+$\kappa^k_h$ makes the bimanual lapse rates depend on the distractor amplitude.
+Per session there are 6 parameters per hand ($\beta_0,\beta_1,\omega^{\hi},\omega^{\lo},\omega^{\hi,\bi},\omega^{\lo,\bi}$), 12 in all; there are 17 hand-level parameters per hand, 34 in all.
+
+\subsection{Priors}
+Independently for each hand $h$ and lapse type $k$:
+\[
+\begin{array}{@{}l@{\qquad}l@{\qquad}l@{}}
+\mu_{0,h}\sim\N(0,2^2) & \sigma_{0,h}\sim\HN(2) & \lambda_h\sim\N(0,1)\\[2pt]
+\mu_{1,h}\sim\operatorname{LogNormal}(\log 4,\,0.5^2) & \sigma_{1,h}\sim\operatorname{Exponential}(1) & \\[2pt]
+\beta_{2,h}\sim\N(0,1) & \beta_{3,h}\sim\N(0,1) & \\[2pt]
+\mu^{k}_{h}\sim\N(-3,1.5^2) & \sigma^{k}_{h}\sim\HN(0.5) & \\[2pt]
+\mu^{k,\bi}_{h}\sim\N(-3,1.5^2) & \sigma^{k,\bi}_{h}\sim\HN(0.5) & \kappa^{k}_{h}\sim\N(0,2^2)
+\end{array}
+\]
+All but $\lambda_h$, $\beta_{3,h}$ and the bimanual lapse parameters are Vera's priors for Model~C ($\beta_{2,h}$ takes the prior of C's mean $\mu_{2,h}$).
+$\mu^k_h=-3$ corresponds to a lapse rate of $\tfrac14\sig(-3)=1.2\%$.
+
+\subsection{Derived quantities}
+For hand $h$, session $s$ and condition $c\in\{0,1\}$, with $\gamma^{\hi},\gamma^{\lo}$ the lapse rates of that condition:
+\begin{align*}
+\text{PSE (50\% point):}\quad & a^{*}_{hsc} = 28 + \frac{\sigma_a}{\beta_{1,hs}}\Bigl[\ln\frac{1-2\gamma^{\hi}}{1-2\gamma^{\lo}} - \beta_{0,hs} - c\,\bigl(\beta_{2,h}\,d_s+\beta_{3,h}\bigr)\Bigr],\\
+\text{PSE shift:}\quad & \Delta_{hs} = a^{*}_{hs1}-a^{*}_{hs0},\\
+\text{JND (half the 25--75\% distance):}\quad & J_{hsc} = \frac{\sigma_a}{2\beta_{1,hs}}\,\ln\frac{(3-4\gamma^{\hi})(3-4\gamma^{\lo})}{(1-4\gamma^{\hi})(1-4\gamma^{\lo})}.
+\end{align*}
+The distractor's effect on the decision variable, $\beta_{2,h}d_s+\beta_{3,h}$, is the same in every session at a given amplitude; the shift in \textmu m also depends on the session's slope and lapse rates.
+A \emph{typical session} sets all $z$'s to zero.
+In a typical session the unimanual PSE differs between the 32 and the 6\um\ sessions by $-26\,\lambda_h/\mu_{1,h}$\,\textmu m.
+Averages ``over sessions'' are means over the 42 sessions (or over the sessions with a given distractor amplitude), computed for each posterior draw. All intervals are 95\% highest-density intervals: for PSE and JND over 2000 draws, for parameters and lapse rates over all 20,000.
+
+\begin{table}[h]
+\centering\small\renewcommand{\arraystretch}{1.18}
+\caption{Model E's hand-level parameters: posterior mean and 95\% highest-density interval (20,000 draws). Logit scale unless noted; $d_s$ is in units of $\sigma_a$.}\label{tab:params}
+\input{../results5000/tex/concl_params.tex}
+\end{table}
+
+\section{The other models, as changes to E}\label{sec:others}
+\paragraph{The other tied models}
+\begin{itemize}
+\item \textbf{E+shared}: $\beta_{0,hs}$ gains a daily offset common to both hands, $+\sigma_v v_s$ with $v_s\sim\N(0,1)$ and $\sigma_v\sim\HN(1)$.
+\item \textbf{D} (= C+LKP, previous recommendation): no trend ($\lambda_h=0$), and the distractor terms vary between sessions, $\beta_{2,hs}=\mu_{2,h}+\sigma_{2,h}z^{(2)}_{hs}$ and $\beta_{3,hs}=\mu_{3,h}+\sigma_{3,h}z^{(3)}_{hs}$, with $\mu_{2,h},\mu_{3,h}\sim\N(0,1)$ and $\sigma_{2,h},\sigma_{3,h}\sim\HN(1)$.
+\item \textbf{D+crit}: D with the trend term $\lambda_h(d_s-\bar d)$ of E.
+\item \textbf{D+order}: D with a linear trend in time instead, $\tau_h t_s$ with $t_s=(s-21.5)/10$ for $s=1,\dots,42$ and $\tau_h\sim\N(0,1)$.
+\item \textbf{D+crit+order}: D with both terms.
+\end{itemize}
+\paragraph{Other models referred to above}
+\begin{itemize}
+\item \textbf{D4}: E without the trend ($\lambda_h=0$). \textbf{D+shared}: D with the daily offset of E+shared.
+\item \textbf{D3+crit}: E with the slope and all lapse rates fixed across sessions ($\sigma_{1,h}=\sigma^{k}_{h}=\sigma^{k,\bi}_{h}=0$; $\kappa^k_h$ kept), so only $\beta_{0,hs}$ varies between sessions.
+\item \textbf{C} (Vera): $\eta_i=\beta_{0,hs}+\beta_{1,hs}x_i+\beta_{2,hs}d_i$ with $\beta_{2,hs}$ as in D, no $\beta_3$, no trend, and the same lapse rates $\tfrac14\sig(\omega^k_{hs})$ on unimanual and bimanual trials.
+\item \textbf{C+L}: C with bimanual lapse logits of their own, $\omega^{k,\bi}_{hs}=\mu^{k,\bi}_h+\sigma^{k,\bi}_h z^{(k,\bi)}_{hs}$ (priors as in E). \textbf{C+LP}: D without $\kappa$ ($\kappa^k_h=0$).
+\item \textbf{D + bimanual slope} (C+LKPS): $\eta_i$ gains $\delta_{hs}\,c_i\,x_i$ with $\delta_{hs}=\mu_{\delta,h}+\sigma_{\delta,h}z^{(\delta)}_{hs}$, $\mu_{\delta,h}\sim\N(0,1)$, $\sigma_{\delta,h}\sim\HN(1)$.
+\item \textbf{Capture models} (C+LPMdist, C+LPMmax): C+LP, with the probability of ``high'' on a bimanual trial replaced by $(1-\pi_h)\,p_i+\pi_h\,p^{\mathrm{cap}}_i$. Here $p^{\mathrm{cap}}_i=\gamma^{\hi}_{u}+(1-\gamma^{\hi}_{u}-\gamma^{\lo}_{u})\sig(\beta_{0,hs}+\beta_{1,hs}x^{\mathrm{cap}}_i)$ is the unimanual curve ($\gamma_u$: the unimanual lapse rates), evaluated at the distractor's position on the stimulus scale, $x^{\mathrm{cap}}_i=d_i-28/\sigma_a$ (Mdist), or at $\max(x_i,\,d_i-28/\sigma_a)$ (Mmax); $\operatorname{logit}\pi_h\sim\N(-2.5,1.5^2)$.
+\item \textbf{B} (Vera): four groups $g=(h,c)$, each with its own hierarchy: $\eta_i=\beta_{0,gs}+\beta_{1,gs}x_i$ and lapse rates $\tfrac14\sig(\omega^k_{gs})$, with $\beta_{0,gs},\beta_{1,gs},\omega^k_{gs}$ formed and given priors as $\beta_{0,hs},\beta_{1,hs},\omega^k_{hs}$ in E (without $\lambda$). B has no distractor covariate: each session's bimanual curve has its own bias, slope and lapse rates.
+\end{itemize}
+
+\section{How the models were scored}
+Each model was fitted with NUTS (4 chains, 5000 draws after 1000 tuning steps, target acceptance 0.9), giving 20,000 posterior draws.
+With $\phi$ the hand-level parameters, $\theta_s$ all session-$s$ parameters of both hands, $\mathbf y_s$ the responses of session $s$ and $\mathbf y_{-s}$ all other responses:
+\begin{align*}
+\elpd_{\mathrm{trial}} &= \sum_{i=1}^{N}\log p(y_i\mid y_{-i}), &
+\elpd_{\mathrm{session}} &= \sum_{s=1}^{S}\log p(\mathbf y_s\mid \mathbf y_{-s}),\\
+p(\mathbf y_s\mid \mathbf y_{-s}) &= \int p(\mathbf y_s\mid\phi)\,p(\phi\mid\mathbf y_{-s})\,d\phi, &
+p(\mathbf y_s\mid\phi) &= \int p(\mathbf y_s\mid\theta_s,\phi)\,p(\theta_s\mid\phi)\,d\theta_s .
+\end{align*}
+The trial-level score is estimated by Pareto-smoothed importance sampling (PSIS-LOO) over the 20,000 draws, and $p_{\mathrm{loo}}=\sum_i\log\bigl(\overline{p(y_i\mid\theta)}\bigr)-\elpd_{\mathrm{trial}}$, where the bar is the average over posterior draws.
+For the session score, $p(\mathbf y_s\mid\phi)$ is computed for each of 1000 evenly thinned posterior draws of $\phi$ by importance sampling with 2000 samples (proposal: 90\% a $t_5$ distribution from a Gaussian approximation of $p(\mathbf y_s\mid\theta_s,\phi)\,p(\theta_s\mid\phi)$, its scale widened 1.2 times, and 10\% $p(\theta_s\mid\phi)$ itself).
+The outer integral uses $p(\phi\mid\mathbf y_{-s})\propto p(\phi\mid\mathbf y)/p(\mathbf y_s\mid\phi)$ and is computed by PSIS over the same 1000 draws.
+For two models, with $\delta_s$ the difference of their scores summed over the trials of session $s$ (or the difference of their session scores),
+\[
+\Delta=\sum_{s=1}^{S}\delta_s,\qquad \operatorname{SE}(\Delta)=\sqrt{S\cdot\frac{1}{S-1}\sum_{s=1}^{S}\bigl(\delta_s-\bar\delta\bigr)^2}\,,
+\]
+and a difference is treated as clear when $|\Delta|>2\,\operatorname{SE}(\Delta)$.
+
+\end{document}

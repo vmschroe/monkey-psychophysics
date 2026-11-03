@@ -1,0 +1,18 @@
+\begin{tabularx}{\linewidth}{@{}l>{\raggedright\arraybackslash}Xrrr@{\ }lr@{\ }l@{}}
+\toprule
+Model & What it is & \makecell[r]{Parameters\\per session} & $p_\mathrm{loo}$ & \multicolumn{2}{c}{\makecell{Trial-level\\minus E (SE)}} & \multicolumn{2}{c}{\makecell{New sessions\\minus E (SE)}} \\
+\midrule
+\textbf{E} & D with fixed distractor terms + trend & 12 & 123 & 0 &  & 0 &  \\
+E+shared & E + daily bias shared by both hands & 13 & 121 & 0.6 & (1.8) & 2.2 & (2.8) \\
+D+crit & D + trend with distractor amplitude & 16 & 144 & 2.6 & (4.0) & 1.6 & (2.9) \\
+D+order & D + trend linear in time & 16 & 144 & 2.0 & (4.2) & 1.1 & (5.1) \\
+D+crit+order & D + both trends & 16 & 144 & 2.5 & (4.0) & 2.0 & (3.7) \\
+\midrule
+D+shared & D + daily bias shared by both hands & 17 & 141 & 1.8 & (4.5) & \ensuremath{-}7.9 & (4.8) \\
+D3+crit & E, only the bias varies by session & 2 & 84 & \ensuremath{-}14.0 & (6.8) & \ensuremath{-}8.5 & (4.5) \\
+D & previous recommendation (no trend) & 16 & 145 & \ensuremath{-}1.6 & (4.5) & \ensuremath{-}14.6 & (5.6) \\
+D4 & E without the trend & 12 & 125 & \ensuremath{-}4.3 & (2.0) & \ensuremath{-}15.7 & (4.6) \\
+B & Vera's Model B & 16 & 179 & \ensuremath{-}14.4 & (9.8) & \ensuremath{-}34.2 & (10.6) \\
+C & Vera's Model C & 10 & 139 & \ensuremath{-}51.2 & (13.3) & \ensuremath{-}70.5 & (13.8) \\
+\bottomrule
+\end{tabularx}

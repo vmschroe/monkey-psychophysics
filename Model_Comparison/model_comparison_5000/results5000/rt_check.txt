@@ -1,0 +1,35 @@
+median response time 562 ms
+
+Weak targets (6-12 um): median RT (ms) and n by condition and answer
+             median  size
+cond answer              
+bi   high     630.0    81
+     low      550.0  1525
+uni  high     931.0     4
+     low      546.0  1623
+
+Weak targets, bimanual: by hand, session distractor amplitude and answer
+                      median  size
+side  amp_bin answer              
+left  6-12    low      540.0   262
+      16-22   high     902.0     2
+              low      533.0    93
+      24-32   high     615.0    36
+              low      564.0   411
+right 6-12    high    1014.0    12
+              low      552.0   247
+      16-22   high     575.0     6
+              low      531.0    94
+      24-32   high     598.0    25
+              low      562.0   418
+
+Strong targets (44-50 um): by condition and answer
+             median  size
+cond answer              
+bi   high     545.0  1582
+     low      808.0    32
+uni  high     549.0  1589
+     low      805.0    32
+left hand, 24-32 um sessions, weak targets: 'high' vs 'low' RT Mann-Whitney p = 0.0175
+right hand, 24-32 um sessions, weak targets: 'high' vs 'low' RT Mann-Whitney p = 0.0031
+all bimanual weak targets: 'high' vs 'low' RT Mann-Whitney p = 1.03e-08

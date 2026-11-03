@@ -1,0 +1,90 @@
+\section{Results}\label{sec:results}
+
+\subsection{Longer chains change nothing material}
+\input{../results5000/tex/draws_note.tex}
+The conclusions of the previous report that do not involve the new models therefore stand. All numbers below are from the 5000-draw fits.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\textwidth]{../results5000/figs/F1_comparison.pdf}
+\caption{Predictive performance of every model relative to Model~D (dashed line), with $\pm2$ standard errors; right of the line is better than D.
+Left: trial-level LOO, the criterion in Vera's reports, with standard errors from per-session sums.
+Right: leave-one-session-out, the accuracy for a session the model has not seen.
+Models are sorted by the left panel. B, C and the recommended Model~E are coloured; arrows mark models off the scale.}\label{fig:comparison}
+\end{figure}
+
+\begin{table}[p]
+\centering\small
+\caption{All models, their size and their predictive performance relative to Model~D.
+Parameters: hand- or group-level parameters\,/\,parameters per session.
+$p_\mathrm{loo}$: effective number of parameters from trial-level LOO.
+Differences are in elpd (log-likelihood units summed over all trials); positive means better than D; standard errors in brackets.}\label{tab:comparison}
+\input{../results5000/tex/tab_comparison.tex}
+\end{table}
+
+\subsection{Model D beats Vera's models, and why}
+Model~D predicts better than Model~B by both scores (Fig.~\ref{fig:comparison}, Table~\ref{tab:comparison}):
+by \DvsBTrial\ (SE \DvsBTrialSE) at the trial level and by \DvsBLoso\ (SE \DvsBLosoSE) for new sessions, where it predicts \DvsBLosoNbetter\ of the 42 held-out sessions better.
+It does this with fewer effective parameters ($p_\mathrm{loo}$ \plooD\ against \plooB), because it ties the unimanual and bimanual trials of a hand to one curve instead of fitting them separately.
+Model~C is far behind both (D minus C: \DvsCTrial\ $\pm$ \DvsCTrialSE\ at the trial level, \DvsCLoso\ $\pm$ \DvsCLosoSE\ for new sessions).
+
+The variants of C show which parts of D matter.
+\begin{itemize}
+\item Giving bimanual trials their own lapse rates (C+L) is the largest single step: \LvsCTrial\ over C at the trial level. C+L alone already beats B (\LvsBTrial\ $\pm$ \LvsBTrialSE; new sessions \LvsBLoso\ $\pm$ \LvsBLosoSE).
+\item Letting those lapse rates change with the distractor amplitude and adding the presence offset helps most for new sessions: D minus C+L is \DvsLTrial\ $\pm$ \DvsLTrialSE\ at the trial level and \DvsLLoso\ $\pm$ \DvsLLosoSE\ for new sessions.
+\item A change of slope on bimanual trials adds nothing (D with a bimanual slope, minus D: \SvsDTrial\ at the trial level, \SvsDLoso\ for new sessions).
+\item Capture by the stronger vibration explains much of C's deficit with one parameter per hand (\MmaxvsCTrial\ over C), but adds nothing once the lapses are per condition (\LMmaxvsLTrial\ $\pm$ \LMmaxvsLTrialSE\ over C+L at the trial level). Replacing D's amplitude-dependent lapses by capture of the distractor (C+LPMdist: on a fraction $\pi$ of bimanual trials Sirius judges the distractor) does slightly worse than D (\CapturevsDTrial\ $\pm$ \CapturevsDTrialSE\ at the trial level, \CapturevsDLoso\ $\pm$ \CapturevsDLosoSE\ for new sessions), and puts capture on only \piCapturePctLeft\% (left) and \piCapturePctRight\% (right) of bimanual trials.
+\item Widening the prior on B's lapse variation does not help B (\BwidevsBTrial\ at the trial level, \BwidevsBLoso\ for new sessions), and fixing B's lapses across sessions makes no difference (\BfixvsBTrial\ at the trial level, \BfixvsBLoso\ for new sessions).
+\end{itemize}
+
+The raw counts show what B and C miss (Fig.~\ref{fig:ppc}).
+For weak targets (6--12\um) Sirius answered ``high'' on 81 of 1,606 bimanual trials (5.0\%) but on only 4 of 1,627 unimanual trials (0.25\%).
+Strong targets (44--50\um) drew ``low'' on 2.0\% of trials in both conditions.
+The bimanual excess differs between the hands.
+For the left hand it appears only with strong distractors: none in 262 trials of the 6 and 12\um\ sessions, 36 of 447 (8.1\%) in the 24--32\um\ sessions.
+For the right hand it is about 5\% at every distractor amplitude.
+Model~C has one pair of lapse rates for both conditions, so it cannot produce twenty times more weak-target errors on bimanual trials.
+Model~B gives bimanual trials their own lapse rates but cannot tie them to the distractor: it pulls every session toward a common rate, so for the left hand it predicts \ppcLowAmpPredB\% ``high'' answers in the 6--12\um\ sessions, where there were none.
+In D the bimanual lapse rate changes with the session's distractor amplitude.
+For the left hand the ``high'' lapse rises steeply with amplitude ($\kappa_h=\kappaHDLeft$, 95\% interval \kappaHDLeftLo\ to \kappaHDLeftHi, on the logit scale per 14.6\um); for the right hand it barely changes ($\kappa_h=\kappaHDRight$, \kappaHDRightLo\ to \kappaHDRightHi).
+In posterior predictive checks of these error rates by hand and amplitude the observed rate falls inside the 95\% predictive interval in \ppcInD\ of \ppcN\ cells for D, \ppcInE\ for E, \ppcInB\ for B and \ppcInC\ for C.
+Figure~\ref{fig:byamp} shows where the gains over B come from: the sessions with the weakest distractors and the 24--30\um\ sessions. In the 32\um\ sessions B still fits slightly better at the trial level, but not for new sessions.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\textwidth]{../results5000/figs/F3_lapse_ppc.pdf}
+\caption{Lapse-like answers on bimanual trials, by hand and by the session's distractor amplitude: ``high'' answers to the two weakest targets (top) and ``low'' answers to the two strongest (bottom).
+Black: observed rate with a 95\% binomial interval. Coloured: each model's posterior predictive mean and 95\% interval.}\label{fig:ppc}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\textwidth]{../results5000/figs/F5_vs_B_by_amplitude.pdf}
+\caption{Where Models C and E gain or lose against Model~B, summed over the sessions with each distractor amplitude. Positive: better than B.}\label{fig:byamp}
+\end{figure}
+
+\input{results_ext.tex}
+
+\input{results_simpler.tex}
+
+\subsection{The distractor effects in the recommended model}
+Every model that predicts well gives the same picture of the distractor's effect on the point of subjective equality (PSE, the target amplitude judged ``high'' half the time; Table~\ref{tab:effects}, Fig.~\ref{fig:shift}).
+\begin{itemize}
+\item On bimanual trials the PSE moves down. Averaged over sessions, the shift in Model~E is \ShiftDfourCritLeft\um\ for the left hand (95\% interval \ShiftDfourCritLeftLo\ to \ShiftDfourCritLeftHi) and \ShiftDfourCritRight\um\ for the right (\ShiftDfourCritRightLo\ to \ShiftDfourCritRightHi). A distractor makes the target feel stronger.
+\item The shift grows with distractor amplitude, from \ShiftSixDfourCritLeft\um\ in the 6\um\ sessions to \ShiftThirtytwoDfourCritLeft\um\ in the 32\um\ sessions for the left hand, and from \ShiftSixDfourCritRight\ to \ShiftThirtytwoDfourCritRight\um\ for the right.
+\item The right hand is shifted even by a weak distractor: its presence offset is $b_3=\muBthreeDfourCritRight$ (\muBthreeDfourCritRightLo\ to \muBthreeDfourCritRightHi), against \muBthreeDfourCritLeft\ (\muBthreeDfourCritLeftLo\ to \muBthreeDfourCritLeftHi) for the left.
+\item There is no reliable change in sensitivity. Model~B's increase of the left hand's JND, \JndBLeft\um\ (\JndBLeftLo\ to \JndBLeftHi), shrinks to \JndDfourCritLeft\um\ in E, and that remainder comes from the bimanual lapses, which flatten the curve's ends, not from a change of slope. With a free bimanual slope the increase is \JndSLeft\um, but the slope change itself is uncertain ($\mu_\delta=\muDboneSLeft$, \muDboneSLeftLo\ to \muDboneSLeftHi) and does not improve prediction.
+\end{itemize}
+
+\begin{table}[tbp]
+\centering\small
+\caption{Distractor effects in \textmu m (posterior mean and 95\% interval): the mean over all sessions, or over the sessions with a 6 or a 32\um\ distractor. PSE shift: bimanual minus unimanual PSE; JND change: bimanual minus unimanual JND. In C the two curves differ only by a shift, so its JND change is zero by construction.}\label{tab:effects}
+\input{../results5000/tex/tab_effects.tex}
+\end{table}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\textwidth]{../results5000/figs/F4_shift_vs_amplitude.pdf}
+\caption{PSE shift (bimanual minus unimanual) against the session's distractor amplitude. Dots: each session's estimate in Models B and E. Lines: a typical session in E (with 95\% interval) and in C.
+C forces the shift to be proportional to amplitude; E allows a presence offset, which the right hand needs.}\label{fig:shift}
+\end{figure}

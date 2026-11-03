@@ -1,0 +1,45 @@
+\section{Model definitions}\label{app:models}
+
+\paragraph{Common parts}
+Every model gives the probability that the monkey answers ``high'' on trial $i$ as
+\[
+P(y_i=\text{high}) \;=\; \gamma_{h} + \bigl(1-\gamma_{h}-\gamma_{l}\bigr)\,\operatorname{logistic}(\eta_i),
+\qquad \gamma = 0.25\,\operatorname{logistic}(\ell),
+\]
+where $\gamma_h$ and $\gamma_l$ are the ``high'' and ``low'' lapse rates (each at most 0.25).
+The target amplitude $a_i$ enters as $x_i=(a_i-28)/14.63$ (14.63\um\ is the standard deviation of the eight amplitudes),
+the distractor as $d_i=a^{\mathrm{dist}}_i/14.63$ on bimanual trials and $d_i=0$ on unimanual trials, and $c_i=1$ marks bimanual trials.
+$h$ is the stimulated hand, $s$ the session, $d_s$ the scaled distractor amplitude of session $s$ and $\bar d$ its mean over the 42 sessions.
+Session-level parameters are drawn from normal distributions with hand-level (or group-level) means $\mu$ and standard deviations $\sigma$, written non-centred ($b=\mu+\sigma z$, $z\sim N(0,1)$).
+
+\paragraph{Vera's models}
+\textbf{A}: four groups $g$ (hand $\times$ condition), $\eta=b_{0g}+b_{1g}x$, lapses per group, no session differences;
+$b_0\sim N(0,6^2)$, $b_1\sim N(4,2^2)$, $\gamma/0.25\sim\mathrm{Beta}$ with mean 0.2 and sd 0.15.
+\textbf{B}: the same four groups, each with its own hierarchy over sessions: $\eta=b_{0gs}+b_{1gs}x$, lapses $\ell_{gs}$.
+\textbf{C}: one hierarchy per hand: $\eta=b_{0hs}+b_{1hs}x+b_{2hs}d$, with lapses $\ell_{hs}$ shared by unimanual and bimanual trials.
+B and C use the same hyperpriors: $\mu_{b_0}\sim N(0,2^2)$, $\sigma_{b_0}\sim \mathrm{HalfNormal}(2)$,
+$\mu_{b_1}\sim \mathrm{LogNormal}(\log 4, 0.5^2)$, $\sigma_{b_1}\sim \mathrm{Exp}(1)$, $\mu_{\ell}\sim N(-3,1.5^2)$, $\sigma_\ell\sim\mathrm{HalfNormal}(0.5)$; in C also $\mu_{b_2}\sim N(0,1)$, $\sigma_{b_2}\sim\mathrm{HalfNormal}(1)$.
+\textbf{B-wide} widens B's lapse prior to $\sigma_\ell\sim\mathrm{HalfNormal}(1.5)$; \textbf{B-fixlapse} gives each group one lapse pair for all sessions.
+
+\paragraph{Additions to C (one letter per addition)}
+\textbf{L}: bimanual trials get their own lapse rates, $\ell^{\mathrm{bi}}_{hs}=\mu^{\mathrm{bi}}_h+\sigma^{\mathrm{bi}}_h z$, with $\mu^{\mathrm{bi}}\sim N(-3,1.5^2)$ and $\sigma^{\mathrm{bi}}\sim\mathrm{HalfNormal}(0.5)$.
+\textbf{K}: these bimanual lapse means change with the session's distractor amplitude, $\mu^{\mathrm{bi}}_h+\kappa_h(d_s-\bar d)$, $\kappa\sim N(0,2^2)$, separately for ``high'' and ``low'' lapses.
+\textbf{P}: a presence offset, $\eta \mathrel{+}= b_{3hs}c$, with $\mu_{b_3}\sim N(0,1)$, $\sigma_{b_3}\sim\mathrm{HalfNormal}(1)$; the bimanual shift is then $b_3+b_2 d$ instead of being proportional to $d$.
+\textbf{S}: a bimanual slope change, $\eta \mathrel{+}= \delta_{hs}\,c\,x$, $\mu_\delta\sim N(0,1)$, $\sigma_\delta\sim\mathrm{HalfNormal}(1)$.
+\textbf{M} (capture): on a fraction $\pi_h$ of bimanual trials the monkey answers from its unimanual curve evaluated at the stronger of the two vibrations (\textbf{Mmax}) or at the distractor (\textbf{Mdist}); $\operatorname{logit}\pi\sim N(-2.5,1.5^2)$.
+
+\paragraph{Model D and its simpler versions}
+\textbf{D} = C+LKP: $\eta=b_{0hs}+b_{1hs}x+b_{2hs}d+b_{3hs}c$, unimanual lapses $\ell_{hs}$ as in C, and bimanual lapses
+$\ell^{\mathrm{bi}}_{hs}=\mu^{\mathrm{bi}}_h+\kappa_h(d_s-\bar d)+\sigma^{\mathrm{bi}}_h z$.
+The simpler versions set some session standard deviations to zero, so that parameter takes one value per hand:
+\textbf{D4} the distractor terms $b_2,b_3$; \textbf{D1} the lapses (both conditions; $\kappa$ kept); \textbf{D2} both of these;
+\textbf{D3} as D2 and also the slope $b_1$, so only the bias $b_0$ differs between sessions; \textbf{D0} everything (no session differences).
+
+\paragraph{Extensions of D}
+\textbf{D+crit}: the hand-level mean of the session bias depends on the session's distractor amplitude, $\mu_{b_0,h}+\lambda_h(d_s-\bar d)$, $\lambda\sim N(0,1)$.
+Because $b_0$ enters unimanual and bimanual trials alike, this moves the whole session's criterion, not the bimanual shift.
+\textbf{D+order}: instead a linear trend over the study, $\mu_{b_0,h}+\tau_h(s-20.5)/10$ with $s=0,\dots,41$ the session's position, $\tau\sim N(0,1)$.
+\textbf{D+crit+order}: both terms.
+\textbf{D+shared}: a daily offset shared by the two hands, $b_{0hs}+v_s$, $v_s\sim N(0,\sigma_v^2)$, $\sigma_v\sim\mathrm{HalfNormal}(1)$.
+The same terms were added to the simpler versions: \textbf{E} = D4+crit, \textbf{D3+crit}, and \textbf{E+shared} (E with the shared offset).
+All other priors are as in C.
