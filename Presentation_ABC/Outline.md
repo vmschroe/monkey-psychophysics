@@ -711,7 +711,7 @@ Small note: PSE shift: bimanual − unimanual, posterior mean; for B and C avera
 - The distractor lowers the PSE: by about 4.2–4.5 μm (left) and 5.7–6.1 μm (right), in all three models.
 - It raises the rate of "high" responses to weak stimuli on bimanual trials ($\gamma_h$); whether this grows with distractor amplitude is open.
 - The sessions differ; a hierarchical model is needed.
-- The shift grows with distractor amplitude, and for the right hand a weak distractor may shift the PSE more than a proportional model allows (right hand).
+- The shift grows with distractor amplitude, and a weak distractor may shift the PSE more than a proportional model allows (right hand).
 
 ## 85. Next steps
 - A new Model D, revising Model C: lapse rates per condition, testing whether the bimanual $\gamma_h$ depends on distractor amplitude (or session order).
