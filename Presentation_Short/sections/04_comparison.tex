@@ -1,0 +1,84 @@
+% !TEX root = ../Presentation.tex
+% ---------------------------------------------------------------------------
+% Model comparison and recovery
+% Slides taken from ../Presentation_ABC/sections; trimmed ones are marked.
+% ---------------------------------------------------------------------------
+\section{Model Comparison and Recovery}
+
+\subsection{Predictive Performance}
+
+% trimmed; numbers from Model_B/Fit_B_Report.tex and Model_C/Fit_C_Report.tex
+\begin{frame}{Leave-one-out cross-validation}
+  How well each model predicts each trial when that trial is left out of the fit
+  (higher is better):
+  \vspace{0.8em}
+
+  \centering
+  \begin{tabular}{lc}
+    \toprule
+    Model & difference from B (SE) \\
+    \midrule
+    A: sessions pooled          & $-164.1$ (19.2) \\
+    B: sessions hierarchical    & \textbf{best} \\
+    C: distractor as covariate  & $-37.1$ (11.9) \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.8em}
+  \raggedright
+  \begin{itemize}
+    \item B beats A clearly, despite many more parameters
+    \item B beats C, although C needs fewer parameters
+  \end{itemize}
+\end{frame}
+
+\subsection{Model Recovery: B vs A}
+% numbers from Model_B/Model_Recov_BA_Report.tex
+
+% trimmed
+\begin{frame}{Model recovery: LOO picks the generating model}
+  Is B's advantage real, or just flexibility? Simulate datasets from each model on the real
+  design, fit both, and see which one LOO picks:
+  \vspace{0.6em}
+
+  \centering
+  \begin{tabular}{lcc}
+    \toprule
+     & selects A & selects B \\
+    \midrule
+    data from A & 9 & 1 \\
+    data from B & 0 & 10 \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.6em}
+  \raggedright
+  \begin{itemize}
+    \item On data from A, B ties or loses: flexibility alone does not make it win
+    \item The real data look like the data from B: sessions really differ
+  \end{itemize}
+\end{frame}
+
+\plotframe{Model recovery: $\Delta$ in every replicate}
+  {\plotsB/Model_Recov_Plots_BA/elpd_diff_by_replicate.png}
+
+\subsection{Model C vs Model B}
+% numbers from Model_C/Fit_C_Report.tex, "Comparison with Model B"
+
+\plotframe{Model C vs Model B: session PSE shifts}
+  {\plotsC/Fit_Plots_C/pse_shift_C_vs_B.png}
+
+% trimmed
+\begin{frame}{Model comparison: conclusions}
+  \begin{itemize}
+    \item \textbf{Sessions differ:} B predicts far better than A, and model recovery shows this
+          is not B's flexibility alone
+    \item \textbf{The models agree on the PSE shift:} about 4~$\mu m$ (left) and 6~$\mu m$
+          (right) on average
+    \item \textbf{B predicts better than C mainly because of lapses:} C's one lapse rate for
+          both conditions misses the extra ``high'' responses to weak stimuli on bimanual
+          trials
+    \item Less clearly: a distractor-presence effect (right hand) and a bimanual slope
+    \item[$\Rightarrow$] Model B is the model to use for inference for now
+  \end{itemize}
+\end{frame}

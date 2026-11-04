@@ -1,51 +1,83 @@
-\documentclass[aspectratio=169,12pt]{beamer}
+\documentclass[aspectratio=169,11pt]{beamer}
 
 % ---------------------------------------------------------------------------
-% Short research update (about 30 min) for the lab that collected the data.
-% Shortened from ../Presentation_ABC: fewer words and numbers, figures reused
-% from the models' plot folders. Compile from this folder: pdflatex
-% Presentation.tex (twice). amplitude_schedule.png is made by
-% Make_Amplitude_Schedule.py.
+% Short version (about 30 min) of ../Presentation_ABC, for the lab that collected
+% the data: the same sections and slide titles, fewer slides, words and numbers.
+% Slides are copied from ../Presentation_ABC/sections; trimmed ones are marked.
+% Compile from this folder: pdflatex Presentation.tex (twice).
+% Figures come straight from the models' plot folders (\plotsA, \plotsB,
+% \plotsC), so rerunning an analysis script updates the slides. Numbers on
+% the slides should be copied from the reports, which are reproducible from
+% the scripts. amplitude_schedule.png is made by Make_Amplitude_Schedule.py.
 % ---------------------------------------------------------------------------
 
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{multicol}
 \usepackage{tikz}
-\usetikzlibrary{decorations.pathmorphing,positioning,arrows.meta,calc}
+\usetikzlibrary{decorations.pathmorphing,positioning,fit,arrows.meta,calc}
 
-% ---- style: as in Presentation_ABC -----------------------------------------
+% ---- style: Beamer's default theme, colors from the plots' palette --------
 \usetheme{default}
 \definecolor{plotblue}{HTML}{2A78D6}
 \definecolor{plotorange}{HTML}{EB6834}
 \definecolor{plotred}{HTML}{E34948}
+\definecolor{covorange}{HTML}{E69500}   % amber, distinct from plotred in equations
 \definecolor{ink}{HTML}{0B0B0B}
 \definecolor{muted}{HTML}{52514E}
 \setbeamercolor{frametitle}{fg=plotblue}
 \setbeamercolor{title}{fg=plotblue}
 \setbeamercolor{structure}{fg=plotblue}
 \setbeamercolor{normal text}{fg=ink}
+\setbeamercolor{section in toc}{fg=ink}
 \setbeamerfont{frametitle}{series=\bfseries}
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{itemize items}[circle]
 \setbeamertemplate{footline}{%
-  \hfill{\color{muted}\scriptsize\insertframenumber/\inserttotalframenumber}\hspace{1em}\vspace{0.6em}}
+  \hfill{\color{muted}\scriptsize\insertsection\quad\insertframenumber/\inserttotalframenumber}\hspace{1em}\vspace{0.6em}}
 
 % ---- figure folders ----------------------------------------------------------
+% example_psych_func.png is shared with the full deck
+\graphicspath{{./}{../Presentation_ABC/}}
 \newcommand{\plotsA}{../Model_A/Plots_A}
 \newcommand{\plotsB}{../Model_B/Plots_B}
 \newcommand{\plotsC}{../Model_C/Plots_C}
 
-% a frame with one figure as large as fits and a one-line takeaway under it; the
-% figure's own title is cropped off (the analysis PNGs are 200 dpi with the title in
-% the top 61 px = 22 bp)
-\newcommand{\takeframe}[3]{%
+% ---- helpers -----------------------------------------------------------------
+\newcommand{\invlogit}{\operatorname{logit}^{-1}}
+\newcommand{\code}[1]{\texttt{#1}}
+% visible placeholder for text or numbers still to write; delete when filled
+\newcommand{\todo}[1]{{\setlength{\fboxsep}{2pt}\colorbox{plotred!15}{\color{plotred}\scriptsize\textbf{TODO:} #1}}}
+% a frame with one figure filling it, plus an optional one-line takeaway
+\newcommand{\figframe}[3]{%
   \begin{frame}{#1}
     \centering
-    \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio,
+    \includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{#2}
+    \par\vspace{0.4em}{\small #3}
+  \end{frame}}
+
+% a frame with one figure as large as fits and no caption; the figure's own title is
+% cropped off (the analysis scripts' PNGs are 200 dpi with the title in the top 61 px,
+% and 22 bp = 61 px), since the frame title replaces it
+\newcommand{\plotframe}[2]{%
+  \begin{frame}{#1}
+    \centering
+    \includegraphics[width=\textwidth,height=0.86\textheight,keepaspectratio,
                      trim=0 0 0 22bp,clip]{#2}
-    \par\vspace{0.3em}{\small #3}
+  \end{frame}}
+
+% a sampling-diagnostics frame: the fit report's numbers as bullets, then one trace plot
+% (density per chain left, draws per chain right); the trace PNGs have no figure title
+\newcommand{\diagframe}[3]{%
+  \begin{frame}{#1}
+    \small
+    \begin{itemize}
+      #2
+    \end{itemize}
+    \centering
+    \includegraphics[width=\textwidth,height=0.44\textheight,keepaspectratio]{#3}
   \end{frame}}
 
 % ---- trial schematic (slide "The task: one trial") -------------------------
@@ -98,10 +130,20 @@
     \fi
   \end{scope}}
 
+% ---- graphical models -------------------------------------------------------
+\tikzset{
+  gm/.style={node distance=1.0cm and 0.8cm},
+  latent/.style={circle, draw, minimum size=10mm, inner sep=0pt, font=\small},
+  obs/.style={latent, fill=gray!25},
+  det/.style={rectangle, draw, minimum size=8mm, inner sep=2pt, font=\small},
+  const/.style={font=\small},
+  arr/.style={-{Stealth[length=2mm]}},
+  plate/.style={draw, rounded corners, inner sep=7pt},
+}
 
 % ---- title ---------------------------------------------------------------------
-\title{How a Distractor on One Hand Changes Judgments on the Other}
-\subtitle{Research update}
+\title{Modeling Bimanual Perceptual Interactions in Macaque Monkeys}
+\subtitle{Bayesian Hierarchical Modeling}
 \author{Vera Schroeder}
 \date{November 2026}
 
@@ -111,9 +153,21 @@
   \titlepage
 \end{frame}
 
-\input{sections/00_terms}
-\input{sections/01_models}
-\input{sections/02_findings}
-\input{sections/03_next}
+\begin{frame}{Outline}
+  \small
+  \begin{multicols}{2}
+    \tableofcontents
+  \end{multicols}
+\end{frame}
+
+\input{sections/00_intro}
+\input{sections/01_model_A}
+\input{sections/02_model_B}
+\input{sections/03_model_C}
+\input{sections/04_comparison}
+\input{sections/05_summary}
+
+\appendix
+%%\input{sections/99_backup}
 
 \end{document}

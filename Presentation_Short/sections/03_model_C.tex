@@ -1,0 +1,128 @@
+% !TEX root = ../Presentation.tex
+% ---------------------------------------------------------------------------
+% Model C: distractor amplitude as a covariate
+% Slides taken from ../Presentation_ABC/sections; trimmed ones are marked.
+% ---------------------------------------------------------------------------
+\section{Model C: Distractor Amplitude as a Covariate}
+
+\subsection{Model Structure}
+
+\begin{frame}{Model C: including the distractor as a covariate}
+  Psychometric function:
+  \[
+    \psi(x_\text{stim}) = \gamma_h + (1 - \gamma_h - \gamma_l)\,
+      \invlogit\big(\textcolor{plotred}{\beta_0 + \beta_1 x_\text{stim}}\big)
+  \]
+  Suppose the distractor has an impact on the perceived stimulus as follows:
+  \[
+    x_\text{perc} = x_\text{stim} + c\, x_\text{dist}
+  \]
+  Then:
+  \begin{align*}
+    \textcolor{plotred}{\beta_0 + \beta_1 x_\text{perc}}
+      &\textcolor{plotred}{{}= \beta_0 + \beta_1 (x_\text{stim} + c\, x_\text{dist})} \\
+      &\textcolor{plotred}{{}= \beta_0 + \beta_1 x_\text{stim}} \mathbin{\textcolor{plotred}{+}}
+        \textcolor{covorange}{\beta_1 c}\, \textcolor{plotred}{x_\text{dist}} \\
+      &\textcolor{plotred}{{}= \beta_0 + \beta_1 x_\text{stim}} \mathbin{\textcolor{plotred}{+}}
+        \textcolor{covorange}{\beta_2}\, \textcolor{plotred}{x_\text{dist}}
+  \end{align*}
+  Considering $x_\text{dist}$ as a covariate:
+  \[
+    \psi(x_\text{stim}, x_\text{dist}) = \gamma_h + (1 - \gamma_h - \gamma_l)\,
+      \invlogit\big(\textcolor{plotred}{\beta_0 + \beta_1 x_\text{stim}} \mathbin{\textcolor{plotred}{+}}
+      \textcolor{covorange}{\beta_2}\, \textcolor{plotred}{x_\text{dist}}\big)
+  \]
+\end{frame}
+
+\begin{frame}{Model C: graphical model}
+  \centering
+  \begin{tikzpicture}[gm, scale=0.8, transform shape]
+    \foreach \n/\lab [count=\k from 0] in {mub0/\mu_{\beta_0}, sb0/\sigma_{\beta_0},
+        mub1/\mu_{\beta_1}, sb1/\sigma_{\beta_1}, mub2/\mu_{\beta_2}, sb2/\sigma_{\beta_2},
+        mugh/\mu_{\gamma_h}, sgh/\sigma_{\gamma_h}, mugl/\mu_{\gamma_l}, sgl/\sigma_{\gamma_l}}
+      \node[latent] (\n) at (1.1*\k, 0) {$\lab$};
+
+    \node[latent] (b0) at ($(mub0)!0.5!(sb0) + (0,-1.6)$) {$\beta_{0,s}$};
+    \node[latent] (b1) at ($(mub1)!0.5!(sb1) + (0,-1.6)$) {$\beta_{1,s}$};
+    \node[latent] (b2) at ($(mub2)!0.5!(sb2) + (0,-1.6)$) {$\beta_{2,s}$};
+    \node[latent] (gh) at ($(mugh)!0.5!(sgh) + (0,-1.6)$) {$\gamma_{h,s}$};
+    \node[latent] (gl) at ($(mugl)!0.5!(sgl) + (0,-1.6)$) {$\gamma_{l,s}$};
+
+    \node[det] (psi) at ($(b2) + (0,-1.4)$) {$\psi_i$};
+    \node[obs, below=0.5cm of psi] (r) {$r_i$};
+    \node[const, right=0.8cm of psi, yshift=0.25cm] (x) {$x_{\text{stim},i}$};
+    \node[const, right=0.8cm of psi, yshift=-0.25cm] (d) {$x_{\text{dist},i}$};
+
+    \foreach \h/\p in {mub0/b0, sb0/b0, mub1/b1, sb1/b1, mub2/b2, sb2/b2, mugh/gh, sgh/gh, mugl/gl, sgl/gl}
+      \draw[arr] (\h) -- (\p);
+    \foreach \p in {b0, b1, b2, gh, gl}
+      \draw[arr] (\p) -- (psi);
+    \draw[arr] (x) -- (psi);
+    \draw[arr] (d) -- (psi);
+    \draw[arr] (psi) -- (r);
+
+    \node[plate, fit=(x)(d)(psi)(r), inner sep=5pt] (ptrial) {};
+    \node[font=\scriptsize, anchor=north east] at (ptrial.south east) {trials $i$ in session $s$};
+    \node[plate, fit=(b0)(gl)(ptrial), inner sep=12pt] (psess) {};
+    \node[font=\scriptsize, anchor=south west] at (psess.south west) {sessions $s = 1,\dots,42$};
+    \node[plate, fit=(mub0)(sgl)(psess), inner sep=8pt] (phand) {};
+    \node[font=\scriptsize, anchor=north east] at (phand.south east) {each hand};
+  \end{tikzpicture}
+
+  \vfill
+  {\scriptsize\color{muted} Circles: random variables (shaded: observed); rectangle:
+  deterministic; $x_{\text{stim},i}$, $x_{\text{dist},i}$: fixed covariates. The same model is fit independently to each
+  hand, with unimanual and bimanual trials together.}
+\end{frame}
+
+\begin{frame}{Model C: prior predictive check of the distractor effect}
+  \centering
+  \includegraphics[width=\textwidth,height=0.7\textheight,keepaspectratio,
+                   trim=0 0 0 22bp,clip]{\plotsC/Convergence_Plots_C/Prior_Check_C_distractor.png}
+  \par\vspace{0.8em}
+  \textbf{Model C drawback:} the PSE shift $-\beta_2 x_\text{dist}/\beta_1$ is tied to the
+  distractor amplitude, so weak distractors can only shift the PSE slightly
+\end{frame}
+
+\subsection{Synthetic Data}
+% numbers from Model_C/Convergence_C_Report.tex
+
+% trimmed
+\begin{frame}{Model C on synthetic data: what is recoverable}
+  At the size of the real data, if the data follow Model C:
+  \begin{itemize}
+    \item \textbf{Recoverable:} each session's PSE in both conditions, and the distractor
+          effect $\beta_2$ of a typical session
+    \item \textbf{Weakly determined:} $\beta_2$ in sessions with a weak distractor, which is
+          pulled toward the typical value
+    \item \textbf{Not tested:} data that break Model C's assumptions (shared lapse rates and
+          slope, a shift proportional to amplitude)
+  \end{itemize}
+\end{frame}
+
+\subsection{Real Data}
+% numbers from Model_C/Fit_C_Report.tex
+
+\plotframe{Model C: the PSE shift grows with distractor amplitude}
+  {\plotsC/Fit_Plots_C/pse_shift_vs_amplitude.png}
+
+\plotframe{Model C on the real data: misfit at the weakest stimuli}
+  {\plotsC/Fit_Plots_C/ppc_pooled_by_stimulus.png}
+
+% trimmed
+\begin{frame}{Model C: conclusions}
+  \begin{itemize}
+    \item \textbf{PSE:} lowered by the distractor, more the stronger it is: a typical session
+          shifts 1--2~$\mu m$ at a 6~$\mu m$ distractor, 6.5--9~$\mu m$ at 32~$\mu m$
+    \item \textbf{JND, \boldmath$\gamma_h$, \boldmath$\gamma_l$:} shared by both conditions, so
+          the model cannot show an effect on them
+    \item The misfit sits where its assumptions meet the data:
+    \begin{itemize}
+      \item shared lapse rates: too few ``high'' responses predicted to weak stimuli on
+            bimanual trials
+      \item a shift proportional to amplitude: on the right hand, even a 6~$\mu m$ distractor
+            shifts responses more than Model C allows
+    \end{itemize}
+    \item[$\Rightarrow$] Which model describes the data best? Model comparison
+  \end{itemize}
+\end{frame}

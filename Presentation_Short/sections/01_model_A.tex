@@ -1,0 +1,111 @@
+% !TEX root = ../Presentation.tex
+% ---------------------------------------------------------------------------
+% Model A: sessions pooled
+% Slides taken from ../Presentation_ABC/sections; trimmed ones are marked.
+% ---------------------------------------------------------------------------
+\section{Model A: Sessions Pooled}
+
+\subsection{Model Structure}
+
+\begin{frame}{Model A: graphical model}
+  \begin{columns}[c]
+    \begin{column}{0.6\textwidth}
+      \centering
+      \begin{tikzpicture}[gm, node distance=0.7cm and 0.6cm]
+        \node[latent] (b0) {$\beta_0$};
+        \node[latent, right=of b0] (b1) {$\beta_1$};
+        \node[latent, right=of b1] (gh) {$\gamma_h$};
+        \node[latent, right=of gh] (gl) {$\gamma_l$};
+
+        \node[det, below=1.0cm of $(b1)!0.5!(gh)$] (psi) {$\psi_i$};
+        \node[obs, below=0.6cm of psi] (r) {$r_i$};
+        \node[const, right=0.8cm of psi] (x) {$x_i$};
+
+        \foreach \p in {b0, b1, gh, gl}
+          \draw[arr] (\p) -- (psi);
+        \draw[arr] (x) -- (psi);
+        \draw[arr] (psi) -- (r);
+
+        \node[plate, fit=(x)(psi)(r), inner sep=5pt] (ptrial) {};
+        \node[font=\scriptsize, anchor=north east] at (ptrial.south east) {trials $i = 1,\dots,n$};
+        \node[plate, fit=(b0)(gl)(ptrial), inner sep=14pt] (pgroup) {};
+        \node[font=\scriptsize, anchor=south west] at (pgroup.south west) {each of the 4 groups};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \footnotesize
+      \begin{itemize}
+        \item circles: random variables
+        \item shaded: observed
+        \item rectangles: deterministic
+        \item $x_i$: fixed covariate
+        \item outer plate: the same model, fit independently to each group
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\subsection{Synthetic Data}
+% numbers from Model_A/Convergence_A_Report.tex
+
+% trimmed
+\begin{frame}{Model A on synthetic data: what is recoverable}
+  At the size of the real data (about 3{,}230 trials per group):
+  \begin{itemize}
+    \item \textbf{Recoverable:} PSE, JND, $\gamma_h$, unbiased and with calibrated 95\% HDIs
+    \item \textbf{Not reliably recoverable:} small $\gamma_l$, biased upward
+    \item \textbf{Caveat:} data simulated with one curve per group, so this says nothing about
+          variation between sessions
+  \end{itemize}
+\end{frame}
+
+\subsection{Real Data}
+% numbers from Model_A/Fit_A_Report.tex
+
+\begin{frame}{Model A on the real data: fitted curves}
+  \centering
+  \includegraphics[width=0.48\textwidth]{\plotsA/Fit_Plots_A/curves_left.png}\hfill
+  \includegraphics[width=0.48\textwidth]{\plotsA/Fit_Plots_A/curves_right.png}
+  \par\vspace{0.4em}{\small Unimanual in blue, bimanual in red, with the observed proportions
+  pooled over sessions; dashed: the trained threshold of 28~$\mu m$.}
+\end{frame}
+
+% Distractor effect, one slide per quantity: its row of uni_bi_posteriors.png (unimanual and
+% bimanual posteriors overlaid) above its row of effect_densities.png (bimanual - unimanual).
+% Both PNGs are 2223 px wide at 200 dpi (1 px = 0.36 bp) with the same two hand columns;
+% the rows are cropped in LaTeX at the white gaps between them, hand titles left out.
+\newcommand{\effectpair}[4]{%
+  \begin{frame}{Model A on the real data: effect of the distractor on #1}
+    \centering
+    \begin{tikzpicture}
+      \node[inner sep=0] (ub) {\includegraphics[width=0.84\textwidth, #2]{\plotsA/Fit_Plots_A/uni_bi_posteriors.png}};
+      \node[inner sep=0, below=3pt of ub] (ef) {\includegraphics[width=0.84\textwidth, #3]{\plotsA/Fit_Plots_A/effect_densities.png}};
+      \node[above, font=\scriptsize] at ($(ub.north west)!0.255!(ub.north east)$) {Left Hand};
+      \node[above, font=\scriptsize] at ($(ub.north west)!0.752!(ub.north east)$) {Right Hand};
+      \node[left, rotate=90, anchor=south, font=\scriptsize, muted] at (ub.west) {uni vs bi};
+      \node[left, rotate=90, anchor=south, font=\scriptsize, muted] at (ef.west) {bi $-$ uni};
+    \end{tikzpicture}\\[0.1em]
+    {\scriptsize \textcolor{plotblue}{\rule[0.5ex]{1.2em}{1pt}}~Unimanual\quad
+     \textcolor{plotred}{\rule[0.5ex]{1.2em}{1pt}}~Bimanual\quad
+     {\color{muted}95\% HDI shaded, mean dotted#4}}
+  \end{frame}}
+
+\effectpair{PSE}
+  {trim=0 626.04bp 0 38.88bp, clip}
+  {trim=0 572.76bp 0 38.88bp, clip}
+  {; green dashed: trained threshold}
+
+% trimmed
+\begin{frame}{Model A: conclusions}
+  \begin{itemize}
+    \item The pooled data are reproduced at every amplitude
+    \item Effect of the distractor (bimanual $-$ unimanual):
+    \begin{itemize}
+      \item \textbf{PSE:} lowered, by about 4~$\mu m$ (left) and 6~$\mu m$ (right)
+      \item \textbf{JND:} raised for the left hand; unclear for the right
+      \item \textbf{\boldmath$\gamma_h$:} raised, by about 0.04
+      \item \textbf{\boldmath$\gamma_l$:} no clear effect
+    \end{itemize}
+    \item[$\Rightarrow$] A curve for every session: Model B
+  \end{itemize}
+\end{frame}

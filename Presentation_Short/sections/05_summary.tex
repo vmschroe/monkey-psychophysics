@@ -1,0 +1,64 @@
+% !TEX root = ../Presentation.tex
+% ---------------------------------------------------------------------------
+% Summary, open questions and next steps
+% Slides taken from ../Presentation_ABC/sections; trimmed ones are marked.
+% ---------------------------------------------------------------------------
+\section{Summary}
+
+% trimmed: elpd and p_loo rows replaced by a ranking
+\begin{frame}{Comparison of the models}
+  \centering
+  \begin{tabular}{lccc}
+    \toprule
+     & A & B & C \\
+    \midrule
+    Sessions & pooled & hierarchical & hierarchical \\
+    Distractor & separate groups & separate groups & covariate $\beta_2 x_\text{dist}$ \\
+    Prediction (LOO) & 3rd & \textbf{best} & 2nd \\
+    PSE shift, left / right ($\mu m$) & $-4.2$ / $-6.1$ & $-4.3$ / $-6.1$ & $-4.5$ / $-5.7$ \\
+    \bottomrule
+  \end{tabular}
+
+  \vfill
+  \raggedright
+  \begin{itemize}
+    \item All three models agree on the PSE shift
+    \item B predicts best: sessions differ (B $\gg$ A), and lapse rates differ between
+          conditions (B $>$ C)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Conclusions}
+  \begin{itemize}
+    \item The distractor lowers the PSE: by about 4.2--4.5~$\mu m$ (left) and 5.7--6.1~$\mu m$
+          (right), in all three models.
+    \item It raises the rate of ``high'' responses to weak stimuli on bimanual trials
+          ($\gamma_h$); whether this grows with distractor amplitude is open.
+    \item The sessions differ; a hierarchical model is needed.
+    \item The shift grows with distractor amplitude, and a weak distractor may shift the PSE
+          more than a proportional model allows (right hand).
+  \end{itemize}
+\end{frame}
+
+% new for this audience
+\begin{frame}{Open questions}
+  \begin{itemize}
+    \item \textbf{The extra ``high'' responses to weak stimuli on bimanual trials:} they seem
+          to cluster in sessions with a strong distractor (being checked). What could produce
+          them: responses to the distractor hand, attention, motor errors?
+    \item \textbf{Amplitude and time:} the distractor amplitude rose over the sessions, so a
+          growing effect could also be training or adaptation. Was the schedule chosen for a
+          reason? Did anything else change over those months?
+    \item \textbf{Left vs right:} the right hand shifts more, even at weak distractors. Is a
+          hand asymmetry expected?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Next steps}
+  \begin{itemize}
+    \item A new Model D, revising Model C: lapse rates per condition, testing whether the bimanual
+          $\gamma_h$ depends on distractor amplitude (or session order).
+    \item A distractor-presence term only if it improves prediction.
+    \item Model recovery for B against D.
+  \end{itemize}
+\end{frame}
