@@ -42,7 +42,7 @@ slides not marked are copied unchanged from it, `[trimmed]` marks a shortened sl
   $\psi(x_\text{stim}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x_\text{stim}), \qquad \vec{\theta} = (\beta_0, \beta_1, \gamma_h, \gamma_l)$
 
 - $\gamma_h$ (in blue): lapse rate for "high"
-  - lower bound on $\mathbf{P}(\text{guess} = \text{"high"})$, even to the weakest stimuli
+  - lower bound on $\mathbf{P}(\text{guess} = \text{"high"})$, even to the lowest stimulus amplitudes
   - lower (left) asymptote of $\psi$
 - $\gamma_l$ (in purple): lapse rate for "low"
   - lower bound on $\mathbf{P}(\text{guess} = \text{"low"})$, even to the strongest stimuli
@@ -223,7 +223,7 @@ At the size of the real data, if the data follow Model C:
 ## 25. Model C: the PSE shift grows with distractor amplitude
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/pse_shift_vs_amplitude.png
 
-## 26. Model C on the real data: misfit at the weakest stimuli
+## 26. Model C on the real data: misfit at the lowest stimulus amplitudes
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/ppc_pooled_by_stimulus.png
 
 ## 27. Model C: conclusions
@@ -231,7 +231,7 @@ At the size of the real data, if the data follow Model C:
 - **PSE:** lowered by the distractor, more the stronger it is: a typical session shifts 1–2 μm at a 6 μm distractor, 6.5–9 μm at 32 μm
 - **JND, $\gamma_h$, $\gamma_l$:** shared by both conditions, so the model cannot show an effect on them
 - The misfit sits where its assumptions meet the data:
-  - shared lapse rates: too few "high" responses predicted to weak stimuli on bimanual trials
+  - shared lapse rates: too few "high" responses predicted to low stimulus amplitudes on bimanual trials
   - a shift proportional to amplitude: on the right hand, even a 6 μm distractor shifts responses more than Model C allows
 - ⇒ Which model describes the data best? Model comparison
 
@@ -282,7 +282,7 @@ Is B's advantage real, or just flexibility? Simulate datasets from each model on
 [trimmed]
 - **Sessions differ:** B predicts far better than A, and model recovery shows this is not B's flexibility alone
 - **The models agree on the PSE shift:** about 4 μm (left) and 6 μm (right) on average
-- **B predicts better than C mainly because of lapses:** C's one lapse rate for both conditions misses the extra "high" responses to weak stimuli on bimanual trials
+- **B predicts better than C mainly because of lapses:** C's one lapse rate for both conditions misses the extra "high" responses to low stimulus amplitudes on bimanual trials
 - Less clearly: a distractor-presence effect (right hand) and a bimanual slope
 - ⇒ Model B is the model to use for inference for now
 
@@ -306,13 +306,13 @@ Table:
 
 ## 34. Conclusions
 - The distractor lowers the PSE: by about 4.2–4.5 μm (left) and 5.7–6.1 μm (right), in all three models.
-- It raises the rate of "high" responses to weak stimuli on bimanual trials ($\gamma_h$); whether this grows with distractor amplitude is open.
+- It raises the rate of "high" responses to low stimulus amplitudes on bimanual trials ($\gamma_h$); whether this grows with distractor amplitude is open.
 - The sessions differ; a hierarchical model is needed.
 - The shift grows with distractor amplitude, and a weak distractor may shift the PSE more than a proportional model allows (right hand).
 
 ## 35. Open questions
 [new for this deck]
-- **The extra "high" responses to weak stimuli on bimanual trials:** they seem to cluster in sessions with a strong distractor (being checked). What could produce them: responses to the distractor hand, attention, motor errors?
+- **The extra "high" responses to low stimulus amplitudes on bimanual trials:** they seem to cluster in sessions with a strong distractor (being checked). What could produce them: responses to the distractor hand, attention, motor errors?
 - **Amplitude and time:** the distractor amplitude rose over the sessions, so a growing effect could also be training or adaptation. Was the schedule chosen for a reason? Did anything else change over those months?
 - **Left vs right:** the right hand shifts more, even at weak distractors. Is a hand asymmetry expected?
 

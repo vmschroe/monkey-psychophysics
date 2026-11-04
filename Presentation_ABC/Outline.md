@@ -41,7 +41,7 @@ Editable outline of `Presentation.tex` and `sections/*.tex`. One `##` heading pe
   $\psi(x_\text{stim}) = \gamma_h + (1-\gamma_h-\gamma_l)\,\text{logit}^{-1}(\beta_0 + \beta_1 x_\text{stim}), \qquad \vec{\theta} = (\beta_0, \beta_1, \gamma_h, \gamma_l)$
 
 - $\gamma_h$ (in blue): lapse rate for "high"
-  - lower bound on $\mathbf{P}(\text{guess} = \text{"high"})$, even to the weakest stimuli
+  - lower bound on $\mathbf{P}(\text{guess} = \text{"high"})$, even to the lowest stimulus amplitudes
   - lower (left) asymptote of $\psi$
 - $\gamma_l$ (in purple): lapse rate for "low"
   - lower bound on $\mathbf{P}(\text{guess} = \text{"low"})$, even to the strongest stimuli
@@ -570,7 +570,7 @@ Small note: PSE, JND and lapse rates of a typical session (JND and lapse rates a
 ## 70. Model C: the PSE shift grows with distractor amplitude
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/pse_shift_vs_amplitude.png
 
-## 71. Model C on the real data: misfit at the weakest stimuli
+## 71. Model C on the real data: misfit at the lowest stimulus amplitudes
 - Figure (no caption, title cropped): Model_C/Plots_C/Fit_Plots_C/ppc_pooled_by_stimulus.png
 
 ## 72. Model C: observed vs predicted, by distractor amplitude
@@ -582,7 +582,7 @@ Small note: PSE, JND and lapse rates of a typical session (JND and lapse rates a
   - **PSE:** lowered, by −4.51 [−5.15, −3.86] μm (left) and −5.74 [−6.39, −5.11] μm (right) on average over sessions; more the stronger the distractor: a typical session shifts −1.23 and −1.66 μm at 6 μm, −6.57 and −8.85 μm at 32 μm
   - **JND, $\gamma_h$, $\gamma_l$:** shared by both conditions, so the model cannot show an effect on them
 - The misfit sits where its assumptions meet the data:
-  - shared lapse rates: 6 of 32 pooled proportions outside their intervals, all at weak stimuli
+  - shared lapse rates: 6 of 32 pooled proportions outside their intervals, all at low stimulus amplitudes
   - a shift proportional to amplitude: for the right hand, even a 6 μm distractor shifts responses more than Model C allows
 - ⇒ Which model describes the data best? Model comparison
 
@@ -681,7 +681,7 @@ Session PSE shifts (μm): mean, and range of the posterior means, over the sessi
 - **Sessions differ:** B predicts far better than A, and model recovery shows this is not B's flexibility alone.
 - **The models agree on the PSE shift:** about −4.2 to −4.5 μm (left) and −5.7 to −6.1 μm (right) on average.
 - **The shift depends on amplitude:** C confirms the trend inside a model.
-- **B predicts better mainly because of lapses:** C's one lapse rate for both conditions misses the extra "high" responses to weak stimuli on bimanual trials. C's misfit points to
+- **B predicts better mainly because of lapses:** C's one lapse rate for both conditions misses the extra "high" responses to low stimulus amplitudes on bimanual trials. C's misfit points to
   - lapse rates per condition (the strongest evidence); open: does the bimanual $\gamma_h$ grow with distractor amplitude?
   - less clearly, a distractor-presence term (right hand) and a bimanual slope
 - ⇒ Model B is the model to use for inference for now
@@ -709,7 +709,7 @@ Small note: PSE shift: bimanual − unimanual, posterior mean; for B and C avera
 
 ## 84. Conclusions
 - The distractor lowers the PSE: by about 4.2–4.5 μm (left) and 5.7–6.1 μm (right), in all three models.
-- It raises the rate of "high" responses to weak stimuli on bimanual trials ($\gamma_h$); whether this grows with distractor amplitude is open.
+- It raises the rate of "high" responses to low stimulus amplitudes on bimanual trials ($\gamma_h$); whether this grows with distractor amplitude is open.
 - The sessions differ; a hierarchical model is needed.
 - The shift grows with distractor amplitude, and a weak distractor may shift the PSE more than a proportional model allows (right hand).
 
