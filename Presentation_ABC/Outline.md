@@ -425,7 +425,7 @@ Small note: quantities at the group-level means, posterior mean [95% HDI].
 - Reliable fit; no systematic misfit, pooled or within sessions (elpd_loo = −3180.0, SE 64.3)
 - Effect of the distractor (bimanual − unimanual), average over the 42 sessions, posterior mean [95% HDI]:
   - **PSE:** lowered, by −4.29 [−5.05, −3.52] μm (left) and −6.06 [−6.80, −5.34] μm (right); posterior mean negative in 40/42 (left) and 42/42 (right) sessions
-  - **JND:** raised for the left hand, +1.03 [0.46, 1.59] μm, driven by a few sessions; unclear for the right, +0.49 [−0.07, 1.03] μm
+  - **JND:** raised for the left hand, +1.03 [0.46, 1.59] μm, driven by a few sessions (possibly lapses absorbed into the slope); unclear for the right, +0.49 [−0.07, 1.03] μm
   - **$\gamma_h$:** raised, by +0.025 [0.009, 0.042] (left) and +0.035 [0.016, 0.054] (right)
   - **$\gamma_l$:** no effect, 0.000 [−0.014, 0.013] (left) and +0.003 [−0.009, 0.015] (right)
 - The PSE shift grows with distractor amplitude, by about −2 μm per 10 μm (exploratory; amplitude is confounded with session order)
@@ -657,7 +657,7 @@ elpd_loo(C) − elpd_loo(B) summed over the trials at each amplitude; negative v
 | 44 | 0.0 | −3.8 | 0.4 | −1.5 |
 | 50 | −0.1 | 0.3 | 0.1 | 0.0 |
 
-- 29.2 of the 37.1 are lost at 6 and 12 μm: one lapse rate for both conditions
+- 29.2 of the 37.1 are lost at 6 and 12 μm, on unimanual as well as bimanual trials: one lapse rate for both conditions, the main cause
 - Next: left unimanual at 32 and 44 μm: one slope for both conditions
 
 ## 80. Model C vs Model B: session PSE shifts
@@ -675,15 +675,15 @@ Session PSE shifts (μm): mean, and range of the posterior means, over the sessi
 
 - The models agree on the average shift and, for the left hand, on the session shifts ($r$ = 0.91)
 - For the right hand at 6 μm, B's shift is more than twice C's: C ties the shift to the amplitude, so a weak distractor must give a small shift
-- Suggests an effect of the distractor being present, on top of its amplitude
+- Hints at an effect of the distractor being present, on top of its amplitude (right hand); not yet shown to improve prediction
 
 ## 82. Model comparison: conclusions
 - **Sessions differ:** B predicts far better than A, and model recovery shows this is not B's flexibility alone.
 - **The models agree on the PSE shift:** about −4.2 to −4.5 μm (left) and −5.7 to −6.1 μm (right) on average.
-- **The shift depends on amplitude, but not only:** C confirms the trend inside a model, yet B still predicts better. C's misfit points to
-  - lapse rates per condition (the strongest evidence)
-  - a distractor-presence term, so the shift is not forced to 0 for a weak distractor
-  - possibly a bimanual slope, which would let the distractor change the JND
+- **The shift depends on amplitude:** C confirms the trend inside a model.
+- **B predicts better mainly because of lapses:** C's one lapse rate for both conditions misses the extra "high" responses to weak stimuli on bimanual trials. C's misfit points to
+  - lapse rates per condition (the strongest evidence); open: does the bimanual $\gamma_h$ grow with distractor amplitude?
+  - less clearly, a distractor-presence term (right hand) and a bimanual slope
 - ⇒ Model B is the model to use for inference for now
 
 ---
@@ -705,16 +705,17 @@ Table:
 Small note: PSE shift: bimanual − unimanual, posterior mean; for B and C averaged over the 42 sessions. Numbers from Fit_A, Fit_B and Fit_C_Report.
 
 - All three models agree on the PSE shift, to within about 0.3 μm for each hand
-- B predicts best: sessions differ (B ≫ A), and the shift is not simply proportional to distractor amplitude (B > C)
+- B predicts best: sessions differ (B ≫ A), and lapse rates differ between conditions (B > C)
 
 ## 84. Conclusions
 - The distractor lowers the PSE: by about 4.2–4.5 μm (left) and 5.7–6.1 μm (right), in all three models.
-- It raises the rate of "high" responses to weak stimuli ($\gamma_h$).
+- It raises the rate of "high" responses to weak stimuli on bimanual trials ($\gamma_h$); whether this grows with distractor amplitude is open.
 - The sessions differ; a hierarchical model is needed.
-- The shift grows with distractor amplitude, but a weak distractor still shifts the PSE more than a proportional model allows (right hand).
+- The shift grows with distractor amplitude, and for the right hand a weak distractor may shift the PSE more than a proportional model allows (right hand).
 
 ## 85. Next steps
-- A new Model D, revising Model C: lapse rates per condition and a distractor-presence term.
+- A new Model D, revising Model C: lapse rates per condition, testing whether the bimanual $\gamma_h$ depends on distractor amplitude (or session order).
+- A distractor-presence term only if it improves prediction.
 - Model recovery for B against D.
 
 ---
