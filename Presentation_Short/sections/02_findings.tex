@@ -1,0 +1,94 @@
+% !TEX root = ../Presentation.tex
+% ---------------------------------------------------------------------------
+% Findings, from the Fit and model comparison reports of Models A, B and C
+% ---------------------------------------------------------------------------
+\section{Findings}
+
+\begin{frame}{The distractor makes ``high'' answers more likely}
+  \centering
+  \includegraphics[width=0.46\textwidth]{\plotsA/Fit_Plots_A/curves_left.png}\hfill
+  \includegraphics[width=0.46\textwidth]{\plotsA/Fit_Plots_A/curves_right.png}
+  \par\vspace{0.3em}
+  The bimanual curve (red) moves left: PSE about 4~$\mu m$ lower (left hand), 6~$\mu m$ (right)
+\end{frame}
+
+\takeframe{The shift appears in nearly every session}
+  {\plotsB/Fit_Plots_B/effect_PSE_by_session.png}
+  {One session per point, in date order (Model B). Below 0: the distractor lowers the PSE}
+
+\takeframe{The shift grows with the distractor's amplitude}
+  {\plotsC/Fit_Plots_C/pse_shift_vs_amplitude.png}
+  {One session per point (Model C). But amplitude also rose over time}
+
+% the circles mark the weakest stimuli (6 and 12 um) on curves_left/right.png, in
+% coordinates relative to the image (0,0 = lower left, 1,1 = upper right)
+\newcommand{\floorcurves}[1]{%
+  \begin{tikzpicture}
+    \node[anchor=south west, inner sep=0] (img) at (0,0)
+      {\includegraphics[width=0.48\textwidth]{#1}};
+    \begin{scope}[x={(img.south east)}, y={(img.north west)}]
+      \draw[plotorange, line width=1.5pt] (0.21,0.205) ellipse (0.095 and 0.05);
+    \end{scope}
+  \end{tikzpicture}}
+
+\begin{frame}{A floor under the bimanual curve}
+  \centering
+  \floorcurves{\plotsA/Fit_Plots_A/curves_left.png}\hfill
+  \floorcurves{\plotsA/Fit_Plots_A/curves_right.png}
+  \par\vspace{0.3em}
+  With a distractor, the monkey sometimes answers ``high'' to the weakest stimuli
+\end{frame}
+
+\begin{frame}{Less clear}
+  \begin{itemize}
+    \setlength{\itemsep}{1em}
+    \item \textbf{Sensitivity:} the left-hand JND is slightly larger with a distractor\\
+          {\color{muted}driven by a few sessions; may be the same extra ``high'' answers}
+    \item \textbf{Weak distractors:} on the right hand, a 6~$\mu m$ distractor shifts the
+          PSE more than its amplitude predicts\\
+          {\color{muted}not yet shown to matter for prediction}
+  \end{itemize}
+\end{frame}
+
+% elpd differences from Model_B/Fit_B_Report.tex and Model_C/Fit_C_Report.tex
+\begin{frame}{Which model predicts best?}
+  \centering
+  How much worse than Model B each model predicts left-out trials\\[0.3em]
+  {\small\color{muted}(difference in log predictive score)}
+  \par\vspace{1em}
+  \begin{tikzpicture}[x=0.045cm]
+    \foreach \m/\v/\y in {A/164.1/0, C/37.1/-1.1, B/0/-2.2} {
+      \node[anchor=east, font=\bfseries] at (-3,\y) {Model \m};
+      \fill[plotblue!70] (0,\y-0.32) rectangle (\v,\y+0.32);
+      \node[anchor=west, font=\small] at (\v+3,\y) {\ifdim\v pt=0pt best\else\v\fi};
+    }
+  \end{tikzpicture}
+  \par\vspace{1em}
+  \raggedright
+  \begin{itemize}
+    \item B $\gg$ A: sessions really differ
+    \item B $>$ C: C has one floor for both trial types
+  \end{itemize}
+\end{frame}
+
+% the bimanual row of ppc_pooled_by_stimulus.png: 1223 px tall at 200 dpi, row starts at
+% 600 px = 216 bp from the top
+\begin{frame}{Why Model C falls short}
+  \centering
+  \includegraphics[width=0.85\textwidth,trim=0 0 0 216bp,clip]
+    {\plotsC/Fit_Plots_C/ppc_pooled_by_stimulus.png}
+  \par\vspace{0.3em}
+  {\small Black: observed. Blue: Model C's prediction.}\\
+  On bimanual trials, C predicts too few ``high'' answers to the weakest stimuli
+\end{frame}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+    \setlength{\itemsep}{0.8em}
+    \item The distractor lowers the PSE: about 4~$\mu m$ (left hand) and 6~$\mu m$ (right),
+          in all three models
+    \item The shift is larger in sessions with a stronger distractor
+    \item With a distractor, the monkey sometimes answers ``high'' to the weakest stimuli
+    \item Sessions differ, so each session needs its own curve
+  \end{itemize}
+\end{frame}
