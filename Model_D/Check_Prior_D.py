@@ -79,9 +79,9 @@ def over_draws(da):
     return da.values.reshape(N_DRAWS, -1)
 
 pse = prior['PSE'] * x_sig + x_mu
-gam = {name: 0.25 / (1 + np.exp(-prior['mu_gams'].sel(lapses=name))) for name in ['gam_h', 'gam_l']}
-mu_b1 = prior['mu_betas'].sel(betas='b1')
-typical_shift = {a: -(prior['mu_b3'] + prior['mu_b2'] * a / x_sig) / mu_b1 * x_sig for a in AMPS}
+gam = {name: prior[name] for name in ['gam_h', 'gam_l']}   # Model D's lapses have no session level: one per hand and condition
+mu_b1 = np.exp(prior['mu_betas'].sel(betas='b1'))   # mu_betas holds b1's mean on the log scale
+typical_shift = {a: -(prior['b3'] + prior['b2'] * a / x_sig) / mu_b1 * x_sig for a in AMPS}
 
 pushforward = {
     'session PSE, unimanual (um)': over_draws(pse.sel(conditions='uni')),
@@ -131,8 +131,8 @@ for name in ['shift_intercept_left', 'shift_slope_left', 'shift_resid_sd_weak_le
 # what the design can say about b3 apart from b2: session-level regression of delta on x_dist
 X = np.column_stack([np.ones_like(sess_x_dist), sess_x_dist])
 cov = np.linalg.inv(X.T @ X)
-report("\nDesign: regression of the session shift delta on x_dist, per unit of sig_delta")
-report(f"  sd of mu_b3 {np.sqrt(cov[0, 0]):.3f}, sd of mu_b2 {np.sqrt(cov[1, 1]):.3f}, correlation {cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1]):.3f}")
+report("\nDesign: regression of a per-session shift on x_dist, per unit of shift noise (how well sessions separate b3 from b2)")
+report(f"  sd of b3 {np.sqrt(cov[0, 0]):.3f}, sd of b2 {np.sqrt(cov[1, 1]):.3f}, correlation {cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1]):.3f}")
 
 RESULTS_PATH.write_text("\n".join(lines) + "\n")
 

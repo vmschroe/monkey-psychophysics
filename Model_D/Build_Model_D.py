@@ -7,17 +7,12 @@ Model D: revises Model C so that the lapse rates depend on hand and condition,
 pooled over sessions as in Model A, and the PSE shift isn't forced to 0 for a
 weak distractor. See Model_D_Spec.txt for the reasoning behind the priors.
 
-    psi = gam_h[c] + (1 - gam_h[c] - gam_l[c]) * invlogit( b0 + b1*x_stim + delta*x_bi )
+    psi = gam_h[c] + (1 - gam_h[c] - gam_l[c]) * invlogit( b0 + b1*x_stim + b2*x_dist + b3*x_bi )
 
-with x_bi = 1 on bimanual trials and 0 on unimanual ones. Groups are the two
-hands; b0, b1 and delta vary by session, with hyperparameters per hand.
-
-The intended form is b0 + b1*x_stim + b2*x_dist + b3*x_bi, with all betas per
-session. Each session has a single distractor amplitude x_dist, so its data can
-only inform the sum delta = b3 + b2*x_dist. Integrating out that split, with b2
-and b3 independent and normal across sessions, gives the same model:
-
-    delta ~ N( mu_b3 + mu_b2 * x_dist , sqrt( sig_b3^2 + sig_b2^2 * x_dist^2 ) )
+with x_bi = 1 on bimanual trials and 0 on unimanual ones, and x_dist = d_s * x_bi.
+Groups are the two hands. b0 and b1 vary by session, with hyperparameters per
+hand; b2 and b3 are per hand, the same in every session. The bimanual shift of a
+session is then delta = b3 + b2 * d_s, set by its distractor amplitude d_s.
 
 Expects x_stim, cond_idx, grp_idx, sess_idx, sess_x_dist, obs_data and sessions
 to be defined (see DataProcessing_D.py).
@@ -72,26 +67,17 @@ with pm.Model(coords=coords) as model_D:
     betas_latent = sig_betas[..., None] * z_betas + mu_betas[..., None]
     beta_vec = pm.Deterministic("beta_vec", pm.math.stack([ betas_latent[0] , pm.math.exp(betas_latent[1]) ], axis=0), dims=("betas", "groups", "sessions"),)
 
-    #Delta (logit shift on bimanual trials), one per session
-    #   delta ~ N[ mu_b3 + mu_b2 * x_dist , sqrt( sig_b3^2 + sig_b2^2 * x_dist^2 ) ]
+    #Distractor terms, per hand (no session level)
+    #   b3 ~ N[ mu = 0 , sigma = 1.5 ]   (presence; either direction; new in Model D, so wide)
+    #   b2 ~ N[ mu = 0 , sigma = 0.75 ]   (per unit of x_dist; either direction)
     #       (x_dist = dist_amp / stim sd, at most ~2.2 for 32 um)
-    #       mu_b3 ~ N[ mu = 0 , sigma = 1.5 ]   (either direction; new in Model D, so wide)
-    #       sig_b3 ~ HalfNormal[sig=1]   (new in Model D, so wide)
-    #       mu_b2 ~ N[ mu = 0 , sigma = 0.75 ]   (either direction)
-    #       sig_b2 ~ HalfNormal[sig=0.5]
     #       (b2 at half the width of b3: at x_dist = 2, ~29 um, neither term is favored)
-    z_mu_b3 = pm.Normal('z_mu_b3', mu = 0, sigma = 1, dims = ('groups',))
-    z_mu_b2 = pm.Normal('z_mu_b2', mu = 0, sigma = 1, dims = ('groups',))
-    mu_b3 = pm.Deterministic('mu_b3', 1.5 * z_mu_b3, dims = ('groups',))
-    mu_b2 = pm.Deterministic('mu_b2', 0.75 * z_mu_b2, dims = ('groups',))
-    z_sig_b3 = pm.HalfNormal('z_sig_b3', sigma = 1, dims = ('groups',))
-    z_sig_b2 = pm.HalfNormal('z_sig_b2', sigma = 1, dims = ('groups',))
-    sig_b3 = pm.Deterministic('sig_b3', 1 * z_sig_b3, dims = ('groups',))
-    sig_b2 = pm.Deterministic('sig_b2', 0.5 * z_sig_b2, dims = ('groups',))
-    z_delta = pm.Normal('z_delta', mu = 0, sigma = 1, dims = ('groups', 'sessions'))
-    mean_delta = mu_b3[:, None] + mu_b2[:, None] * sess_x_dist_mut[None, :]
-    sd_delta = pm.math.sqrt( sig_b3[:, None]**2 + (sig_b2[:, None] * sess_x_dist_mut[None, :])**2 )
-    delta = pm.Deterministic('delta', mean_delta + sd_delta * z_delta, dims = ('groups', 'sessions'))
+    #Delta = b3 + b2 * d_s is the logit shift on bimanual trials of session s
+    z_b3 = pm.Normal('z_b3', mu = 0, sigma = 1, dims = ('groups',))
+    z_b2 = pm.Normal('z_b2', mu = 0, sigma = 1, dims = ('groups',))
+    b3 = pm.Deterministic('b3', 1.5 * z_b3, dims = ('groups',))
+    b2 = pm.Deterministic('b2', 0.75 * z_b2, dims = ('groups',))
+    delta = pm.Deterministic('delta', b3[:, None] + b2[:, None] * sess_x_dist_mut[None, :], dims = ('groups', 'sessions'))
 
 
     #Gamma (gamma_h and gamma_l iid; per hand and condition, pooled over sessions as in Model A)

@@ -25,26 +25,26 @@ Each session uses one distractor amplitude, between 6 and 32 um.
 
   psi_t = gam_h[j,c] + (1 - gam_h[j,c] - gam_l[j,c]) * invlogit(eta_t)
 
-  eta_t = b0[s,j] + b1[s,j] * x_stim + delta[s,j] * x_bi
+  eta_t = b0[s,j] + b1[s,j] * x_stim + b2[j] * x_dist + b3[j] * x_bi
 
 The slope b1 is shared by the two conditions.
 
 
-3. SESSION SHIFT, OPTION A (DECIDED)
+3. DISTRACTOR SHIFT, PER HAND (DECIDED 2026-11-17)
 
-The intended form is b0 + b1*x_stim + b2*x_dist + b3*x_bi, with b0, b1, b2 and b3
-fit per session. Within a session x_dist = d_s * x_bi, so the data inform only the
-sum delta = b3 + b2*d_s. Integrating out that split gives the same model:
+b2 and b3 are fit per hand, the same in every session. The bimanual shift of
+session s is then fixed by its distractor amplitude:
 
-  delta[s,j] ~ Normal( mu3[j] + mu2[j]*d_s , sqrt( sig3[j]^2 + sig2[j]^2 * d_s^2 ) )
+  delta[s,j] = b3[j] + b2[j]*d_s
 
-Coded non-centered:
+Because d_s differs between sessions, b2 and b3 are identified separately: b2 from
+how the shift changes across sessions, b3 from its level.
 
-  delta[s,j] = mu3[j] + mu2[j]*d_s + sqrt( sig3[j]^2 + sig2[j]^2 * d_s^2 ) * z[s,j]
-  z[s,j] ~ Normal(0, 1)
-
-Session-level b2 and b3 are not reported, because their split would come from the
-prior. Only delta is meaningful per session.
+This replaces Option A (2026-10-30), which fit delta per session around
+mu3[j] + mu2[j]*d_s with its own scatter (sig3, sig2). That version left the
+session-level split of b2 and b3 to the prior. The model now has no session-to-
+session variation in the shift beyond what amplitude predicts; whether the data
+need it is a retrodictive check (Section 9).
 
 
 4. PRIORS
@@ -68,14 +68,13 @@ Slope
   sig1[j] ~ HalfNormal(0.3)                                  DECIDED
 
 Distractor shift
-  mu3[j]  ~ Normal(0, 1.5)                                   DECIDED (new parameter: wide)
-  mu2[j]  ~ Normal(0, 0.75)                                  DECIDED
-  sig3[j] ~ HalfNormal(1)                                    DECIDED (new parameter: wide)
-  sig2[j] ~ HalfNormal(0.5)                                  DECIDED
+  b3[j]   ~ Normal(0, 1.5)                                   PROPOSED (was mu3's prior; new parameter: wide)
+  b2[j]   ~ Normal(0, 0.75)                                  PROPOSED (was mu2's prior)
 
-New parameters err toward uninformative. mu2 and sig2 are set at half the width
-of mu3 and sig3 so that, at d = 2 (about 29 um), the prior favors neither the
-constant nor the amplitude-dependent term.
+New parameters err toward uninformative. b2 is set at half the width of b3 so
+that, at d = 2 (about 29 um), the prior favors neither the constant nor the
+amplitude-dependent term. These carry over the priors on mu3 and mu2 from
+Option A; sig3 and sig2 are gone.
 
 
 5. DERIVED QUANTITIES
@@ -92,7 +91,7 @@ Both are on the x_stim scale. For um: PSE * 14.63 + 28, and JND * 14.63.
 
   Lapses       per hand x condition, pooled over sessions (C: per hand and session)
   Lapse prior  fixed LogitNormal(-2.5, 1.5) (C: hierarchical logit-normal)
-  Shift        mu3 + mu2*d with its own scatter (C: b2*d only)
+  Shift        b3 + b2*d per hand, no session scatter (C: b2*d per session)
   Slope        lognormal per session (C: normal, allowing negative slopes)
   mu0          Normal(0, 1) (C: Normal(0, 2))
   sig0         HalfNormal(1) (C: HalfNormal(2))
@@ -102,7 +101,9 @@ Both are on the x_stim scale. For um: PSE * 14.63 + 28, and JND * 14.63.
 
 Share of the ensemble beyond each draft threshold. The target is 0.1% to 5%.
 These come from a quick simulation of one hand on the real session amplitudes,
-not from the PyMC model, and are to be rerun properly in Step 7.
+not from the PyMC model, and are to be rerun properly in Step 7. They predate the
+2026-11-17 change to per-hand b2 and b3: the two "session shift" rows no longer
+apply, since the session shift now equals the typical shift at that amplitude.
 
   Session PSE outside 6-50 um, unimanual        1.8%
   Session PSE outside 0-56 um, bimanual         5.2%   marginally over the limit
@@ -123,16 +124,21 @@ limits are approximate. The remaining thresholds are drafts, not yet confirmed, 
 
 Amplitude and time are confounded. Distractor amplitude climbs with session order
 (Spearman 0.90), and only the last 12 sessions alternate, between 24 and 32 um.
-So mu2 and mu3 are associations with amplitude and could partly reflect training,
+So b2 and b3 are associations with amplitude and could partly reflect training,
 adaptation or novelty. The shift within a session is not affected, assuming the
 trial types were interleaved.
 
-mu3 is an extrapolation to zero amplitude, because the weakest distractor is 6 um.
+b3 is an extrapolation to zero amplitude, because the weakest distractor is 6 um.
 Report the shift at 6 um alongside it. A compressive response to amplitude could
-also produce a nonzero mu3 with no separate "presence" effect.
+also produce a nonzero b3 with no separate "presence" effect.
 
-mu2 and mu3 are strongly correlated (about -0.90 from the design), so read them
-jointly. sig2 and sig3 may be weakly identified.
+b2 and b3 are strongly correlated (about -0.90 from the design), so read them
+jointly.
+
+The shift has no session scatter. If the real shift varies from day to day beyond
+what amplitude predicts, nothing in the model absorbs it (b0 and b1 are shared by
+both conditions, and lapses are pooled), so the posteriors of b2 and b3 would be
+too narrow. The retrodictive check of session shifts against amplitude tests this.
 
 Lapses pooled over sessions mean any real day-to-day lapse variation goes into
 the session betas.
@@ -154,6 +160,7 @@ as summation predicts a shift in um, which would scale with the session's slope.
   - Calibration budget: 100-200 prior-drawn fits, roughly 5-10 hours.
 
 Planned as retrodictive checks, not parameters, in this first iteration:
+session-to-session scatter of the bimanual shift around b3 + b2*d_s,
 bimanual slope and JND by amplitude, correlation between the hands, curve asymmetry
 around the PSE (log amplitude), day-to-day lapse variation, target-side bias,
 serial dependence, and within-session drift.
