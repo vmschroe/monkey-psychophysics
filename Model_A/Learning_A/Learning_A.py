@@ -71,7 +71,7 @@ cov_all = data_dict['cov_mat']
 grp_all = data_dict['grp_idx']
 resp_all = data_dict['resp']
 
-with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+with open(MODEL_DIR.parent / "Data" / "Sirius_Data.pkl", "rb") as f:
     raw_data = pickle.load(f)
 raw = raw_data['data']
 assert np.array_equal(raw['response'].to_numpy(), resp_all)

@@ -37,7 +37,7 @@ DATA_DIR.mkdir(exist_ok=True)
 
 #%% Load raw data
 
-with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+with open(MODEL_DIR.parent / "Data" / "Sirius_Data.pkl", "rb") as f:
     DataDict = pickle.load(f)
 
 Raw_DataFrame = DataDict['data']

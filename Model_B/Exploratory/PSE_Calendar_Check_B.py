@@ -72,7 +72,7 @@ if __name__ == "__main__":
         pse_xr = pickle.load(f)
     with open(HYPER_PATH, "rb") as f:
         hyper = pickle.load(f)
-    with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+    with open(MODEL_DIR.parent / "Data" / "Sirius_Data.pkl", "rb") as f:
         stims = np.unique(pickle.load(f)['data']['stim_amp'])
     x_mu, x_sig = np.mean(stims), np.std(stims)
 

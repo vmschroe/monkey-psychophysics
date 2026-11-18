@@ -22,7 +22,7 @@ from scipy.stats import binom
 #%%
 
 #load raw data
-with open("Sirius_Data.pkl", "rb") as f:
+with open("Data/Sirius_Data.pkl", "rb") as f:
     DataDict = pickle.load(f)  
 
 # if doesn't load, os.getcwd()

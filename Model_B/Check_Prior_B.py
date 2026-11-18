@@ -165,7 +165,7 @@ plt.show()
 
 #%% Bias prior, seen through the PSE in raw amplitude units (28 is the category boundary)
 
-with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+with open(MODEL_DIR.parent / "Data" / "Sirius_Data.pkl", "rb") as f:
     raw_stims = np.unique(pickle.load(f)['data']['stim_amp'])
 amp_mu, amp_sd = raw_stims.mean(), raw_stims.std()   # same standardization as DataProcessing_B.py
 to_amp = lambda x: amp_mu + amp_sd * x

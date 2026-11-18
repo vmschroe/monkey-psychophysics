@@ -38,7 +38,7 @@ with open(DATA_DIR / "ReadyData_Sirius_B.pkl", "rb") as f:
     data_dict = pickle.load(f)
 with open(EXPLORATORY_DIR / "PSE_Draws_B.pkl", "rb") as f:
     pse_xr = pickle.load(f)
-with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+with open(MODEL_DIR.parent / "Data" / "Sirius_Data.pkl", "rb") as f:
     stims = np.unique(pickle.load(f)['data']['stim_amp'])
 x_mu, x_sig = np.mean(stims), np.std(stims)
 

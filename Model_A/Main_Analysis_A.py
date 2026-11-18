@@ -58,7 +58,7 @@ obs_data = data_dict['resp']
 
 # Model A ignores sessions, but the raw data have the same trials in the same order plus the
 # session of each trial; it is used only to check how well Model A fits single sessions
-with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+with open(MODEL_DIR.parent / "Data" / "Sirius_Data.pkl", "rb") as f:
     raw_data = pickle.load(f)
 assert np.array_equal(raw_data['data']['response'].to_numpy(), obs_data)
 assert np.array_equal(raw_data['data']['group_idx'].to_numpy(), grp_idx)

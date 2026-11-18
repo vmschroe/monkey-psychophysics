@@ -64,7 +64,7 @@ if __name__ == "__main__":
     sess_summary = data_dict['session_summary']
     dist_amp = sess_summary.set_index(sess_summary.index.astype(str))['dist_amp'].reindex(dates).values.astype(float)
 
-    with open(MODEL_DIR.parent / "Sirius_Data.pkl", "rb") as f:
+    with open(MODEL_DIR.parent / "Data" / "Sirius_Data.pkl", "rb") as f:
         stims = np.unique(pickle.load(f)['data']['stim_amp'])
     X_MU, X_SIG = np.mean(stims), np.std(stims)
 
