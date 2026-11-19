@@ -55,6 +55,10 @@ and differ in how `eta` is built and how sessions are pooled.
   `eta = b0[s,j] + b1[s,j]*x_stim + b2[j]*x_dist + b3[j]*x_bi`: session-level
   intercept and slope, distractor terms per hand. Developed under Betancourt's
   principled Bayesian workflow; no fit yet.
+  **Not done yet:** the prior checks are a work in progress. The committed
+  outputs of `Check_Prior_D.py` (`Prior_Check_D_Results.txt`,
+  `Plots_D/Prior_Plots_D/`) are from the 2026-11-17 version, and several
+  checks still come out "too wide", so the priors aren't final.
 
 ## Reproducing
 

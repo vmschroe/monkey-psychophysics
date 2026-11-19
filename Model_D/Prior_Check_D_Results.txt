@@ -1,0 +1,37 @@
+Model D prior checks: 1000 draws, seed 20261030, real design (12937 trials, 42 sessions)
+
+Prior pushforward checks
+                       summary threshold     q05  median    q95 beyond  verdict
+   session PSE, unimanual (um)   (6, 50)  16.757  27.956 38.617  1.94%       ok
+    session PSE, bimanual (um)   (6, 50)   9.034  27.725 46.088  6.84% too wide
+              session JND (um)   (1, 22)   1.666   4.460 11.726  1.26%       ok
+                 typical gam_h  (, 0.15)   0.002   0.020  0.123  2.85%       ok
+                 typical gam_l  (, 0.15)   0.002   0.019  0.129  2.62%       ok
+                 session gam_h  (, 0.15)   0.002   0.020  0.123  2.85%       ok
+                 session gam_l  (, 0.15)   0.002   0.019  0.129  2.62%       ok
+    typical shift at 6 um (um) (-11, 11) -10.596  -0.004 11.431 10.15% too wide
+   typical shift at 32 um (um) (-22, 22) -16.279  -0.397 15.631  4.60%       ok
+between-session sd of PSE (um)    (, 11)   0.385   2.681 11.845  5.65% too wide
+
+Prior predictive checks
+        summary   threshold    q05  median   q95 beyond  verdict
+       accuracy (0.6, 0.98)  0.731   0.835 0.907  0.10%       ok
+     p_high_6um     (, 0.3)  0.034   0.127 0.470 12.60% too wide
+    p_high_50um     (0.7, )  0.568   0.878 0.965 12.10% too wide
+mid_diff_bi_uni (-0.5, 0.5) -0.419   0.019 0.418  4.00%       ok
+    sess_sd_mid    (, 0.25)  0.118   0.189 0.299 18.50% too wide
+
+Statistics without thresholds, for the retrodictive checks: 5%, 50%, 95% of the ensemble
+  shift_intercept_left         [-9.666  0.142  9.413]
+  shift_slope_left             [-0.284 -0.008  0.291]
+  shift_resid_sd_weak_left     [1.534 2.607 4.116]
+  shift_resid_sd_strong_left   [1.668 2.608 4.472]
+  corr_uni_bi_left             [-0.053  0.602  0.924]
+  corr_hands_uni               [-0.258 -0.005  0.246]
+  corr_hands_bi                [-0.257 -0.005  0.251]
+  p_repeat                     [0.488 0.502 0.542]
+  accuracy_late_minus_early    [-0.013 -0.001  0.01 ]
+  target_side_bias_left        [-0.014 -0.001  0.01 ]
+
+Design: regression of a per-session shift on x_dist, per unit of shift noise (how well sessions separate b3 from b2)
+  sd of b3 0.360, sd of b2 0.227, correlation -0.904
